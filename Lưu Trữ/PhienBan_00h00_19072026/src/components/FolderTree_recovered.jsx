@@ -4,10 +4,9 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Folder, FolderOpen, File, HardDrive, RefreshCw,
   ChevronRight, ChevronDown, Search, ExternalLink,
-  Pencil, Check, X, RotateCcw, CheckCircle2, Brain
+  Pencil, Check, X, RotateCcw, CheckCircle2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import DocumentAnalyzeModal from './DocumentAnalyzeModal';
 
 // =========================================================
 // TreeNode — chỉ render Folder
@@ -103,9 +102,9 @@ const EditableCell = ({ value, onSave, multiline = false, className = '' }) => {
       <div className="flex flex-col gap-1">
         {multiline
           ? <textarea value={draft} onChange={e => setDraft(e.target.value)} rows={2}
-              className="text-sm w-full border border-emerald-400 rounded px-2 py-1 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none resize-none"/>
+              className="text-xs w-full border border-emerald-400 rounded px-2 py-1 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none resize-none"/>
           : <input value={draft} onChange={e => setDraft(e.target.value)} autoFocus
-              className="text-sm w-full border border-emerald-400 rounded px-2 py-1 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none"/>
+              className="text-xs w-full border border-emerald-400 rounded px-2 py-1 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none"/>
         }
         <div className="flex gap-1">
           <button onClick={handleSave}   className="p-1 rounded bg-emerald-500 text-white hover:bg-emerald-600"><Check size={11}/></button>
@@ -130,7 +129,7 @@ const EditableCell = ({ value, onSave, multiline = false, className = '' }) => {
 // =========================================================
 // Hàng dữ liệu có edit + re-extract
 // =========================================================
-const DocRow = ({ file, idx, onUpdate, onAnalyze }) => {
+const DocRow = ({ file, idx, onUpdate }) => {
   const [saving, setSaving]   = useState(false);
   const [reloading, setReloading] = useState(false);
   const [saved, setSaved]     = useState(false);
@@ -179,7 +178,7 @@ const DocRow = ({ file, idx, onUpdate, onAnalyze }) => {
   if (file._loading) {
     return (
       <tr className="border-b border-slate-100 dark:border-slate-800/80">
-        <td className="px-3 py-2.5 text-slate-400 text-sm">{idx + 1}</td>
+        <td className="px-3 py-2.5 text-slate-400 text-xs">{idx + 1}</td>
         {[...Array(6)].map((_,i) => <td key={i} className="px-3 py-2.5"><SkeletonCell/></td>)}
         <td className="px-3 py-2.5"><SkeletonCell w="w-full"/></td>
         <td className="px-3 py-2.5"/>
@@ -190,7 +189,7 @@ const DocRow = ({ file, idx, onUpdate, onAnalyze }) => {
   return (
     <tr className="border-b border-slate-100 dark:border-slate-800/80 hover:bg-emerald-50/40 dark:hover:bg-emerald-900/10 transition-colors group">
       {/* # */}
-      <td className="px-3 py-2.5 text-slate-400 text-sm w-8">
+      <td className="px-3 py-2.5 text-slate-400 text-xs w-8">
         <div className="flex flex-col items-center gap-1">
           <span>{idx + 1}</span>
           {file.manually_edited && <CheckCircle2 size={10} className="text-emerald-500" title="Đã chỉnh sửa thủ công"/>}
@@ -204,40 +203,41 @@ const DocRow = ({ file, idx, onUpdate, onAnalyze }) => {
       </td>
 
       {/* Số VB */}
-      <td className="px-3 py-2.5 font-mono text-sm text-slate-700 dark:text-slate-300 whitespace-nowrap">
+      <td className="px-3 py-2.5 font-mono text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">
         <EditableCell value={file.so_vb} onSave={v => handleSaveField('so_vb', v)}/>
       </td>
 
       {/* Ngày PH */}
-      <td className="px-3 py-2.5 text-sm text-slate-600 dark:text-slate-400 whitespace-nowrap">
+      <td className="px-3 py-2.5 text-xs text-slate-600 dark:text-slate-400 whitespace-nowrap">
         <EditableCell value={file.ngay_phat_hanh} onSave={v => handleSaveField('ngay_phat_hanh', v)}/>
       </td>
 
       {/* Nơi phát hành */}
-      <td className="px-3 py-2.5 text-sm text-slate-600 dark:text-slate-400 max-w-[140px]">
+      <td className="px-3 py-2.5 text-xs text-slate-600 dark:text-slate-400 max-w-[140px]">
         <EditableCell value={file.noi_phat_hanh} onSave={v => handleSaveField('noi_phat_hanh', v)}/>
       </td>
 
       {/* Trích yếu */}
-      <td className="px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 max-w-xs">
+      <td className="px-3 py-2.5 text-xs text-slate-800 dark:text-slate-200 max-w-xs">
         <EditableCell value={file.trich_yeu} onSave={v => handleSaveField('trich_yeu', v)} multiline/>
       </td>
 
       {/* Nơi gửi */}
-      <td className="px-3 py-2.5 text-sm text-slate-600 dark:text-slate-400 max-w-[140px]">
+      <td className="px-3 py-2.5 text-xs text-slate-600 dark:text-slate-400 max-w-[140px]">
         <EditableCell value={file.noi_gui} onSave={v => handleSaveField('noi_gui', v)}/>
       </td>
 
       {/* Actions */}
       <td className="px-3 py-2.5">
         <div className="flex items-center gap-1.5 justify-center">
-          {/* Phân tích lại bằng AI Gemini */}
+          {/* Phân tích lại */}
           <button
-            onClick={onAnalyze}
-            className="w-7 h-7 flex items-center justify-center rounded-md bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white transition-all shadow-sm shadow-amber-500/20"
-            title="Phân tích lại bằng AI Gemini"
+            onClick={handleReExtract}
+            disabled={reloading}
+            className="w-7 h-7 flex items-center justify-center rounded-md bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white transition-all disabled:opacity-50"
+            title="Phân tích lại bằng AI"
           >
-            <Brain size={13} className="drop-shadow-md" />
+            <RotateCcw size={12} className={reloading ? 'animate-spin' : ''}/>
           </button>
 
           {/* Mở file */}
@@ -269,15 +269,11 @@ export default function FolderTree({ projectId }) {
   const [loading, setLoading]   = useState(true);
   const [syncing, setSyncing]   = useState(false);
   const [error, setError]       = useState(null);
-  const [rootPath, setRootPath] = useState('H:/My Drive/Bồi thường BT-CG');
-  const [selectedFolderId, setSelectedFolderId] = useState(null);
-  
-  const [analyzingDoc, setAnalyzingDoc] = useState(null);
-  const [folderFiles, setFolderFiles]       = useState([]);
-  const [loadingFiles, setLoadingFiles]     = useState(false);
   const [search, setSearch]     = useState('');
 
   const [selectedFolder, setSelectedFolder] = useState(null);
+  const [folderFiles, setFolderFiles]       = useState([]);
+  const [loadingFiles, setLoadingFiles]     = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -318,20 +314,16 @@ export default function FolderTree({ projectId }) {
       .then(json => {
         if (!json.success || !json.data) return;
 
-        // Lọc file PDF
+        // Chỉ xử lý file PDF
         const pdfFiles = json.data.filter(f => f.mimeType === 'application/pdf');
-        
-        // File nào cần AI thì mới để loading state
-        const rows = pdfFiles.map(f => ({ ...f, _loading: f.needs_ai === true }));
+        const rows = pdfFiles.map(f => ({ ...f, _loading: true }));
         setFolderFiles(rows);
-
-        const filesToExtract = pdfFiles.filter(f => f.needs_ai === true);
 
         // Extract theo batch 3
         const extractBatch = async () => {
           const SIZE = 3;
-          for (let i = 0; i < filesToExtract.length; i += SIZE) {
-            await Promise.all(filesToExtract.slice(i, i + SIZE).map(async file => {
+          for (let i = 0; i < pdfFiles.length; i += SIZE) {
+            await Promise.all(pdfFiles.slice(i, i + SIZE).map(async file => {
               try {
                 const p = new URLSearchParams({
                   fileId:      file.id,
@@ -353,9 +345,7 @@ export default function FolderTree({ projectId }) {
             }));
           }
         };
-        if (filesToExtract.length > 0) {
-          extractBatch();
-        }
+        extractBatch();
       })
       .finally(() => setLoadingFiles(false));
   };
@@ -486,7 +476,7 @@ export default function FolderTree({ projectId }) {
                     </thead>
                     <tbody>
                       {folderFiles.map((file, idx) => (
-                        <DocRow key={file.id} file={file} idx={idx} onUpdate={updateRow} onAnalyze={() => setAnalyzingDoc(file)} />
+                        <DocRow key={file.id} file={file} idx={idx} onUpdate={updateRow}/>
                       ))}
                     </tbody>
                   </table>
@@ -496,18 +486,6 @@ export default function FolderTree({ projectId }) {
           )}
         </div>
       </div>
-      {analyzingDoc && (
-        <DocumentAnalyzeModal 
-          document={analyzingDoc} 
-          isOpen={!!analyzingDoc} 
-          onClose={() => setAnalyzingDoc(null)} 
-          onSave={(updatedDoc) => {
-            // Update the local list
-            updateRow(updatedDoc.id, updatedDoc);
-            setAnalyzingDoc(null);
-          }} 
-        />
-      )}
     </div>
   );
 }

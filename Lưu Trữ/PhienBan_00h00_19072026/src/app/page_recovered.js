@@ -1,9 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useTheme } from 'next-themes';
 import FolderTree from '@/components/FolderTree';
-import DocumentAnalyzeModal from '@/components/DocumentAnalyzeModal';
 import { 
   FileText, 
   Layers, 
@@ -24,7 +22,6 @@ import {
   ExternalLink,
   ChevronLeft,
   ChevronRight,
-  Brain,
   Image,
   Film,
   Table,
@@ -35,18 +32,10 @@ import {
   File,
   MapPin,
   LayoutGrid,
-  Settings,
-  Sun,
-  Moon
+  Settings
 } from 'lucide-react';
 
 export default function Home() {
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
   // Trạng thái dữ liệu
   const [tasks, setTasks] = useState([]);
   const [documents, setDocuments] = useState([]);
@@ -59,10 +48,8 @@ export default function Home() {
   const [docCategory, setDocCategory] = useState('all');
   const [driveSource, setDriveSource] = useState('loading');
   const [realtimeStatus, setRealtimeStatus] = useState('connecting');
-  const [activeDmsTab, setActiveDmsTab] = useState('all'); // 'all', 'linked'
-  const [analyzingDoc, setAnalyzingDoc] = useState(null);
-  const [activeMainTab, setActiveMainTab] = useState('projects'); // 'documents', 'projects', 'gis'
-  const [projectSubTab, setProjectSubTab] = useState('folders'); // 'progress', 'folders'
+  const [activeMainTab, setActiveMainTab] = useState('documents'); // 'documents', 'projects', 'gis'
+  const [projectSubTab, setProjectSubTab] = useState('progress'); // 'progress', 'folders'
   
   // Trạng thái dự án
   const [projects, setProjects] = useState([]);
@@ -440,13 +427,6 @@ export default function Home() {
             <Zap className={`w-3 h-3 ${realtimeStatus === 'connected' ? 'animate-pulse' : ''}`} />
             <span>{realtimeStatus === 'connected' ? 'LIVE' : 'SYNC'}</span>
           </div>
-          <button 
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="p-1.5 rounded-lg bg-slate-950/60 border border-slate-800 text-slate-400 hover:text-emerald-400 hover:border-emerald-500/40 transition-colors ml-1 flex items-center justify-center"
-            title="Chuyển đổi Sáng/Tối"
-          >
-            {mounted && theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-          </button>
         </div>
       </header>
 
@@ -641,11 +621,6 @@ export default function Home() {
                           title="Mở bằng app">
                           <ExternalLink className="w-3.5 h-3.5" />
                         </button>
-                        <button onClick={() => setAnalyzingDoc(doc)}
-                          className="p-1.5 bg-slate-950/80 border border-slate-800 hover:border-amber-500/40 rounded-lg text-slate-400 hover:text-amber-400 sm:opacity-0 sm:group-hover:opacity-100 transition-all"
-                          title="Phân tích lại bằng AI Gemini">
-                          <Brain className="w-3.5 h-3.5" />
-                        </button>
                         {isLinkedToSelected ? (
                           <span className="inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-full font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                             ✓ Liên kết
@@ -834,19 +809,6 @@ export default function Home() {
           </div>
         </div>
       )}
-      {analyzingDoc && (
-        <DocumentAnalyzeModal 
-          document={analyzingDoc} 
-          isOpen={!!analyzingDoc} 
-          onClose={() => setAnalyzingDoc(null)} 
-          onSave={(updatedDoc) => {
-            // Update local state if necessary or re-fetch data
-            fetchData();
-            setAnalyzingDoc(null);
-          }} 
-        />
-      )}
     </div>
   );
 }
-
