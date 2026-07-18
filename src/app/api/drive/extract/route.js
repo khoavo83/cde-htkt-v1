@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { getDriveClient } from '@/lib/drive';
 import { Pool } from 'pg';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import pdfParse from 'pdf-parse';
+import path from 'path';
+import fs from 'fs';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -68,7 +71,6 @@ async function downloadPdfText(drive, fileId) {
       { fileId, alt: 'media' },
       { responseType: 'arraybuffer' }
     );
-    const pdfParse = (await import('pdf-parse/lib/pdf-parse.js')).default;
     const buffer = Buffer.from(res.data);
     // Chỉ đọc tối đa 2 trang đầu
     const parsed = await pdfParse(buffer, { max: 2 });
@@ -230,9 +232,18 @@ export async function GET(request) {
     const textContent = await downloadPdfText(drive, fileId);
 
     // Gọi Gemini
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new Error('Thiếu GEMINI_API_KEY');
-
+    let apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+    if (!apiKey) {
+      try {
+        const configPath = path.join(process.cwd(), 'config.json');
+        if (fs.existsSync(configPath)) {
+          const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+          apiKey = config.gemini_api_key || config.google_ai_api_key;
+        }
+      } catch (e) {}
+    }
+    
+    if (!apiKey) throw new Error('Thiếu GEMINI_API_KEY trong môi trường hoặc config.json');
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.0-flash',
