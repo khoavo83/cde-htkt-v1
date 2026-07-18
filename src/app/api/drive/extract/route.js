@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getDriveClient } from '@/lib/drive';
 import { Pool } from 'pg';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import pdfParse from 'pdf-parse';
+import { PDFParse } from 'pdf-parse';
 import path from 'path';
 import fs from 'fs';
 
@@ -73,7 +73,7 @@ async function downloadPdfText(drive, fileId) {
     );
     const buffer = Buffer.from(res.data);
     // Chỉ đọc tối đa 2 trang đầu
-    const parsed = await pdfParse(buffer, { max: 2 });
+    const parsed = await PDFParse(buffer, { max: 2 });
     return parsed.text?.substring(0, 4000) || '';
   } catch (err) {
     console.error('Lỗi đọc PDF:', err.message);
