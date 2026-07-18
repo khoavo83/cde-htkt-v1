@@ -147,9 +147,9 @@ export async function POST(request) {
         try {
           // Loại bỏ markdown code fence nếu có
           const cleanJson = responseText
-            .replace(/^```json\s*/i, '')
-            .replace(/^```\s*/i, '')
-            .replace(/\s*```$/i, '')
+            .replace(/^`{3}json\s*/i, '')
+            .replace(/^`{3}\s*/i, '')
+            .replace(/\s*`{3}$/i, '')
             .trim();
           parsed = JSON.parse(cleanJson);
         } catch (parseErr) {
