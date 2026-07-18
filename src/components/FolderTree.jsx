@@ -130,7 +130,7 @@ const EditableCell = ({ value, onSave, multiline = false, className = '' }) => {
 // =========================================================
 // Hàng dữ liệu có edit + re-extract
 // =========================================================
-const DocRow = ({ file, idx, onUpdate }) => {
+const DocRow = ({ file, idx, onUpdate, onAnalyze }) => {
   const [saving, setSaving]   = useState(false);
   const [reloading, setReloading] = useState(false);
   const [saved, setSaved]     = useState(false);
@@ -233,7 +233,7 @@ const DocRow = ({ file, idx, onUpdate }) => {
         <div className="flex items-center gap-1.5 justify-center">
           {/* Phân tích lại bằng AI Gemini */}
           <button
-            onClick={() => setAnalyzingDoc(file)}
+            onClick={onAnalyze}
             className="w-7 h-7 flex items-center justify-center rounded-md bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white transition-all shadow-sm shadow-amber-500/20"
             title="Phân tích lại bằng AI Gemini"
           >
@@ -480,7 +480,7 @@ export default function FolderTree({ projectId }) {
                     </thead>
                     <tbody>
                       {folderFiles.map((file, idx) => (
-                        <DocRow key={file.id} file={file} idx={idx} onUpdate={updateRow}/>
+                        <DocRow key={file.id} file={file} idx={idx} onUpdate={updateRow} onAnalyze={() => setAnalyzingDoc(file)} />
                       ))}
                     </tbody>
                   </table>
