@@ -89,7 +89,7 @@ Lưu ý:
 - TT-KHKT = Trung tâm Kỹ thuật
 - Thư mục "${folderName}" cho biết ngữ cảnh văn bản thuộc đơn vị/lĩnh vực nào
 
-Chỉ trả về JSON thuần túy, không có bất kỳ text hay markdown nào khác.\`;
+Chỉ trả về JSON thuần túy, không có bất kỳ text hay markdown nào khác.`;
 }
 // ─── POST Handler ────────────────────────────────────────────────
 export async function POST(request) {
