@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { getDriveClient } from '@/lib/drive';
 import { Pool } from 'pg';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { PDFParse } from 'pdf-parse';
 import path from 'path';
 import fs from 'fs';
 
@@ -64,26 +63,27 @@ async function saveToCache(client, fileId, fileName, metadata, webViewLink, manu
       webViewLink, manuallyEdited]);
 }
 
-// Tải nội dung PDF từ Drive
-async function downloadPdfText(drive, fileId) {
+// Download nội dung PDF dưới dạng Base64
+async function downloadPdfBase64(drive, fileId) {
   try {
     const res = await drive.files.get(
       { fileId, alt: 'media' },
       { responseType: 'arraybuffer' }
     );
     const buffer = Buffer.from(res.data);
-    // Chỉ đọc tối đa 2 trang đầu
-    const parsed = await PDFParse(buffer, { max: 2 });
-    return parsed.text?.substring(0, 4000) || '';
+    return buffer.toString('base64');
   } catch (err) {
-    console.error('Lỗi đọc PDF:', err.message);
-    return '';
+    console.error('Lỗi tải PDF:', err.message);
+    return null;
   }
 }
 
-// Prompt với cấu trúc văn bản hành chính Việt Nam + few-shot examples
-function buildPrompt(fileName, textContent) {
-  return `Bạn là chuyên gia phân tích văn bản hành chính Nhà nước Việt Nam.
+// =========================================================
+// PROMPT TEMPLATE CẢI TIẾN (Native PDF)
+// =========================================================
+function buildPrompt(fileName) {
+  return `Bạn là một Chuyên viên Văn thư lưu trữ cấp cao của Nhà nước Việt Nam.
+Hãy đọc toàn bộ tài liệu PDF đính kèm (hoặc dựa vào tên file: ${fileName}) và trích xuất thông tin.
 
 ## CẤU TRÚC ĐIỂN HÌNH CỦA VĂN BẢN HÀNH CHÍNH VN
 
@@ -177,14 +177,10 @@ Output JSON:
 
 ## YÊU CẦU
 
-Phân tích văn bản dưới đây và trả về JSON với 6 trường trên.
+Phân tích văn bản đính kèm và trả về JSON với 6 trường trên.
+Chú ý đọc kỹ các bảng biểu, chữ ký, con dấu đỏ nếu có.
 Nếu không tìm thấy thông tin → để chuỗi rỗng "".
-CHỈ trả về JSON thuần túy, không markdown, không giải thích.
-
-**Tên file:** ${fileName}
-
-**Nội dung văn bản:**
-${textContent || '(Không đọc được nội dung PDF)'}`;
+CHỈ trả về JSON thuần túy, không markdown, không giải thích.`;
 }
 
 // =========================================================
@@ -227,9 +223,9 @@ export async function GET(request) {
       }
     }
 
-    // Download nội dung PDF
+    // Download nội dung PDF dạng Base64
     const drive = await getDriveClient();
-    const textContent = await downloadPdfText(drive, fileId);
+    const pdfBase64 = await downloadPdfBase64(drive, fileId);
 
     // Gọi Gemini
     let apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
@@ -250,8 +246,17 @@ export async function GET(request) {
       generationConfig: { temperature: 0.1 }, // Giảm sáng tạo, tăng nhất quán
     });
 
-    const prompt = buildPrompt(fileName, textContent);
-    const result = await model.generateContent(prompt);
+    const prompt = buildPrompt(fileName);
+    let requestPayload = prompt;
+
+    if (pdfBase64) {
+      requestPayload = [
+        prompt,
+        { inlineData: { data: pdfBase64, mimeType: 'application/pdf' } }
+      ];
+    }
+
+    const result = await model.generateContent(requestPayload);
     const raw = result.response.text().trim();
 
     const jsonMatch = raw.match(/\{[\s\S]*\}/);

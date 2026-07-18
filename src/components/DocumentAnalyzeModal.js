@@ -96,7 +96,8 @@ export default function DocumentAnalyzeModal({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fileName: doc.name,
+          fileId: doc.id,
+          fileName: doc.name || doc.file_name,
           folderName: doc.folder,
         }),
       });

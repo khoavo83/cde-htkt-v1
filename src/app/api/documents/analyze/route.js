@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getDriveClient } from '@/lib/drive';
 import fs from 'fs';
 import path from 'path';
 
@@ -44,9 +45,9 @@ function getGeminiClient() {
 }
 
 // ─── Prompt template cho Gemini ──────────────────────────────────
-function buildAnalysisPrompt(fileName, folderName) {
+function buildAnalysisPrompt(fileName, folderName, hasPdf = false) {
   return `Bạn là chuyên gia phân tích văn bản hành chính nhà nước Việt Nam. 
-Hãy phân tích tên file sau và trích xuất thông tin chi tiết.
+${hasPdf ? 'Hãy đọc toàn bộ tài liệu đính kèm' : 'Hãy phân tích tên file sau'} và trích xuất thông tin chi tiết.
 
 **Tên file:** ${fileName}
 **Thư mục chứa:** ${folderName}
@@ -116,9 +117,31 @@ function parseDocDetailsImproved(fileName, folderName) {
 
   // Pattern 1: YYYY-MM-DD_SốHiệu_KýHiệu_MôTả
   const numP1 = fileName.match(/^\d{4}-\d{2}-\d{2}_([^_]+)_([A-ZĐa-zđ\-\.]+(?:-[A-ZĐa-zđ]+)*)_/);
+  // Pattern Đặc biệt: 250 QD-BQLDSDT 2662026 dieu chinh...
+  const spacePattern = fileName.match(/^(\d{1,5})\s+([A-ZĐa-zđ]+)-([A-ZĐa-zđ]+)\s+(\d{6,8})\s+(.*)/i);
+  
   if (numP1) {
     documentNumber = `${numP1[1]}/${numP1[2]}`;
     docNumConfidence = 0.85;
+  } else if (spacePattern) {
+    documentNumber = `${spacePattern[1]}/${spacePattern[2]}-${spacePattern[3]}`.toUpperCase();
+    docNumConfidence = 0.9;
+    
+    // Trích xuất ngày từ chuỗi số (VD: 2662026 -> 26/06/2026)
+    const dStr = spacePattern[4];
+    if (dStr.length === 7) {
+      const d = dStr.substring(0, 2);
+      const m = dStr.substring(2, 3).padStart(2, '0');
+      const y = dStr.substring(3);
+      issuedDate = `${y}-${m}-${d}`;
+      dateConfidence = 0.8;
+    } else if (dStr.length === 8) {
+      const d = dStr.substring(0, 2);
+      const m = dStr.substring(2, 4);
+      const y = dStr.substring(4);
+      issuedDate = `${y}-${m}-${d}`;
+      dateConfidence = 0.8;
+    }
   } else {
     // Pattern 2: Số liên tiếp ở đầu (sau date)
     const numP2 = fileName.match(/^\d{4}-\d{2}-\d{2}_(\d{2,6})_/);
@@ -144,6 +167,13 @@ function parseDocDetailsImproved(fileName, folderName) {
         if (ptrMatch) {
           documentNumber = ptrMatch[1];
           docNumConfidence = 0.6;
+        } else {
+           // Pattern 5: Bắt đầu bằng số và khoảng trắng (VD: 250 QD BQL)
+           const startNum = fileName.match(/^(\d{1,5})\s+([A-Za-zĐđ]+)[-\s]([A-Za-zĐđ]+)/);
+           if (startNum) {
+             documentNumber = `${startNum[1]}/${startNum[2]}-${startNum[3]}`.toUpperCase();
+             docNumConfidence = 0.8;
+           }
         }
       }
     }
@@ -249,7 +279,7 @@ function parseDocDetailsImproved(fileName, folderName) {
 // ─── POST Handler ────────────────────────────────────────────────
 export async function POST(request) {
   try {
-    const { fileName, folderName, forceAI = false } = await request.json();
+    const { fileId, fileName, folderName, forceAI = false } = await request.json();
 
     if (!fileName) {
       return NextResponse.json({ error: 'Thiếu tên file để phân tích' }, { status: 400 });
@@ -272,8 +302,29 @@ export async function POST(request) {
           }
         });
 
-        const prompt = buildAnalysisPrompt(fileName, folder);
-        const result = await model.generateContent(prompt);
+        let inlineData = null;
+        if (fileId) {
+          try {
+            const drive = await getDriveClient();
+            const res = await drive.files.get(
+              { fileId, alt: 'media' },
+              { responseType: 'arraybuffer' }
+            );
+            inlineData = {
+              inlineData: {
+                data: Buffer.from(res.data).toString('base64'),
+                mimeType: 'application/pdf',
+              }
+            };
+          } catch (e) {
+            console.error('Không thể tải PDF từ Drive:', e.message);
+          }
+        }
+
+        const prompt = buildAnalysisPrompt(fileName, folder, !!inlineData);
+        const requestPayload = inlineData ? [prompt, inlineData] : prompt;
+        
+        const result = await model.generateContent(requestPayload);
         const responseText = result.response.text().trim();
 
         // Parse JSON từ response
