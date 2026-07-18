@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getDriveClient } from '@/lib/drive';
 import { Pool } from 'pg';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { parseDocDetailsImproved } from '@/utils/regexParser';
 import path from 'path';
 import fs from 'fs';
 
@@ -276,12 +277,28 @@ export async function GET(request) {
 
   } catch (error) {
     console.error('Lỗi extract:', error.message);
+    
+    // Nếu lỗi gọi AI (thường là rate limit), dùng fallback thay vì bỏ trống
+    const fallback = parseDocDetailsImproved(fileName, '');
+    const fallbackMetadata = {
+      loai_vb: fallback.loai_vb || 'Khác',
+      so_vb: fallback.documentNumber || '',
+      ngay_phat_hanh: fallback.issuedDate !== 'Chưa xác định' ? fallback.issuedDate : '',
+      noi_phat_hanh: fallback.issuer || '',
+      trich_yeu: fallback.notes || fileName,
+      noi_gui: ''
+    };
+
+    // VẪN LƯU vào cache để khỏi bắt AI đọc lại liên tục khi đang rate limit
+    if (useSupabase && client) {
+      await saveToCache(client, fileId, fileName, fallbackMetadata, webViewLink, false);
+    }
+
     return NextResponse.json({
       success: true,
       data: {
         file_id: fileId, file_name: fileName, web_view_link: webViewLink,
-        loai_vb: '', so_vb: '', ngay_phat_hanh: '',
-        noi_phat_hanh: '', trich_yeu: fileName, noi_gui: '',
+        ...fallbackMetadata
       },
       error: error.message,
       fromCache: false,
