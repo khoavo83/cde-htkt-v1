@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { 
-  X, Save, Brain, RefreshCw, Edit3, CheckCircle2, AlertTriangle, 
-  FileText, Sparkles, Loader2, ArrowRight, Pencil, Shield,
-  Calendar, User, Tag, Hash, FolderOpen, MessageSquare
+  X, Save, Bot, CheckCircle2, AlertTriangle, 
+  FileText, Sparkles, Loader2, Shield,
+  Calendar, User, Tag, Hash, FolderOpen, Send, Copy, Type
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -18,25 +18,18 @@ const STATUS_OPTIONS = [
   { value: "draft", label: "Dự thảo" }
 ];
 
-// Thanh confidence với hiệu ứng gradient
-function ConfidenceBar({ value, label }) {
+// Badge hiển thị độ tin cậy của AI (Confidence)
+function ConfidenceBadge({ value }) {
+  if (value === undefined || value === null) return null;
   const pct = Math.round(value * 100);
-  const color = pct >= 80 ? 'from-emerald-500 to-teal-400' 
-    : pct >= 50 ? 'from-amber-500 to-yellow-400' 
-    : 'from-red-500 to-orange-400';
-  const textColor = pct >= 80 ? 'text-emerald-400' : pct >= 50 ? 'text-amber-400' : 'text-red-400';
+  const color = pct >= 80 ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' 
+    : pct >= 50 ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' 
+    : 'text-red-400 bg-red-500/10 border-red-500/20';
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-[8px] text-slate-500 w-16 shrink-0">{label}</span>
-      <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-        <div 
-          className={`h-full rounded-full bg-gradient-to-r ${color} transition-all duration-700`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <span className={`text-[9px] font-bold w-8 text-right ${textColor}`}>{pct}%</span>
-    </div>
+    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${color} flex-shrink-0 ml-2`} title="Độ tin cậy của AI">
+      {pct}% AI
+    </span>
   );
 }
 
@@ -46,47 +39,50 @@ export default function DocumentAnalyzeModal({
   onClose,
   onSave,
 }) {
-  // Trạng thái phân tích
   const [analyzing, setAnalyzing] = useState(false);
+  const [extracting, setExtracting] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
-  const [analysisMode, setAnalysisMode] = useState(null); // 'gemini_2.0_flash' | 'regex_improved'
+  const [analysisMode, setAnalysisMode] = useState(null); 
+  const [extractedText, setExtractedText] = useState('');
+  
   const [warning, setWarning] = useState('');
   const [error, setError] = useState('');
 
-  // Trạng thái form chỉnh sửa
-  const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({
+  const [formData, setFormData] = useState({
     documentNumber: '',
     issuedDate: '',
     issuer: '',
     notes: '',
     category: 'Khác',
     status: 'effective',
+    receiver: '', // Nơi gửi
   });
+  
   const [saving, setSaving] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
-  // Reset khi mở/đóng
   useEffect(() => {
     if (isOpen && doc) {
       setAnalysisResult(null);
       setAnalysisMode(null);
+      setExtractedText('');
       setWarning('');
       setError('');
-      setIsEditing(false);
-      setEditData({
-        documentNumber: doc.documentNumber || '',
-        issuedDate: doc.issuedDate || '',
-        issuer: doc.issuer || '',
-        notes: doc.notes || '',
-        category: doc.category || 'Khác',
+      setShowConfirm(false);
+      setFormData({
+        documentNumber: doc.documentNumber || doc.so_vb || '',
+        issuedDate: doc.issuedDate || doc.ngay_phat_hanh || '',
+        issuer: doc.issuer || doc.noi_phat_hanh || '',
+        notes: doc.notes || doc.trich_yeu || '',
+        category: doc.category || doc.loai_vb || 'Khác',
         status: doc.status || 'effective',
+        receiver: doc.noi_gui || doc.receiver || '',
       });
     }
   }, [isOpen, doc]);
 
   if (!isOpen || !doc) return null;
 
-  // Gọi API phân tích
   const handleAnalyze = async () => {
     setAnalyzing(true);
     setError('');
@@ -108,14 +104,15 @@ export default function DocumentAnalyzeModal({
         setAnalysisMode(data.analysis.analysisMode || 'unknown');
         if (data.warning) setWarning(data.warning);
 
-        // Cập nhật editData với kết quả phân tích
-        setEditData(prev => ({
+        // Update form data directly with AI results
+        setFormData(prev => ({
           ...prev,
           documentNumber: data.analysis.documentNumber || prev.documentNumber,
           issuedDate: data.analysis.issuedDate || prev.issuedDate,
           issuer: data.analysis.issuer || prev.issuer,
           notes: data.analysis.notes || prev.notes,
           category: data.analysis.category || prev.category,
+          receiver: data.analysis.receiver || prev.receiver, // Fallback if AI provides receiver
         }));
       } else {
         setError(data.error || 'Phân tích thất bại');
@@ -127,40 +124,63 @@ export default function DocumentAnalyzeModal({
     }
   };
 
-  // Chuyển sang chế độ nhập tay
-  const handleSwitchToEdit = () => {
-    setIsEditing(true);
+  const handleExtractText = async () => {
+    setExtracting(true);
+    setError('');
+    setWarning('');
+    try {
+      const res = await fetch('/api/documents/extract-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filePath: doc.path, fileId: doc.id }),
+      });
+      const data = await res.json();
+
+      if (data.success && data.text) {
+        setExtractedText(data.text);
+      } else {
+        setError(data.error || 'Trích xuất chữ thất bại (Có thể do file scan ảnh, không chứa text)');
+      }
+    } catch (err) {
+      setError('Lỗi kết nối server: ' + err.message);
+    } finally {
+      setExtracting(false);
+    }
   };
 
-  // Cập nhật input
+  const handleCopyText = () => {
+    if (extractedText) {
+      navigator.clipboard.writeText(extractedText);
+      // Optional: show a small toast here if available
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setEditData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Lưu kết quả
-  const handleSave = async () => {
+  const handleSaveConfirm = async () => {
     setSaving(true);
     try {
       const updatedDoc = {
         ...doc,
-        // Giữ các thuộc tính tiếng Anh để Modal xài
-        documentNumber: editData.documentNumber,
-        issuedDate: editData.issuedDate,
-        issuer: editData.issuer,
-        notes: editData.notes,
-        category: editData.category,
-        status: editData.status,
+        documentNumber: formData.documentNumber,
+        issuedDate: formData.issuedDate,
+        issuer: formData.issuer,
+        notes: formData.notes,
+        category: formData.category,
+        status: formData.status,
+        receiver: formData.receiver,
         
-        // Map sang tiếng Việt để FolderTree xài và hiển thị trên bảng
-        so_vb: editData.documentNumber,
-        ngay_phat_hanh: editData.issuedDate,
-        noi_phat_hanh: editData.issuer,
-        trich_yeu: editData.notes,
-        loai_vb: editData.category,
+        so_vb: formData.documentNumber,
+        ngay_phat_hanh: formData.issuedDate,
+        noi_phat_hanh: formData.issuer,
+        trich_yeu: formData.notes,
+        loai_vb: formData.category,
+        noi_gui: formData.receiver,
       };
 
-      // Gửi request cập nhật vào database (đánh dấu manually_edited = true)
       await fetch('/api/drive/extract', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -173,411 +193,338 @@ export default function DocumentAnalyzeModal({
           ngay_phat_hanh: updatedDoc.ngay_phat_hanh,
           noi_phat_hanh: updatedDoc.noi_phat_hanh,
           trich_yeu: updatedDoc.trich_yeu,
-          noi_gui: doc.noi_gui || ''
+          noi_gui: updatedDoc.noi_gui
         })
       });
 
       await onSave(updatedDoc);
+      setShowConfirm(false);
     } catch (err) {
       setError('Lỗi khi lưu: ' + err.message);
+      setShowConfirm(false);
     } finally {
       setSaving(false);
     }
   };
 
-  // Badge cho AI mode
   const getModeBadge = () => {
     if (!analysisMode) return null;
     if (analysisMode === 'gemini_2.0_flash') {
       return (
-        <span className="inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-400 border border-violet-500/30 font-bold">
+        <span className="inline-flex items-center gap-1 text-[10px] px-2.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 font-bold ml-2">
           <Sparkles className="w-3 h-3" />
-          Gemini 2.0 Flash (AI)
+          Gemini 2.0 AI
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 font-bold">
+      <span className="inline-flex items-center gap-1 text-[10px] px-2.5 py-0.5 rounded-full bg-violet-500/15 text-violet-400 border border-violet-500/30 font-bold ml-2">
         <Shield className="w-3 h-3" />
-        Regex cải tiến (Offline)
+        Regex Cải tiến
       </span>
     );
   };
 
+  // Chuẩn bị URL embed cho iframe (Dùng Google Drive Preview để hỗ trợ mọi định dạng file)
+  const embedUrl = doc.webViewLink 
+    ? doc.webViewLink.replace(/\/view.*$/, '/preview')
+    : '';
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-        onClick={onClose}
+        className="absolute inset-0 bg-black/80 backdrop-blur-md"
+        onClick={() => !showConfirm && onClose()}
       />
 
       {/* Modal Container */}
-      <div className="relative w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200">
+      <div className="relative w-full max-w-[98vw] lg:max-w-[90vw] xl:max-w-7xl bg-slate-900 border border-slate-700/60 rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[95vh] animate-in fade-in zoom-in duration-200">
         
         {/* Header */}
-        <div className="flex justify-between items-start p-5 border-b border-slate-800 bg-gradient-to-r from-slate-900 via-slate-900 to-violet-950/20">
-          <div className="flex items-start gap-3 pr-8 min-w-0">
-            <div className="p-2.5 bg-violet-500/10 border border-violet-500/20 rounded-xl mt-0.5 shrink-0">
-              <Brain className="w-6 h-6 text-violet-400" />
+        <div className="flex justify-between items-center p-4 border-b border-slate-800/80 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 shadow-sm shrink-0">
+          <div className="flex items-center gap-3 pr-8 min-w-0">
+            <div className="p-2.5 bg-gradient-to-br from-cyan-500/20 to-blue-500/10 border border-cyan-500/30 rounded-xl shrink-0 shadow-inner">
+              <Bot className="w-6 h-6 text-cyan-400" />
             </div>
             <div className="min-w-0">
-              <h2 className="text-sm font-bold text-slate-100 mb-1.5">
-                Phân tích & Nhận diện văn bản
-              </h2>
-              <p className="text-[10px] text-slate-400 truncate max-w-[350px]" title={doc.name}>
+              <div className="flex items-center">
+                <h2 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                  Phân tích & Nhập liệu Văn bản
+                </h2>
+                {getModeBadge()}
+              </div>
+              <p className="text-[11px] text-slate-400 truncate max-w-lg mt-1" title={doc.name}>
                 <FileText className="w-3 h-3 inline mr-1 text-slate-500" />
                 {doc.name}
-              </p>
-              <p className="text-[9px] text-slate-500 mt-0.5">
-                <FolderOpen className="w-3 h-3 inline mr-1" />
-                {doc.folder}
               </p>
             </div>
           </div>
           <button 
             onClick={onClose}
-            className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-200 transition-colors shrink-0"
+            className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors shrink-0"
+            disabled={showConfirm}
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-5">
+        {/* Content Area (Split Grid) */}
+        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0 bg-slate-950/50">
+          
+          {/* Left Column: PDF Viewer */}
+          <div className="flex-1 lg:w-[55%] border-b lg:border-b-0 lg:border-r border-slate-800 flex flex-col h-[40vh] lg:h-full bg-[#323639]">
+            {embedUrl ? (
+              <iframe 
+                src={embedUrl} 
+                className="w-full h-full border-0" 
+                title="Trình xem tài liệu"
+                allow="autoplay"
+              />
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center text-slate-500">
+                <FileText className="w-12 h-12 mb-3 opacity-20" />
+                <p className="text-sm">Không thể xem trước tệp này.</p>
+              </div>
+            )}
+          </div>
 
-          {/* Thông tin hiện tại */}
-          {!analysisResult && !isEditing && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                  <FileText className="w-4 h-4 text-slate-500" />
-                  Thông tin hiện tại (có thể sai)
-                </h3>
-                <span className="text-[9px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20 font-bold">
-                  Chưa phân tích lại
-                </span>
+          {/* Right Column: Data Form */}
+          <div className="flex-1 lg:w-[45%] flex flex-col h-full max-h-full bg-slate-900 relative">
+            <div className="flex-1 overflow-y-auto p-5 space-y-5 custom-scrollbar">
+              
+              {/* Toolbar */}
+              <div className="flex items-center justify-between gap-3 mb-2 bg-slate-800/40 p-2 rounded-xl border border-slate-700/50">
+                <p className="text-xs text-slate-400 font-medium pl-2">Thông tin trích xuất</p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleExtractText}
+                    disabled={extracting}
+                    className="px-3 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-slate-200 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all border border-slate-600/50 shadow-sm"
+                  >
+                    {extracting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Type className="w-3.5 h-3.5" />}
+                    Lấy chữ (PDF)
+                  </button>
+                  <button
+                    onClick={handleAnalyze}
+                    disabled={analyzing}
+                    className="px-3 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-lg shadow-cyan-500/20"
+                  >
+                    {analyzing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bot className="w-3.5 h-3.5" />}
+                    Phân tích AI
+                  </button>
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <InfoField label="Số hiệu" value={doc.documentNumber} icon={<Hash className="w-3 h-3" />} />
-                <InfoField label="Ngày ban hành" value={doc.issuedDate} icon={<Calendar className="w-3 h-3" />} />
-                <InfoField label="Cơ quan ban hành" value={doc.issuer} icon={<User className="w-3 h-3" />} className="col-span-2" />
-                <InfoField label="Danh mục" value={doc.category} icon={<Tag className="w-3 h-3" />} />
-                <InfoField label="Trạng thái" value={doc.status} icon={<CheckCircle2 className="w-3 h-3" />} />
-              </div>
-
-              <div>
-                <span className="text-[10px] text-slate-500 flex items-center gap-1 mb-1">
-                  <MessageSquare className="w-3 h-3" />
-                  Trích yếu nội dung
-                </span>
-                <p className="text-[11px] text-slate-300 bg-slate-950/60 border border-slate-850 p-2.5 rounded-lg leading-relaxed">
-                  {doc.notes || 'Không có'}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Kết quả phân tích AI */}
-          {analysisResult && !isEditing && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <h3 className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-emerald-400" />
-                  Kết quả phân tích mới
-                </h3>
-                {getModeBadge()}
-              </div>
-
+              {/* Messages */}
               {warning && (
-                <div className="p-2.5 bg-amber-950/40 border border-amber-900/30 rounded-xl text-[10px] text-amber-400 flex items-start gap-2">
-                  <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                  <span>{warning}</span>
+                <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-[11px] text-amber-400 flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span className="leading-relaxed">{warning}</span>
+                </div>
+              )}
+              {error && (
+                <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-[11px] text-red-400 flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span className="leading-relaxed">{error}</span>
+                </div>
+              )}
+              
+              {/* Vùng hiển thị Text trích xuất (nếu có) */}
+              {extractedText && (
+                <div className="bg-slate-950/80 border border-slate-700/60 rounded-xl overflow-hidden shadow-inner">
+                  <div className="flex items-center justify-between px-3.5 py-2 bg-slate-800/60 border-b border-slate-700/60">
+                    <span className="text-[11px] font-bold text-slate-300 flex items-center gap-1.5">
+                      <Type className="w-3.5 h-3.5 text-slate-400" /> Nội dung thô (Trang đầu)
+                    </span>
+                    <button 
+                      onClick={handleCopyText}
+                      className="text-[10px] bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 rounded-md flex items-center gap-1 transition-colors"
+                    >
+                      <Copy className="w-3 h-3" /> Copy
+                    </button>
+                  </div>
+                  <div className="p-3">
+                    <textarea
+                      readOnly
+                      value={extractedText}
+                      rows={5}
+                      className="w-full bg-transparent text-[11px] text-slate-300 focus:outline-none resize-none custom-scrollbar"
+                    />
+                  </div>
                 </div>
               )}
 
-              {/* Confidence Overview */}
-              {analysisResult.confidence && (
-                <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-3 space-y-1.5">
-                  <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Độ tin cậy AI</span>
-                  <ConfidenceBar value={analysisResult.confidence.documentNumber} label="Số hiệu" />
-                  <ConfidenceBar value={analysisResult.confidence.issuedDate} label="Ngày BH" />
-                  <ConfidenceBar value={analysisResult.confidence.issuer} label="Cơ quan" />
-                  <ConfidenceBar value={analysisResult.confidence.notes} label="Trích yếu" />
+              {/* Form Fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                
+                {/* Loại VB (Danh mục) - Chuyển sang DataList để cho phép gõ */}
+                <div className="sm:col-span-2">
+                  <div className="flex justify-between items-end mb-1.5">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <Tag className="w-3.5 h-3.5" /> Loại VB (Danh mục)
+                    </label>
+                  </div>
+                  <input
+                    type="text"
+                    name="category"
+                    list="category-options"
+                    value={formData.category}
+                    onChange={handleInputChange}
+                    placeholder="Chọn hoặc nhập loại văn bản..."
+                    className="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl text-sm px-3.5 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all text-slate-200 shadow-inner"
+                  />
+                  <datalist id="category-options">
+                    {CATEGORIES.map(cat => (
+                      <option key={cat} value={cat} />
+                    ))}
+                  </datalist>
                 </div>
-              )}
 
-              {/* So sánh Cũ → Mới */}
-              <div className="space-y-2">
-                <CompareField 
-                  label="Số hiệu văn bản" 
-                  oldValue={doc.documentNumber} 
-                  newValue={analysisResult.documentNumber}
-                  confidence={analysisResult.confidence?.documentNumber}
-                />
-                <CompareField 
-                  label="Ngày ban hành" 
-                  oldValue={doc.issuedDate} 
-                  newValue={analysisResult.issuedDate}
-                  confidence={analysisResult.confidence?.issuedDate}
-                />
-                <CompareField 
-                  label="Cơ quan ban hành" 
-                  oldValue={doc.issuer} 
-                  newValue={analysisResult.issuer}
-                  confidence={analysisResult.confidence?.issuer}
-                />
-                <CompareField 
-                  label="Trích yếu" 
-                  oldValue={doc.notes} 
-                  newValue={analysisResult.notes}
-                  confidence={analysisResult.confidence?.notes}
-                  isLong
-                />
-                <CompareField 
-                  label="Danh mục" 
-                  oldValue={doc.category} 
-                  newValue={analysisResult.category}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Form nhập tay */}
-          {isEditing && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold text-cyan-300 flex items-center gap-1.5">
-                  <Pencil className="w-4 h-4 text-cyan-400" />
-                  Chỉnh sửa thủ công
-                </h3>
-                <button
-                  onClick={() => setIsEditing(false)}
-                  className="text-[10px] text-slate-400 hover:text-slate-200 transition-colors"
-                >
-                  ← Quay lại xem kết quả
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {/* Số hiệu */}
+                {/* Số VB */}
                 <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                    Số hiệu văn bản
-                  </label>
+                  <div className="flex justify-between items-end mb-1.5">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <Hash className="w-3.5 h-3.5" /> Số VB
+                    </label>
+                    <ConfidenceBadge value={analysisResult?.confidence?.documentNumber} />
+                  </div>
                   <input
                     type="text"
                     name="documentNumber"
-                    value={editData.documentNumber}
+                    value={formData.documentNumber}
                     onChange={handleInputChange}
-                    placeholder="VD: 1209/BQLĐSĐT-HTKT"
-                    className="w-full bg-slate-950/80 border border-slate-800 rounded-xl text-xs px-3 py-2 focus:outline-none focus:border-violet-500 transition-all text-slate-200"
+                    placeholder="VD: 1209/BQL..."
+                    className="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl text-sm px-3.5 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all text-slate-200 shadow-inner"
                   />
                 </div>
 
-                {/* Ngày ban hành */}
+                {/* Ngày phát hành */}
                 <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                    Ngày ban hành
-                  </label>
+                  <div className="flex justify-between items-end mb-1.5">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5" /> Ngày phát hành
+                    </label>
+                    <ConfidenceBadge value={analysisResult?.confidence?.issuedDate} />
+                  </div>
                   <input
                     type="date"
                     name="issuedDate"
-                    value={editData.issuedDate}
+                    value={formData.issuedDate}
                     onChange={handleInputChange}
-                    className="w-full bg-slate-950/80 border border-slate-800 rounded-xl text-xs px-3 py-2 focus:outline-none focus:border-violet-500 transition-all text-slate-200 cursor-pointer"
+                    className="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl text-sm px-3.5 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all text-slate-200 shadow-inner custom-calendar-icon"
                   />
                 </div>
 
-                {/* Cơ quan ban hành */}
-                <div className="md:col-span-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                    Cơ quan ban hành
-                  </label>
+                {/* Nơi phát hành */}
+                <div className="sm:col-span-2">
+                  <div className="flex justify-between items-end mb-1.5">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5" /> Nơi phát hành
+                    </label>
+                    <ConfidenceBadge value={analysisResult?.confidence?.issuer} />
+                  </div>
                   <input
                     type="text"
                     name="issuer"
-                    value={editData.issuer}
+                    value={formData.issuer}
                     onChange={handleInputChange}
-                    placeholder="VD: Ban Quản lý Đường sắt Đô thị"
-                    className="w-full bg-slate-950/80 border border-slate-800 rounded-xl text-xs px-3 py-2 focus:outline-none focus:border-violet-500 transition-all text-slate-200"
+                    placeholder="VD: Ban Quản lý..."
+                    className="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl text-sm px-3.5 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all text-slate-200 shadow-inner"
                   />
                 </div>
 
-                {/* Danh mục */}
-                <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                    Danh mục
-                  </label>
-                  <select
-                    name="category"
-                    value={editData.category}
+                {/* Nơi gửi */}
+                <div className="sm:col-span-2">
+                  <div className="flex justify-between items-end mb-1.5">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <Send className="w-3.5 h-3.5" /> Nơi gửi (Nơi nhận)
+                    </label>
+                    <ConfidenceBadge value={analysisResult?.confidence?.receiver} />
+                  </div>
+                  <input
+                    type="text"
+                    name="receiver"
+                    value={formData.receiver}
                     onChange={handleInputChange}
-                    className="w-full bg-slate-950/80 border border-slate-800 rounded-xl text-xs px-3 py-2 focus:outline-none focus:border-violet-500 transition-all text-slate-200 cursor-pointer"
-                  >
-                    {CATEGORIES.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
+                    placeholder="VD: Sở Tài Nguyên Môi Trường, UBND TP..."
+                    className="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl text-sm px-3.5 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all text-slate-200 shadow-inner"
+                  />
                 </div>
-
-                {/* Trạng thái */}
-                <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                    Trạng thái hiệu lực
-                  </label>
-                  <select
-                    name="status"
-                    value={editData.status}
-                    onChange={handleInputChange}
-                    className="w-full bg-slate-950/80 border border-slate-800 rounded-xl text-xs px-3 py-2 focus:outline-none focus:border-violet-500 transition-all text-slate-200 cursor-pointer"
-                  >
-                    {STATUS_OPTIONS.map(opt => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Trích yếu */}
-                <div className="md:col-span-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                    Trích yếu nội dung / Ghi chú
-                  </label>
+                
+                {/* Trích yếu nội dung */}
+                <div className="sm:col-span-2">
+                  <div className="flex justify-between items-end mb-1.5">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5" /> Trích yếu nội dung
+                    </label>
+                    <ConfidenceBadge value={analysisResult?.confidence?.notes} />
+                  </div>
                   <textarea
                     name="notes"
-                    value={editData.notes}
+                    value={formData.notes}
                     onChange={handleInputChange}
-                    placeholder="Nhập nội dung tóm tắt..."
-                    rows={3}
-                    className="w-full bg-slate-950/80 border border-slate-800 rounded-xl text-xs px-3 py-2 focus:outline-none focus:border-violet-500 transition-all text-slate-200 resize-none"
+                    placeholder="Nhập trích yếu tóm tắt nội dung văn bản..."
+                    rows={4}
+                    className="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl text-sm px-3.5 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all text-slate-200 resize-none shadow-inner leading-relaxed"
                   />
                 </div>
+
               </div>
+              
+              {/* Spacing for footer */}
+              <div className="h-6"></div>
             </div>
-          )}
 
-          {/* Error */}
-          {error && (
-            <div className="p-3 bg-red-950/40 border border-red-900/30 rounded-xl text-xs text-red-400 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Footer Actions */}
-        <div className="p-4 bg-slate-950/60 border-t border-slate-800 flex flex-wrap justify-between items-center gap-3">
-          {/* Left: Phân tích lại */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleAnalyze}
-              disabled={analyzing}
-              className="px-4 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-lg shadow-violet-500/10"
-            >
-              {analyzing ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Đang phân tích...
-                </>
-              ) : (
-                <>
-                  <Brain className="w-4 h-4" />
-                  {analysisResult ? 'Phân tích lại' : '🔄 Phân tích bằng AI'}
-                </>
-              )}
-            </button>
-
-            {/* Nút nhập tay */}
-            {!isEditing && (
+            {/* Footer Form */}
+            <div className="p-4 bg-slate-900 border-t border-slate-800/80 shrink-0">
               <button
-                onClick={handleSwitchToEdit}
-                className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
-              >
-                <Pencil className="w-3.5 h-3.5 text-cyan-400" />
-                Nhập tay
-              </button>
-            )}
-          </div>
-
-          {/* Right: Lưu / Hủy */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200 rounded-xl text-xs font-semibold transition-all"
-            >
-              Đóng
-            </button>
-
-            {(analysisResult || isEditing) && (
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="px-5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md shadow-emerald-500/10"
+                onClick={() => setShowConfirm(true)}
+                className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/20"
               >
                 <Save className="w-4 h-4" />
-                {saving ? 'Đang lưu...' : '💾 Lưu kết quả'}
+                Lưu thông tin văn bản
               </button>
+            </div>
+            
+            {/* Confirmation Overlay */}
+            {showConfirm && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-6">
+                <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-2xl w-full max-w-sm animate-in zoom-in-95 duration-200">
+                  <h3 className="text-lg font-bold text-slate-100 mb-2 flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-amber-500" />
+                    Xác nhận lưu
+                  </h3>
+                  <p className="text-sm text-slate-300 mb-6">
+                    Bạn có chắc chắn muốn lưu các thông tin đã chỉnh sửa cho văn bản này không? Dữ liệu cũ sẽ bị ghi đè.
+                  </p>
+                  <div className="flex justify-end gap-3">
+                    <button
+                      onClick={() => setShowConfirm(false)}
+                      className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl text-sm font-medium transition-colors"
+                      disabled={saving}
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      onClick={handleSaveConfirm}
+                      disabled={saving}
+                      className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-colors"
+                    >
+                      {saving ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Đang lưu...</>
+                      ) : (
+                        <><CheckCircle2 className="w-4 h-4" /> Đồng ý lưu</>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
+            
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-// ─── Sub-components ──────────────────────────────────────────────
-
-function InfoField({ label, value, icon, className = '' }) {
-  return (
-    <div className={className}>
-      <span className="text-[10px] text-slate-500 flex items-center gap-1 mb-0.5">
-        {icon}
-        {label}
-      </span>
-      <span className="text-[11px] font-semibold text-slate-200 bg-slate-950/60 border border-slate-850 px-2.5 py-1.5 rounded-lg block">
-        {value || '—'}
-      </span>
-    </div>
-  );
-}
-
-function CompareField({ label, oldValue, newValue, confidence, isLong }) {
-  const isChanged = oldValue !== newValue;
-  const confColor = confidence >= 0.8 ? 'text-emerald-400' : confidence >= 0.5 ? 'text-amber-400' : 'text-red-400';
-
-  return (
-    <div className={`bg-slate-950/40 border rounded-xl p-2.5 ${isChanged ? 'border-violet-500/30' : 'border-slate-800/60'}`}>
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-[10px] text-slate-400 font-bold">{label}</span>
-        {confidence !== undefined && (
-          <span className={`text-[8px] font-bold ${confColor}`}>
-            {Math.round(confidence * 100)}% tin cậy
-          </span>
-        )}
-      </div>
-
-      {isChanged ? (
-        <div className="space-y-1">
-          <div className="flex items-start gap-2">
-            <span className="text-[8px] text-red-400 bg-red-500/10 px-1 rounded font-bold shrink-0 mt-0.5">CŨ</span>
-            <span className={`text-[10px] text-slate-500 line-through ${isLong ? '' : 'truncate'}`}>
-              {oldValue || '—'}
-            </span>
-          </div>
-          <div className="flex items-start gap-2">
-            <span className="text-[8px] text-emerald-400 bg-emerald-500/10 px-1 rounded font-bold shrink-0 mt-0.5">MỚI</span>
-            <span className={`text-[10px] text-emerald-300 font-semibold ${isLong ? 'leading-relaxed' : 'truncate'}`}>
-              {newValue || '—'}
-            </span>
-          </div>
-        </div>
-      ) : (
-        <span className="text-[10px] text-slate-300">
-          {newValue || '—'}
-          <span className="text-[8px] text-slate-500 ml-2">(không đổi)</span>
-        </span>
-      )}
     </div>
   );
 }

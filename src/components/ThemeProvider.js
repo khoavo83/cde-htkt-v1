@@ -1,19 +1,19 @@
 'use client';
 
-import { ThemeProvider as NextThemesProvider } from 'next-themes';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
-export default function ThemeProvider({ children, ...props }) {
-  const [mounted, setMounted] = useState(false);
-
+// Thay thế next-themes bằng cách đơn giản set class "dark" trực tiếp
+// để tránh lỗi Console "script tag" trên Next.js 16
+export default function ThemeProvider({ children, defaultTheme = 'dark' }) {
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    // Đảm bảo class "dark" luôn có trên thẻ <html>
+    const root = document.documentElement;
+    if (defaultTheme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+  }, [defaultTheme]);
 
-  if (!mounted) {
-    // Render without ThemeProvider on server to prevent Hydration errors
-    return <>{children}</>;
-  }
-
-  return <NextThemesProvider {...props}>{children}</NextThemesProvider>;
+  return <>{children}</>;
 }
