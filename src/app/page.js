@@ -37,7 +37,8 @@ import {
   LayoutGrid,
   Settings,
   Sun,
-  Moon
+  Moon,
+  Edit2
 } from 'lucide-react';
 
 export default function Home() {
@@ -368,7 +369,7 @@ export default function Home() {
   };
 
   return (
-    <div className="h-screen bg-slate-950 text-slate-100 flex flex-col overflow-hidden font-sans text-sm">
+    <div className="h-full w-full flex flex-col overflow-hidden font-sans text-sm">
       {/* Header - thu gọn */}
       <header className="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-3 sm:px-6 py-2 sm:py-3 flex flex-wrap justify-between items-center gap-2 shrink-0 shadow-lg shadow-black/20">
         <div className="flex items-center gap-2">
@@ -643,8 +644,8 @@ export default function Home() {
                         </button>
                         <button onClick={() => setAnalyzingDoc(doc)}
                           className="p-1.5 bg-slate-950/80 border border-slate-800 hover:border-amber-500/40 rounded-lg text-slate-400 hover:text-amber-400 sm:opacity-0 sm:group-hover:opacity-100 transition-all"
-                          title="Phân tích lại bằng AI Gemini">
-                          <Brain className="w-3.5 h-3.5" />
+                          title="Chỉnh sửa thông tin">
+                          <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         {isLinkedToSelected ? (
                           <span className="inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-full font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">

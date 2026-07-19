@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getDriveClient } from '@/lib/drive';
+import { extractText, getDocumentProxy } from 'unpdf';
 
 export async function POST(request) {
   try {
@@ -11,7 +12,7 @@ export async function POST(request) {
 
     let pdfBuffer = null;
 
-    // Ưu tiên tải từ Google Drive bằng fileId (đáng tin cậy nhất)
+    // Ưu tiên tải từ Google Drive bằng fileId
     if (fileId && !fileId.startsWith('file-sync')) {
       try {
         const drive = await getDriveClient();
@@ -22,11 +23,10 @@ export async function POST(request) {
         pdfBuffer = Buffer.from(response.data);
       } catch (driveErr) {
         console.error('Lỗi tải file từ Drive:', driveErr.message);
-        // Không return, thử fallback sang local path
       }
     }
 
-    // Fallback: đọc từ đường dẫn local (nếu không tải được từ Drive)
+    // Fallback: đọc từ đường dẫn local
     if (!pdfBuffer && filePath) {
       try {
         const fs = await import('fs');
@@ -39,30 +39,60 @@ export async function POST(request) {
     }
 
     if (!pdfBuffer) {
-      return NextResponse.json({ 
-        error: 'Không thể tải file PDF. Kiểm tra lại fileId hoặc đường dẫn file.' 
+      return NextResponse.json({
+        error: 'Không thể tải file PDF. Kiểm tra lại fileId hoặc đường dẫn file.'
       }, { status: 500 });
     }
 
-    // Kiểm tra đây có phải file PDF không
+    // Kiểm tra header PDF
     const header = pdfBuffer.slice(0, 5).toString('utf8');
     if (!header.startsWith('%PDF')) {
-      return NextResponse.json({ 
-        error: 'File này không phải định dạng PDF. Chỉ hỗ trợ trích xuất text từ file PDF gốc (không phải file scan ảnh).' 
+      return NextResponse.json({
+        error: 'File này không phải định dạng PDF.'
       }, { status: 400 });
     }
 
-    // Trích xuất text bằng unpdf (chạy trên server, không cần DOM)
-    const { extractText } = await import('unpdf');
+    // Trích xuất text bằng unpdf - lấy từng trang riêng
     const uint8 = new Uint8Array(pdfBuffer);
-    const { text, totalPages } = await extractText(uint8, { mergePages: false });
-
+    
+    // Dùng getDocumentProxy để kiểm soát chi tiết hơn
+    const pdf = await getDocumentProxy(uint8);
+    const totalPages = pdf.numPages;
+    
     // Chỉ lấy trang đầu tiên
-    const firstPageText = text && text.length > 0 ? text[0] : '';
+    const page = await pdf.getPage(1);
+    const textContent = await page.getTextContent();
+    
+    // Ghép text thông minh theo tọa độ Y (giữ layout dòng)
+    let lines = [];
+    let currentLine = '';
+    let lastY = null;
+    
+    for (const item of textContent.items) {
+      if (item.str === undefined) continue;
+      
+      const y = item.transform ? item.transform[5] : null;
+      
+      // Nếu tọa độ Y thay đổi → dòng mới
+      if (lastY !== null && y !== null && Math.abs(y - lastY) > 2) {
+        if (currentLine.trim()) {
+          lines.push(currentLine.trim());
+        }
+        currentLine = item.str;
+      } else {
+        currentLine += item.str;
+      }
+      lastY = y;
+    }
+    if (currentLine.trim()) {
+      lines.push(currentLine.trim());
+    }
+    
+    const firstPageText = lines.join('\n');
 
     if (!firstPageText || firstPageText.trim().length === 0) {
-      return NextResponse.json({ 
-        error: 'Không trích xuất được chữ. File này có thể là bản scan (ảnh chụp), cần dùng OCR để đọc.' 
+      return NextResponse.json({
+        error: 'Không trích xuất được chữ. File này có thể là bản scan (ảnh chụp), cần dùng OCR.'
       }, { status: 400 });
     }
 
@@ -74,8 +104,8 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('Lỗi khi trích xuất text PDF:', error);
-    return NextResponse.json({ 
-      error: 'Lỗi trích xuất text PDF: ' + error.message 
+    return NextResponse.json({
+      error: 'Lỗi trích xuất text PDF: ' + error.message
     }, { status: 500 });
   }
 }

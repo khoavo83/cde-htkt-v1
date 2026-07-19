@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { 
   X, Save, Bot, CheckCircle2, AlertTriangle, 
   FileText, Sparkles, Loader2, Shield,
-  Calendar, User, Tag, Hash, FolderOpen, Send, Copy, Type
+  Calendar, User, Tag, Hash, FolderOpen, Send, Copy, Type, XCircle, ScanEye
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -41,9 +41,11 @@ export default function DocumentAnalyzeModal({
 }) {
   const [analyzing, setAnalyzing] = useState(false);
   const [extracting, setExtracting] = useState(false);
+  const [aiReading, setAiReading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [analysisMode, setAnalysisMode] = useState(null); 
   const [extractedText, setExtractedText] = useState('');
+  const [extractMode, setExtractMode] = useState(null); // 'ocr' | 'ai'
   
   const [warning, setWarning] = useState('');
   const [error, setError] = useState('');
@@ -66,6 +68,8 @@ export default function DocumentAnalyzeModal({
       setAnalysisResult(null);
       setAnalysisMode(null);
       setExtractedText('');
+      setExtractMode(null);
+      setAiReading(false);
       setWarning('');
       setError('');
       setShowConfirm(false);
@@ -82,6 +86,12 @@ export default function DocumentAnalyzeModal({
   }, [isOpen, doc]);
 
   if (!isOpen || !doc) return null;
+
+  const handleClose = () => {
+    if (window.confirm("Bạn có chắc chắn muốn thoát? Dữ liệu chưa lưu sẽ bị mất.")) {
+      onClose();
+    }
+  };
 
   const handleAnalyze = async () => {
     setAnalyzing(true);
@@ -138,6 +148,12 @@ export default function DocumentAnalyzeModal({
 
       if (data.success && data.text) {
         setExtractedText(data.text);
+        setExtractMode('ocr');
+        // Kiểm tra xem text có vẻ bị lỗi font không (nhiều ký tự lạ, thiếu dấu TV)
+        const weirdCharCount = (data.text.match(/[§©®°¡¢£¤¥¦¨ª«¬­¯±²³´µ¶·¸¹º»¼½¾¿]/g) || []).length;
+        if (weirdCharCount > 5) {
+          setWarning('⚠️ Phát hiện lỗi font: File PDF này dùng font đặc biệt nên một số chữ tiếng Việt có thể bị sai dấu. Hãy đối chiếu với nội dung PDF bên trái để chỉnh sửa.');
+        }
       } else {
         setError(data.error || 'Trích xuất chữ thất bại (Có thể do file scan ảnh, không chứa text)');
       }
@@ -148,10 +164,38 @@ export default function DocumentAnalyzeModal({
     }
   };
 
+  const handleAiRead = async () => {
+    setAiReading(true);
+    setError('');
+    setWarning('');
+    try {
+      const res = await fetch('/api/documents/ai-read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          filePath: doc.path, 
+          fileId: doc.id,
+          fileName: doc.name || doc.file_name 
+        }),
+      });
+      const data = await res.json();
+
+      if (data.success && data.text) {
+        setExtractedText(data.text);
+        setExtractMode('ai');
+      } else {
+        setError(data.error || 'AI đọc thất bại');
+      }
+    } catch (err) {
+      setError('Lỗi kết nối server: ' + err.message);
+    } finally {
+      setAiReading(false);
+    }
+  };
+
   const handleCopyText = () => {
     if (extractedText) {
       navigator.clipboard.writeText(extractedText);
-      // Optional: show a small toast here if available
     }
   };
 
@@ -225,21 +269,25 @@ export default function DocumentAnalyzeModal({
     );
   };
 
-  // Chuẩn bị URL embed cho iframe (Dùng Google Drive Preview để hỗ trợ mọi định dạng file)
-  const embedUrl = doc.webViewLink 
-    ? doc.webViewLink.replace(/\/view.*$/, '/preview')
-    : '';
+  // Chuẩn bị URL embed cho iframe
+  let embedUrl = '';
+  if (doc.path) {
+    // Dùng API trực tiếp với Chrome PDF viewer, yêu cầu hiển thị từng trang (view=Fit)
+    embedUrl = `/api/documents/view?path=${encodeURIComponent(doc.path)}#toolbar=1&navpanes=1&scrollbar=1&view=Fit`;
+  } else if (doc.webViewLink) {
+    embedUrl = doc.webViewLink.replace(/\/view.*$/, '/preview');
+  }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-2 sm:p-4 md:p-6 lg:p-8">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/80 backdrop-blur-md"
-        onClick={() => !showConfirm && onClose()}
+        onClick={() => !showConfirm && handleClose()}
       />
 
       {/* Modal Container */}
-      <div className="relative w-full max-w-[98vw] lg:max-w-[90vw] xl:max-w-7xl bg-slate-900 border border-slate-700/60 rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[95vh] animate-in fade-in zoom-in duration-200">
+      <div className="relative w-full h-full max-w-7xl bg-slate-900 border border-slate-700/60 rounded-2xl shadow-2xl overflow-hidden flex flex-col min-h-0 animate-in fade-in zoom-in duration-200">
         
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b border-slate-800/80 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 shadow-sm shrink-0">
@@ -261,9 +309,10 @@ export default function DocumentAnalyzeModal({
             </div>
           </div>
           <button 
-            onClick={onClose}
-            className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors shrink-0"
+            onClick={handleClose}
+            className="p-2 bg-red-500/10 hover:bg-red-500/30 border border-red-500/30 rounded-lg text-red-400 hover:text-red-300 transition-colors shrink-0"
             disabled={showConfirm}
+            title="Đóng"
           >
             <X className="w-5 h-5" />
           </button>
@@ -273,7 +322,7 @@ export default function DocumentAnalyzeModal({
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0 bg-slate-950/50">
           
           {/* Left Column: PDF Viewer */}
-          <div className="flex-1 lg:w-[55%] border-b lg:border-b-0 lg:border-r border-slate-800 flex flex-col h-[40vh] lg:h-full bg-[#323639]">
+          <div className="flex-1 lg:w-[55%] border-b lg:border-b-0 lg:border-r border-slate-800 flex flex-col h-[40vh] lg:h-full bg-[#323639] min-h-0">
             {embedUrl ? (
               <iframe 
                 src={embedUrl} 
@@ -290,25 +339,38 @@ export default function DocumentAnalyzeModal({
           </div>
 
           {/* Right Column: Data Form */}
-          <div className="flex-1 lg:w-[45%] flex flex-col h-full max-h-full bg-slate-900 relative">
-            <div className="flex-1 overflow-y-auto p-5 space-y-5 custom-scrollbar">
+          <div className="flex-1 lg:w-[45%] flex flex-col h-full max-h-full bg-slate-900 relative min-h-0">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-5 custom-scrollbar min-h-0">
               
               {/* Toolbar */}
-              <div className="flex items-center justify-between gap-3 mb-2 bg-slate-800/40 p-2 rounded-xl border border-slate-700/50">
-                <p className="text-xs text-slate-400 font-medium pl-2">Thông tin trích xuất</p>
-                <div className="flex items-center gap-2">
+              <div className="flex flex-col gap-2 mb-2 bg-slate-800/40 p-2.5 rounded-xl border border-slate-700/50">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-slate-400 font-medium pl-1">Công cụ trích xuất</p>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
                   <button
                     onClick={handleExtractText}
-                    disabled={extracting}
-                    className="px-3 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-slate-200 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all border border-slate-600/50 shadow-sm"
+                    disabled={extracting || aiReading}
+                    className="px-3 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-slate-200 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all border border-slate-600/50 shadow-sm"
+                    title="Trích xuất chữ bằng thư viện code (nhanh, có thể sai font)"
                   >
                     {extracting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Type className="w-3.5 h-3.5" />}
-                    Lấy chữ (PDF)
+                    OCR Code
+                  </button>
+                  <button
+                    onClick={handleAiRead}
+                    disabled={aiReading || extracting}
+                    className="px-3 py-2 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all shadow-lg shadow-violet-500/20"
+                    title="Dùng Gemini AI đọc lại nội dung trang đầu (chính xác, chậm hơn)"
+                  >
+                    {aiReading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ScanEye className="w-3.5 h-3.5" />}
+                    AI Đọc lại
                   </button>
                   <button
                     onClick={handleAnalyze}
-                    disabled={analyzing}
-                    className="px-3 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-lg shadow-cyan-500/20"
+                    disabled={analyzing || aiReading}
+                    className="px-3 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all shadow-lg shadow-cyan-500/20"
+                    title="Phân tích AI tự điền vào form"
                   >
                     {analyzing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bot className="w-3.5 h-3.5" />}
                     Phân tích AI
@@ -335,7 +397,8 @@ export default function DocumentAnalyzeModal({
                 <div className="bg-slate-950/80 border border-slate-700/60 rounded-xl overflow-hidden shadow-inner">
                   <div className="flex items-center justify-between px-3.5 py-2 bg-slate-800/60 border-b border-slate-700/60">
                     <span className="text-[11px] font-bold text-slate-300 flex items-center gap-1.5">
-                      <Type className="w-3.5 h-3.5 text-slate-400" /> Nội dung thô (Trang đầu)
+                      {extractMode === 'ai' ? <ScanEye className="w-3.5 h-3.5 text-violet-400" /> : <Type className="w-3.5 h-3.5 text-slate-400" />}
+                      {extractMode === 'ai' ? 'AI Đọc lại (Trang đầu)' : 'OCR Code (Trang đầu)'}
                     </span>
                     <button 
                       onClick={handleCopyText}
@@ -356,14 +419,12 @@ export default function DocumentAnalyzeModal({
               )}
 
               {/* Form Fields */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-12 gap-3 sm:gap-4">
                 
-                {/* Loại VB (Danh mục) - Chuyển sang DataList để cho phép gõ */}
-                <div className="sm:col-span-2">
-                  <div className="flex justify-between items-end mb-1.5">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <Tag className="w-3.5 h-3.5" /> Loại VB (Danh mục)
-                    </label>
+                {/* Loại VB (Danh mục) */}
+                <div className="col-span-12 sm:col-span-3 xl:col-span-3 relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Tag className="w-4 h-4 text-slate-500" />
                   </div>
                   <input
                     type="text"
@@ -371,8 +432,8 @@ export default function DocumentAnalyzeModal({
                     list="category-options"
                     value={formData.category}
                     onChange={handleInputChange}
-                    placeholder="Chọn hoặc nhập loại văn bản..."
-                    className="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl text-sm px-3.5 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all text-slate-200 shadow-inner"
+                    placeholder="Loại VB..."
+                    className="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl text-sm pl-9 pr-3.5 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all text-slate-200 shadow-inner"
                   />
                   <datalist id="category-options">
                     {CATEGORIES.map(cat => (
@@ -382,109 +443,119 @@ export default function DocumentAnalyzeModal({
                 </div>
 
                 {/* Số VB */}
-                <div>
-                  <div className="flex justify-between items-end mb-1.5">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <Hash className="w-3.5 h-3.5" /> Số VB
-                    </label>
-                    <ConfidenceBadge value={analysisResult?.confidence?.documentNumber} />
+                <div className="col-span-12 sm:col-span-5 xl:col-span-5 relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Hash className="w-4 h-4 text-slate-500" />
                   </div>
                   <input
                     type="text"
                     name="documentNumber"
                     value={formData.documentNumber}
                     onChange={handleInputChange}
-                    placeholder="VD: 1209/BQL..."
-                    className="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl text-sm px-3.5 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all text-slate-200 shadow-inner"
+                    placeholder="Số VB..."
+                    className="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl text-sm pl-9 pr-12 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all text-slate-200 shadow-inner"
                   />
+                  <div className="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none">
+                    <ConfidenceBadge value={analysisResult?.confidence?.documentNumber} />
+                  </div>
                 </div>
 
                 {/* Ngày phát hành */}
-                <div>
-                  <div className="flex justify-between items-end mb-1.5">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5" /> Ngày phát hành
-                    </label>
-                    <ConfidenceBadge value={analysisResult?.confidence?.issuedDate} />
+                <div className="col-span-12 sm:col-span-4 xl:col-span-4 relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+                    <Calendar className="w-4 h-4 text-slate-500" />
                   </div>
                   <input
-                    type="date"
+                    type="text"
                     name="issuedDate"
                     value={formData.issuedDate}
                     onChange={handleInputChange}
-                    className="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl text-sm px-3.5 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all text-slate-200 shadow-inner custom-calendar-icon"
+                    placeholder="Ngày ban hành..."
+                    className="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl text-sm pl-9 pr-8 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all text-slate-200 shadow-inner"
                   />
+                  <div className="absolute inset-y-0 right-8 pr-1 flex items-center pointer-events-none">
+                    <ConfidenceBadge value={analysisResult?.confidence?.issuedDate} />
+                  </div>
                 </div>
 
                 {/* Nơi phát hành */}
-                <div className="sm:col-span-2">
-                  <div className="flex justify-between items-end mb-1.5">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <User className="w-3.5 h-3.5" /> Nơi phát hành
-                    </label>
-                    <ConfidenceBadge value={analysisResult?.confidence?.issuer} />
+                <div className="col-span-12 sm:col-span-6 relative">
+                  <div className="absolute top-3 left-3 pointer-events-none">
+                    <User className="w-4 h-4 text-slate-500" />
                   </div>
-                  <input
-                    type="text"
+                  <textarea
                     name="issuer"
                     value={formData.issuer}
                     onChange={handleInputChange}
-                    placeholder="VD: Ban Quản lý..."
-                    className="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl text-sm px-3.5 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all text-slate-200 shadow-inner"
+                    placeholder="Nơi phát hành (Ban Quản lý...)"
+                    rows={2}
+                    className="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl text-sm pl-9 pr-12 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all text-slate-200 resize-none shadow-inner leading-snug"
                   />
+                  <div className="absolute top-2 right-2 pointer-events-none">
+                    <ConfidenceBadge value={analysisResult?.confidence?.issuer} />
+                  </div>
                 </div>
 
                 {/* Nơi gửi */}
-                <div className="sm:col-span-2">
-                  <div className="flex justify-between items-end mb-1.5">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <Send className="w-3.5 h-3.5" /> Nơi gửi (Nơi nhận)
-                    </label>
-                    <ConfidenceBadge value={analysisResult?.confidence?.receiver} />
+                <div className="col-span-12 sm:col-span-6 relative">
+                  <div className="absolute top-3 left-3 pointer-events-none">
+                    <Send className="w-4 h-4 text-slate-500" />
                   </div>
-                  <input
-                    type="text"
+                  <textarea
                     name="receiver"
                     value={formData.receiver}
                     onChange={handleInputChange}
-                    placeholder="VD: Sở Tài Nguyên Môi Trường, UBND TP..."
-                    className="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl text-sm px-3.5 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all text-slate-200 shadow-inner"
+                    placeholder="Nơi nhận (Sở TNMT...)"
+                    rows={2}
+                    className="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl text-sm pl-9 pr-12 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all text-slate-200 resize-none shadow-inner leading-snug"
                   />
+                  <div className="absolute top-2 right-2 pointer-events-none">
+                    <ConfidenceBadge value={analysisResult?.confidence?.receiver} />
+                  </div>
                 </div>
                 
                 {/* Trích yếu nội dung */}
-                <div className="sm:col-span-2">
-                  <div className="flex justify-between items-end mb-1.5">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <FileText className="w-3.5 h-3.5" /> Trích yếu nội dung
-                    </label>
-                    <ConfidenceBadge value={analysisResult?.confidence?.notes} />
+                <div className="col-span-12 relative">
+                  <div className="absolute top-3 left-3 pointer-events-none">
+                    <FileText className="w-4 h-4 text-slate-500" />
                   </div>
                   <textarea
                     name="notes"
                     value={formData.notes}
                     onChange={handleInputChange}
-                    placeholder="Nhập trích yếu tóm tắt nội dung văn bản..."
-                    rows={4}
-                    className="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl text-sm px-3.5 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all text-slate-200 resize-none shadow-inner leading-relaxed"
+                    placeholder="Trích yếu nội dung văn bản..."
+                    rows={3}
+                    className="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl text-sm pl-9 pr-12 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all text-slate-200 resize-none shadow-inner leading-relaxed"
                   />
+                  <div className="absolute top-2 right-2 pointer-events-none">
+                    <ConfidenceBadge value={analysisResult?.confidence?.notes} />
+                  </div>
+                </div>
+                
+                {/* Nút hành động */}
+                <div className="col-span-12 pt-4 mt-2 border-t border-slate-800/80">
+                  <div className="flex items-center justify-end gap-4">
+                    <button
+                      onClick={handleClose}
+                      className="px-6 py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
+                    >
+                      <XCircle className="w-4 h-4" />
+                      Hủy thao tác
+                    </button>
+                    <button
+                      onClick={() => setShowConfirm(true)}
+                      className="px-8 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/20"
+                    >
+                      <Save className="w-4 h-4" />
+                      Lưu thông tin văn bản
+                    </button>
+                  </div>
                 </div>
 
               </div>
               
               {/* Spacing for footer */}
               <div className="h-6"></div>
-            </div>
-
-            {/* Footer Form */}
-            <div className="p-4 bg-slate-900 border-t border-slate-800/80 shrink-0">
-              <button
-                onClick={() => setShowConfirm(true)}
-                className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/20"
-              >
-                <Save className="w-4 h-4" />
-                Lưu thông tin văn bản
-              </button>
             </div>
             
             {/* Confirmation Overlay */}
