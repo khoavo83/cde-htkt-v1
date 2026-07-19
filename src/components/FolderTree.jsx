@@ -4,9 +4,10 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Folder, FolderOpen, File, HardDrive, RefreshCw, Network,
   ChevronRight, ChevronDown, Search, ExternalLink,
-  Pencil, Check, X, RotateCcw, CheckCircle2, Sparkles, ScanSearch
+  Pencil, Check, X, RotateCcw, CheckCircle2, Sparkles, ScanSearch, GripVertical
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import DocumentAnalyzeModal from './DocumentAnalyzeModal';
 
 // =========================================================
@@ -127,144 +128,85 @@ const EditableCell = ({ value, onSave, multiline = false, className = '' }) => {
   );
 };
 
+
+const parseDateString = (dateStr) => {
+  if (!dateStr || dateStr === 'Chưa xác định') return 0;
+  const parts = dateStr.split('/');
+  if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]).getTime();
+  return 0;
+};
+
 // =========================================================
 // Hàng dữ liệu có edit + re-extract
 // =========================================================
-const DocRow = ({ file, idx, onUpdate, onAnalyze }) => {
-  const [saving, setSaving]   = useState(false);
-  const [reloading, setReloading] = useState(false);
-  const [saved, setSaved]     = useState(false);
-
-  const FIELDS = ['loai_vb','so_vb','ngay_phat_hanh','noi_phat_hanh','trich_yeu','noi_gui'];
-
-  const handleSaveField = async (field, newValue) => {
-    const updated = { ...file, [field]: newValue };
-    onUpdate(file.id, updated);
-    setSaving(true);
-    try {
-      await fetch('/api/drive/extract', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fileId:      file.id,
-          fileName:    file.file_name || file.name,
-          webViewLink: file.web_view_link || file.webViewLink,
-          ...FIELDS.reduce((acc, f) => ({ ...acc, [f]: updated[f] || '' }), {}),
-        }),
-      });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch { /* nếu lỗi vẫn giữ giá trị local */ }
-    finally { setSaving(false); }
-  };
-
-  const handleReExtract = async () => {
-    setReloading(true);
-    onUpdate(file.id, { ...file, _loading: true });
-    try {
-      const p = new URLSearchParams({
-        fileId:      file.id,
-        fileName:    file.file_name || file.name,
-        mimeType:    file.mimeType || 'application/pdf',
-        webViewLink: file.web_view_link || file.webViewLink || '',
-        refresh:     'true',
-      });
-      const res  = await fetch(`/api/drive/extract?${p}`);
-      const json = await res.json();
-      onUpdate(file.id, { ...file, ...(json.success ? json.data : {}), _loading: false });
-    } catch { onUpdate(file.id, { ...file, _loading: false }); }
-    finally { setReloading(false); }
-  };
+const DocRow = ({ file, idx, onUpdate, onAnalyze, provided, snapshot }) => {
+  const isDraggingClass = snapshot?.isDragging ? 'bg-emerald-50 dark:bg-emerald-900/30 shadow-lg' : '';
 
   if (file._loading) {
     return (
-      <tr className="border-b border-slate-100 dark:border-slate-800/80">
-        <td className="px-3 py-2.5 text-slate-400 text-sm">{idx + 1}</td>
-        {[...Array(6)].map((_,i) => <td key={i} className="px-3 py-2.5"><SkeletonCell/></td>)}
-        <td className="px-3 py-2.5"><SkeletonCell w="w-full"/></td>
+      <tr 
+        ref={provided?.innerRef} 
+        {...provided?.draggableProps}
+        className="border-b border-slate-100 dark:border-slate-800/80"
+      >
+        <td className="px-3 py-2.5 text-slate-400 text-sm w-12">
+          <div className="flex items-center gap-2">
+            {provided && (
+              <div {...provided.dragHandleProps} className="text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing">
+                <GripVertical size={14}/>
+              </div>
+            )}
+            <span>{idx + 1}</span>
+          </div>
+        </td>
+        {[...Array(5)].map((_,i) => <td key={i} className="px-3 py-2.5"><SkeletonCell/></td>)}
         <td className="px-3 py-2.5"/>
       </tr>
     );
   }
 
-  const hasData = file.loai_vb || file.so_vb || file.ngay_phat_hanh || file.noi_phat_hanh || file.trich_yeu || file.noi_gui || file.manually_edited;
+  const cellClass = "px-3 py-2.5 text-sm text-slate-600 dark:text-slate-400 cursor-pointer max-w-[150px] truncate hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors";
+  const notesClass = "px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 cursor-pointer max-w-xs hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors";
 
   return (
-    <tr className="border-b border-slate-100 dark:border-slate-800/80 hover:bg-emerald-50/40 dark:hover:bg-emerald-900/10 transition-colors group">
-      {/* # */}
-      <td className="px-3 py-2.5 text-slate-400 text-sm w-8">
-        <div className="flex flex-col items-center gap-1">
-          <span>{idx + 1}</span>
-          {file.manually_edited && <CheckCircle2 size={10} className="text-emerald-500" title="Đã chỉnh sửa thủ công"/>}
+    <tr 
+      ref={provided?.innerRef} 
+      {...provided?.draggableProps}
+      className={`border-b border-slate-100 dark:border-slate-800/80 hover:bg-emerald-50/40 dark:hover:bg-emerald-900/10 transition-colors group ${isDraggingClass}`}
+    >
+      <td className="px-3 py-2.5 text-slate-400 text-sm w-12">
+        <div className="flex items-center gap-2">
+          {provided && (
+            <div {...provided.dragHandleProps} className="text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing">
+              <GripVertical size={14}/>
+            </div>
+          )}
+          <div className="flex flex-col items-center gap-1">
+            <span>{idx + 1}</span>
+            {file.manually_edited && <CheckCircle2 size={10} className="text-emerald-500" title="Đã chỉnh sửa thủ công"/>}
+          </div>
         </div>
       </td>
 
-      {!hasData ? (
-        <td colSpan={6} className="px-3 py-2.5">
-          <div className="flex items-center gap-2 text-sm">
-            <span className="font-medium text-slate-700 dark:text-slate-300 truncate max-w-md" title={file.name || file.file_name}>
-              {file.name || file.file_name}
-            </span>
-            <span className="text-xs text-slate-400 font-mono bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded truncate max-w-[100px]" title={file.id}>
-              {file.id}
-            </span>
-            <button 
-              onClick={() => handleSaveField('manually_edited', true)}
-              className="text-xs text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 ml-2 italic underline decoration-dotted underline-offset-2"
-              title="Mở các cột để tự nhập thông tin"
-            >
-              Nhập tay
-            </button>
-          </div>
-        </td>
-      ) : (
-        <>
-          {/* Loại VB */}
-          <td className="px-3 py-2.5">
-            <EditableCell value={file.loai_vb} onSave={v => handleSaveField('loai_vb', v)}
-              className="inline-block"/>
-          </td>
-
-          {/* Số VB */}
-          <td className="px-3 py-2.5 font-mono text-sm text-slate-700 dark:text-slate-300 whitespace-nowrap">
-            <EditableCell value={file.so_vb} onSave={v => handleSaveField('so_vb', v)}/>
-          </td>
-
-          {/* Ngày PH */}
-          <td className="px-3 py-2.5 text-sm text-slate-600 dark:text-slate-400 whitespace-nowrap">
-            <EditableCell value={file.ngay_phat_hanh} onSave={v => handleSaveField('ngay_phat_hanh', v)}/>
-          </td>
-
-          {/* Nơi phát hành */}
-          <td className="px-3 py-2.5 text-sm text-slate-600 dark:text-slate-400 max-w-[140px]">
-            <EditableCell value={file.noi_phat_hanh} onSave={v => handleSaveField('noi_phat_hanh', v)}/>
-          </td>
-
-          {/* Trích yếu */}
-          <td className="px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 max-w-xs">
-            <EditableCell value={file.trich_yeu} onSave={v => handleSaveField('trich_yeu', v)} multiline/>
-          </td>
-
-          {/* Nơi gửi */}
-          <td className="px-3 py-2.5 text-sm text-slate-600 dark:text-slate-400 max-w-[140px]">
-            <EditableCell value={file.noi_gui} onSave={v => handleSaveField('noi_gui', v)}/>
-          </td>
-        </>
-      )}
+      <td className={cellClass} onClick={onAnalyze}>{file.loai_vb || '—'}</td>
+      <td className={cellClass + " font-mono"} onClick={onAnalyze}>{file.so_vb || '—'}</td>
+      <td className={cellClass} onClick={onAnalyze}>{file.ngay_phat_hanh || '—'}</td>
+      <td className={cellClass} onClick={onAnalyze}>{file.noi_phat_hanh || '—'}</td>
+      <td className={notesClass} onClick={onAnalyze}>
+        <div className="line-clamp-2" title={file.trich_yeu || file.name || file.file_name}>{file.trich_yeu || file.name || file.file_name}</div>
+      </td>
 
       {/* Actions */}
       <td className="px-3 py-2.5">
         <div className="flex items-center gap-1.5 justify-center">
-          {/* Phân tích lại bằng AI Gemini */}
           <button
             onClick={onAnalyze}
             className="w-7 h-7 flex items-center justify-center rounded-md bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white transition-all shadow-sm shadow-amber-500/20"
-            title="Phân tích tự động (AI)"
+            title="Sửa / Phân tích chi tiết"
           >
-            <Sparkles size={13} className="drop-shadow-md" />
+            <Pencil size={13} className="drop-shadow-md" />
           </button>
           
-          {/* Quét OCR (Dự phòng) */}
           <button
             onClick={() => alert('Tính năng quét OCR đang được phát triển làm phương án dự phòng.')}
             className="w-7 h-7 flex items-center justify-center rounded-md bg-indigo-500/10 text-indigo-600 hover:bg-indigo-500 hover:text-white transition-all shadow-sm shadow-indigo-500/20"
@@ -273,7 +215,6 @@ const DocRow = ({ file, idx, onUpdate, onAnalyze }) => {
             <ScanSearch size={13} className="drop-shadow-md" />
           </button>
 
-          {/* Mở file */}
           {(file.webViewLink || file.web_view_link) && (
             <a
               href={file.webViewLink || file.web_view_link}
@@ -285,10 +226,6 @@ const DocRow = ({ file, idx, onUpdate, onAnalyze }) => {
             </a>
           )}
         </div>
-
-        {saved && (
-          <div className="text-xs text-emerald-500 text-center mt-1 whitespace-nowrap">✓ Đã lưu</div>
-        )}
       </td>
     </tr>
   );
@@ -354,11 +291,66 @@ export default function FolderTree({ projectId }) {
         // Lọc file PDF
         const pdfFiles = json.data.filter(f => f.mimeType === 'application/pdf');
         
-        // Không tự động quét AI nữa, hiển thị file ngay lập tức
+
         const rows = pdfFiles.map(f => ({ ...f, _loading: false }));
+        // Sắp xếp ngày phát hành (nhỏ đến lớn) -> custom_order_index
+        rows.sort((a, b) => {
+          const timeA = parseDateString(a.ngay_phat_hanh);
+          const timeB = parseDateString(b.ngay_phat_hanh);
+          if (timeA !== timeB) return timeA - timeB;
+          return (a.custom_order_index || 0) - (b.custom_order_index || 0);
+        });
         setFolderFiles(rows);
+
       })
       .finally(() => setLoadingFiles(false));
+  };
+
+
+  const onDragEnd = async (result) => {
+    if (!result.destination) return;
+    const sourceIndex = result.source.index;
+    const destinationIndex = result.destination.index;
+    if (sourceIndex === destinationIndex) return;
+
+    const newFiles = Array.from(folderFiles);
+    const draggedItem = newFiles[sourceIndex];
+    
+    // Ràng buộc không vượt quá ngày phát hành
+    const targetItem = newFiles[destinationIndex];
+    const draggedTime = parseDateString(draggedItem.ngay_phat_hanh);
+    const targetTime = parseDateString(targetItem.ngay_phat_hanh);
+
+    if (draggedTime !== targetTime) {
+      // Bị kéo ra khỏi cụm ngày của nó, từ chối drop
+      return; 
+    }
+
+    // Cập nhật lại mảng
+    newFiles.splice(sourceIndex, 1);
+    newFiles.splice(destinationIndex, 0, draggedItem);
+
+    // Tính toán lại custom_order_index cho các item có cùng ngày
+    const sameDateItems = newFiles.filter(f => parseDateString(f.ngay_phat_hanh) === draggedTime);
+    
+    const updates = [];
+    sameDateItems.forEach((f, idx) => {
+      f.custom_order_index = idx;
+      updates.push({ fileId: f.id, orderIndex: idx });
+    });
+
+    setFolderFiles(newFiles);
+
+    // Gọi API update
+    try {
+      await fetch('/api/drive/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ updates })
+      });
+    } catch (error) {
+      console.error('Lỗi lưu thứ tự', error);
+    }
   };
 
   const flattenFolders = (nodes, query) => {
@@ -478,18 +470,32 @@ export default function FolderTree({ projectId }) {
                   <table className="w-full text-sm border-collapse">
                     <thead>
                       <tr className="sticky top-0 bg-slate-100/95 dark:bg-slate-800/95 backdrop-blur z-10">
-                        {['#','Loại VB','Số VB','Ngày PH','Nơi phát hành','Trích yếu nội dung','Nơi gửi','Thao tác'].map(h => (
+                        {['#','Loại VB','Số VB','Ngày PH','Nơi phát hành','Trích yếu nội dung','Thao tác'].map(h => (
                           <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap border-b border-slate-200 dark:border-slate-700">
                             {h}
                           </th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody>
-                      {folderFiles.map((file, idx) => (
-                        <DocRow key={file.id} file={file} idx={idx} onUpdate={updateRow} onAnalyze={() => setAnalyzingDoc(file)} />
-                      ))}
-                    </tbody>
+                    <DragDropContext onDragEnd={onDragEnd}>
+                      <Droppable droppableId="document-list">
+                        {(provided) => (
+                          <tbody ref={provided.innerRef} {...provided.droppableProps}>
+                            {folderFiles.map((file, idx) => (
+                              <Draggable key={file.id} draggableId={file.id} index={idx}>
+                                {(provided, snapshot) => (
+                                  <DocRow 
+                                    file={file} idx={idx} onUpdate={updateRow} onAnalyze={() => setAnalyzingDoc(file)} 
+                                    provided={provided} snapshot={snapshot}
+                                  />
+                                )}
+                              </Draggable>
+                            ))}
+                            {provided.placeholder}
+                          </tbody>
+                        )}
+                      </Droppable>
+                    </DragDropContext>
                   </table>
                 )}
               </div>

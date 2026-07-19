@@ -28,6 +28,7 @@ async function ensureTable(client) {
   await client.query(`
     ALTER TABLE drive_file_metadata ADD COLUMN IF NOT EXISTS manually_edited BOOLEAN DEFAULT FALSE;
     ALTER TABLE drive_file_metadata ADD COLUMN IF NOT EXISTS modified_time TIMESTAMP;
+    ALTER TABLE drive_file_metadata ADD COLUMN IF NOT EXISTS custom_order_index INTEGER DEFAULT 0;
   `).catch(() => {});
 }
 
@@ -101,6 +102,7 @@ export async function GET(request) {
         trich_yeu: existing?.trich_yeu || '',
         noi_gui: existing?.noi_gui || '',
         manually_edited: existing?.manually_edited || false,
+        custom_order_index: existing?.custom_order_index || 0,
       };
 
       updatedFiles.push(mergedFile);

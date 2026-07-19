@@ -356,7 +356,7 @@ export default function DocumentAnalyzeModal({
                 <div className="flex items-center gap-2 flex-wrap">
                   <button
                     onClick={handleExtractText}
-                    disabled={extracting || aiReading}
+                    disabled={extracting}
                     className="px-3 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-slate-200 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all border border-slate-600/50 shadow-sm"
                     title="Trích xuất chữ bằng thư viện code (nhanh, có thể sai font)"
                   >
@@ -364,17 +364,8 @@ export default function DocumentAnalyzeModal({
                     OCR Code
                   </button>
                   <button
-                    onClick={handleAiRead}
-                    disabled={aiReading || extracting}
-                    className="px-3 py-2 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all shadow-lg shadow-violet-500/20"
-                    title="Dùng Gemini AI đọc lại nội dung trang đầu (chính xác, chậm hơn)"
-                  >
-                    {aiReading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ScanEye className="w-3.5 h-3.5" />}
-                    AI Đọc lại
-                  </button>
-                  <button
                     onClick={handleAnalyze}
-                    disabled={analyzing || aiReading}
+                    disabled={analyzing}
                     className="px-3 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all shadow-lg shadow-cyan-500/20"
                     title="Tự động phân tích và điền vào form"
                   >
@@ -403,8 +394,8 @@ export default function DocumentAnalyzeModal({
                 <div className="bg-slate-950/80 border border-slate-700/60 rounded-xl overflow-hidden shadow-inner">
                   <div className="flex items-center justify-between px-3.5 py-2 bg-slate-800/60 border-b border-slate-700/60">
                     <span className="text-[11px] font-bold text-slate-300 flex items-center gap-1.5">
-                      {extractMode === 'ai' ? <ScanEye className="w-3.5 h-3.5 text-violet-400" /> : <Type className="w-3.5 h-3.5 text-slate-400" />}
-                      {extractMode === 'ai' ? 'AI Đọc lại (Trang đầu)' : 'OCR Code (Trang đầu)'}
+                      <Type className="w-3.5 h-3.5 text-slate-400" />
+                      'OCR Code (Trang đầu)'
                     </span>
                     <button 
                       onClick={handleCopyText}
