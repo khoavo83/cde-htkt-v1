@@ -1,32 +1,19 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { getDriveClient } from '@/lib/drive';
 
 export async function POST(request) {
   try {
     const { fileId, filePath } = await request.json();
 
-    // Ưu tiên đọc từ filePath (đường dẫn file local) trước
+    if (!fileId && !filePath) {
+      return NextResponse.json({ error: 'Thiếu fileId hoặc filePath' }, { status: 400 });
+    }
+
     let pdfBuffer = null;
 
-    if (filePath) {
-      // Đọc trực tiếp từ đường dẫn local trên máy
+    // Ưu tiên tải từ Google Drive bằng fileId (đáng tin cậy nhất)
+    if (fileId && !fileId.startsWith('file-sync')) {
       try {
-        if (!fs.existsSync(filePath)) {
-          return NextResponse.json({ 
-            error: 'Không tìm thấy file tại đường dẫn: ' + filePath 
-          }, { status: 404 });
-        }
-        pdfBuffer = fs.readFileSync(filePath);
-      } catch (fsErr) {
-        return NextResponse.json({ 
-          error: 'Không thể đọc file: ' + fsErr.message 
-        }, { status: 500 });
-      }
-    } else if (fileId) {
-      // Fallback: đọc từ Google Drive nếu có fileId
-      try {
-        const { getDriveClient } = await import('@/lib/drive');
         const drive = await getDriveClient();
         const response = await drive.files.get(
           { fileId, alt: 'media' },
@@ -34,19 +21,34 @@ export async function POST(request) {
         );
         pdfBuffer = Buffer.from(response.data);
       } catch (driveErr) {
-        return NextResponse.json({ 
-          error: 'Không thể tải file từ Drive: ' + driveErr.message 
-        }, { status: 500 });
+        console.error('Lỗi tải file từ Drive:', driveErr.message);
+        // Không return, thử fallback sang local path
       }
-    } else {
-      return NextResponse.json({ error: 'Thiếu filePath hoặc fileId' }, { status: 400 });
+    }
+
+    // Fallback: đọc từ đường dẫn local (nếu không tải được từ Drive)
+    if (!pdfBuffer && filePath) {
+      try {
+        const fs = await import('fs');
+        if (fs.existsSync(filePath)) {
+          pdfBuffer = fs.readFileSync(filePath);
+        }
+      } catch (fsErr) {
+        console.error('Lỗi đọc file local:', fsErr.message);
+      }
+    }
+
+    if (!pdfBuffer) {
+      return NextResponse.json({ 
+        error: 'Không thể tải file PDF. Kiểm tra lại fileId hoặc đường dẫn file.' 
+      }, { status: 500 });
     }
 
     // Kiểm tra đây có phải file PDF không
     const header = pdfBuffer.slice(0, 5).toString('utf8');
     if (!header.startsWith('%PDF')) {
       return NextResponse.json({ 
-        error: 'File này không phải PDF (header: ' + header + '). Chỉ hỗ trợ trích xuất text từ PDF.' 
+        error: 'File này không phải định dạng PDF. Chỉ hỗ trợ trích xuất text từ file PDF gốc (không phải file scan ảnh).' 
       }, { status: 400 });
     }
 
@@ -57,6 +59,12 @@ export async function POST(request) {
 
     // Chỉ lấy trang đầu tiên
     const firstPageText = text && text.length > 0 ? text[0] : '';
+
+    if (!firstPageText || firstPageText.trim().length === 0) {
+      return NextResponse.json({ 
+        error: 'Không trích xuất được chữ. File này có thể là bản scan (ảnh chụp), cần dùng OCR để đọc.' 
+      }, { status: 400 });
+    }
 
     return NextResponse.json({
       success: true,
