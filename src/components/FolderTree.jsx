@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Folder, FolderOpen, File, HardDrive, RefreshCw,
+  Folder, FolderOpen, File, HardDrive, RefreshCw, Network,
   ChevronRight, ChevronDown, Search, ExternalLink,
-  Pencil, Check, X, RotateCcw, CheckCircle2, Brain
+  Pencil, Check, X, RotateCcw, CheckCircle2, Sparkles, ScanSearch
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import DocumentAnalyzeModal from './DocumentAnalyzeModal';
@@ -187,6 +187,8 @@ const DocRow = ({ file, idx, onUpdate, onAnalyze }) => {
     );
   }
 
+  const hasData = file.loai_vb || file.so_vb || file.ngay_phat_hanh || file.noi_phat_hanh || file.trich_yeu || file.noi_gui || file.manually_edited;
+
   return (
     <tr className="border-b border-slate-100 dark:border-slate-800/80 hover:bg-emerald-50/40 dark:hover:bg-emerald-900/10 transition-colors group">
       {/* # */}
@@ -197,36 +199,58 @@ const DocRow = ({ file, idx, onUpdate, onAnalyze }) => {
         </div>
       </td>
 
-      {/* Loại VB */}
-      <td className="px-3 py-2.5">
-        <EditableCell value={file.loai_vb} onSave={v => handleSaveField('loai_vb', v)}
-          className="inline-block"/>
-      </td>
+      {!hasData ? (
+        <td colSpan={6} className="px-3 py-2.5">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="font-medium text-slate-700 dark:text-slate-300 truncate max-w-md" title={file.name || file.file_name}>
+              {file.name || file.file_name}
+            </span>
+            <span className="text-xs text-slate-400 font-mono bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded truncate max-w-[100px]" title={file.id}>
+              {file.id}
+            </span>
+            <button 
+              onClick={() => handleSaveField('manually_edited', true)}
+              className="text-xs text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 ml-2 italic underline decoration-dotted underline-offset-2"
+              title="Mở các cột để tự nhập thông tin"
+            >
+              Nhập tay
+            </button>
+          </div>
+        </td>
+      ) : (
+        <>
+          {/* Loại VB */}
+          <td className="px-3 py-2.5">
+            <EditableCell value={file.loai_vb} onSave={v => handleSaveField('loai_vb', v)}
+              className="inline-block"/>
+          </td>
 
-      {/* Số VB */}
-      <td className="px-3 py-2.5 font-mono text-sm text-slate-700 dark:text-slate-300 whitespace-nowrap">
-        <EditableCell value={file.so_vb} onSave={v => handleSaveField('so_vb', v)}/>
-      </td>
+          {/* Số VB */}
+          <td className="px-3 py-2.5 font-mono text-sm text-slate-700 dark:text-slate-300 whitespace-nowrap">
+            <EditableCell value={file.so_vb} onSave={v => handleSaveField('so_vb', v)}/>
+          </td>
 
-      {/* Ngày PH */}
-      <td className="px-3 py-2.5 text-sm text-slate-600 dark:text-slate-400 whitespace-nowrap">
-        <EditableCell value={file.ngay_phat_hanh} onSave={v => handleSaveField('ngay_phat_hanh', v)}/>
-      </td>
+          {/* Ngày PH */}
+          <td className="px-3 py-2.5 text-sm text-slate-600 dark:text-slate-400 whitespace-nowrap">
+            <EditableCell value={file.ngay_phat_hanh} onSave={v => handleSaveField('ngay_phat_hanh', v)}/>
+          </td>
 
-      {/* Nơi phát hành */}
-      <td className="px-3 py-2.5 text-sm text-slate-600 dark:text-slate-400 max-w-[140px]">
-        <EditableCell value={file.noi_phat_hanh} onSave={v => handleSaveField('noi_phat_hanh', v)}/>
-      </td>
+          {/* Nơi phát hành */}
+          <td className="px-3 py-2.5 text-sm text-slate-600 dark:text-slate-400 max-w-[140px]">
+            <EditableCell value={file.noi_phat_hanh} onSave={v => handleSaveField('noi_phat_hanh', v)}/>
+          </td>
 
-      {/* Trích yếu */}
-      <td className="px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 max-w-xs">
-        <EditableCell value={file.trich_yeu} onSave={v => handleSaveField('trich_yeu', v)} multiline/>
-      </td>
+          {/* Trích yếu */}
+          <td className="px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 max-w-xs">
+            <EditableCell value={file.trich_yeu} onSave={v => handleSaveField('trich_yeu', v)} multiline/>
+          </td>
 
-      {/* Nơi gửi */}
-      <td className="px-3 py-2.5 text-sm text-slate-600 dark:text-slate-400 max-w-[140px]">
-        <EditableCell value={file.noi_gui} onSave={v => handleSaveField('noi_gui', v)}/>
-      </td>
+          {/* Nơi gửi */}
+          <td className="px-3 py-2.5 text-sm text-slate-600 dark:text-slate-400 max-w-[140px]">
+            <EditableCell value={file.noi_gui} onSave={v => handleSaveField('noi_gui', v)}/>
+          </td>
+        </>
+      )}
 
       {/* Actions */}
       <td className="px-3 py-2.5">
@@ -235,9 +259,18 @@ const DocRow = ({ file, idx, onUpdate, onAnalyze }) => {
           <button
             onClick={onAnalyze}
             className="w-7 h-7 flex items-center justify-center rounded-md bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white transition-all shadow-sm shadow-amber-500/20"
-            title="Phân tích lại bằng AI Gemini"
+            title="Phân tích tự động (AI)"
           >
-            <Brain size={13} className="drop-shadow-md" />
+            <Sparkles size={13} className="drop-shadow-md" />
+          </button>
+          
+          {/* Quét OCR (Dự phòng) */}
+          <button
+            onClick={() => alert('Tính năng quét OCR đang được phát triển làm phương án dự phòng.')}
+            className="w-7 h-7 flex items-center justify-center rounded-md bg-indigo-500/10 text-indigo-600 hover:bg-indigo-500 hover:text-white transition-all shadow-sm shadow-indigo-500/20"
+            title="Quét bằng OCR (Dự phòng)"
+          >
+            <ScanSearch size={13} className="drop-shadow-md" />
           </button>
 
           {/* Mở file */}
@@ -321,41 +354,9 @@ export default function FolderTree({ projectId }) {
         // Lọc file PDF
         const pdfFiles = json.data.filter(f => f.mimeType === 'application/pdf');
         
-        // File nào cần AI thì mới để loading state
-        const rows = pdfFiles.map(f => ({ ...f, _loading: f.needs_ai === true }));
+        // Không tự động quét AI nữa, hiển thị file ngay lập tức
+        const rows = pdfFiles.map(f => ({ ...f, _loading: false }));
         setFolderFiles(rows);
-
-        const filesToExtract = pdfFiles.filter(f => f.needs_ai === true);
-
-        // Extract theo batch 3
-        const extractBatch = async () => {
-          const SIZE = 3;
-          for (let i = 0; i < filesToExtract.length; i += SIZE) {
-            await Promise.all(filesToExtract.slice(i, i + SIZE).map(async file => {
-              try {
-                const p = new URLSearchParams({
-                  fileId:      file.id,
-                  fileName:    file.name,
-                  mimeType:    file.mimeType,
-                  webViewLink: file.webViewLink || '',
-                });
-                const resp = await fetch(`/api/drive/extract?${p}`).then(r => r.json());
-                setFolderFiles(prev => prev.map(f =>
-                  f.id === file.id
-                    ? { ...f, ...(resp.success ? resp.data : {}), _loading: false }
-                    : f
-                ));
-              } catch {
-                setFolderFiles(prev => prev.map(f =>
-                  f.id === file.id ? { ...f, _loading: false } : f
-                ));
-              }
-            }));
-          }
-        };
-        if (filesToExtract.length > 0) {
-          extractBatch();
-        }
       })
       .finally(() => setLoadingFiles(false));
   };
@@ -381,8 +382,8 @@ export default function FolderTree({ projectId }) {
       {/* Toolbar */}
       <div className="p-4 border-b border-slate-200/50 dark:border-slate-800/50 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0">
         <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold">
-          <HardDrive size={20}/>
-          <span>Quản lý Tài liệu Google Drive</span>
+          <Network size={20}/>
+          <span>Cấu trúc dữ liệu</span>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <div className="relative w-full sm:w-64">

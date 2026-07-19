@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { fetchDriveTree } from '@/lib/drive';
+import { fetchDriveFoldersFlat } from '@/lib/drive';
 import fs from 'fs';
 import path from 'path';
 import { Pool } from 'pg';
@@ -41,8 +41,8 @@ export async function POST(request) {
     }
 
     console.log('Starting sync for folder:', targetFolderId);
-    // Fetch the tree (folders only)
-    const tree = await fetchDriveTree(targetFolderId);
+    // Fetch the tree as flat folders
+    const flatFolders = await fetchDriveFoldersFlat(targetFolderId);
     
     // Save to Supabase if configured
     if (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes("[YOUR_PASSWORD]")) {
@@ -54,21 +54,37 @@ export async function POST(request) {
       try {
         // Create table if not exists
         await client.query(`
-          CREATE TABLE IF NOT EXISTS drive_folders (
-            project_id VARCHAR(255) PRIMARY KEY,
-            data JSONB,
+          CREATE TABLE IF NOT EXISTS drive_folders_flat (
+            folder_id VARCHAR(255) PRIMARY KEY,
+            folder_name TEXT,
+            parent_id VARCHAR(255),
+            project_id VARCHAR(255),
+            drive_modified_time TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
           );
         `);
-        // Upsert
-        await client.query(`
-          INSERT INTO drive_folders (project_id, data, updated_at) 
-          VALUES ($1, $2, CURRENT_TIMESTAMP)
-          ON CONFLICT (project_id) DO UPDATE SET 
-            data = EXCLUDED.data,
-            updated_at = CURRENT_TIMESTAMP;
-        `, [targetProjectId, JSON.stringify(tree)]);
-        console.log('Saved tree to Supabase table drive_folders');
+        
+        // Upsert all folders
+        for (const folder of flatFolders) {
+          await client.query(`
+            INSERT INTO drive_folders_flat (folder_id, folder_name, parent_id, project_id, drive_modified_time, updated_at) 
+            VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
+            ON CONFLICT (folder_id) DO UPDATE SET 
+              folder_name = EXCLUDED.folder_name,
+              parent_id = EXCLUDED.parent_id,
+              project_id = EXCLUDED.project_id,
+              drive_modified_time = EXCLUDED.drive_modified_time,
+              updated_at = CURRENT_TIMESTAMP;
+          `, [
+            folder.id, 
+            folder.name, 
+            folder.parent_id, 
+            targetProjectId, 
+            folder.modified_time ? new Date(folder.modified_time) : null
+          ]);
+        }
+        
+        console.log(`Saved ${flatFolders.length} folders to Supabase table drive_folders_flat`);
       } catch (dbError) {
         console.error('Error saving to Supabase:', dbError);
       } finally {
@@ -77,8 +93,9 @@ export async function POST(request) {
       }
     }
     
-    // Save to cache as fallback
-    fs.writeFileSync(cachePath, JSON.stringify(tree, null, 2), 'utf8');
+    // We can also build the tree here to save to cache, but for now we just save the flat structure
+    // We will build the tree in the frontend or tree/route.js
+    fs.writeFileSync(cachePath, JSON.stringify(flatFolders, null, 2), 'utf8');
     console.log('Sync complete, saved to', cachePath);
 
     return NextResponse.json({ success: true, message: 'Đồng bộ dữ liệu thành công' });

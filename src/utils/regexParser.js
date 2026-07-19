@@ -5,11 +5,12 @@ export function parseDocDetailsImproved(fileName, folderName = '') {
   let issuedDate = 'Chưa xác định';
   
   if (dateMatch) {
-    issuedDate = dateMatch[1];
+    const parts = dateMatch[1].split('-');
+    issuedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
   } else if (altDateMatch) {
     const [, d, m, y] = altDateMatch;
     if (parseInt(m) <= 12 && parseInt(d) <= 31) {
-      issuedDate = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+      issuedDate = `${d.padStart(2, '0')}/${m.padStart(2, '0')}/${y}`;
     }
   }
 
@@ -29,12 +30,12 @@ export function parseDocDetailsImproved(fileName, folderName = '') {
       const d = dStr.substring(0, 2);
       const m = dStr.substring(2, 3).padStart(2, '0');
       const y = dStr.substring(3);
-      issuedDate = `${y}-${m}-${d}`;
+      issuedDate = `${d}/${m}/${y}`;
     } else if (dStr.length === 8) {
       const d = dStr.substring(0, 2);
       const m = dStr.substring(2, 4);
       const y = dStr.substring(4);
-      issuedDate = `${y}-${m}-${d}`;
+      issuedDate = `${d}/${m}/${y}`;
     }
   } else {
     const numP2 = fileName.match(/^\d{4}-\d{2}-\d{2}_(\d{2,6})_/);

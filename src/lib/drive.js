@@ -137,6 +137,69 @@ export async function fetchDriveTree(folderId) {
 }
 
 /**
+ * Fetch recursively all folders inside a given folder ID and return as a flat array.
+ */
+export async function fetchDriveFoldersFlat(folderId) {
+  const drive = await getDriveClient();
+  const flatFolders = [];
+  const queue = [{ id: folderId, name: 'Root' }];
+  
+  // Lấy thông tin thư mục gốc
+  try {
+    const rootRes = await drive.files.get({
+      fileId: folderId,
+      fields: 'id, name, modifiedTime',
+    });
+    flatFolders.push({
+      id: rootRes.data.id,
+      name: rootRes.data.name || 'Root',
+      parent_id: null,
+      modified_time: rootRes.data.modifiedTime,
+    });
+  } catch (err) {
+    // Nếu lỗi (ví dụ root không tồn tại), fallback
+    flatFolders.push({
+      id: folderId,
+      name: 'Root',
+      parent_id: null,
+      modified_time: new Date().toISOString(),
+    });
+  }
+  
+  while (queue.length > 0) {
+    const batch = queue.splice(0, 5);
+    
+    await Promise.all(batch.map(async (parent) => {
+      let pageToken = null;
+      do {
+        const res = await drive.files.list({
+          q: `'${parent.id}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+          pageSize: 1000,
+          fields: 'nextPageToken, files(id, name, modifiedTime)',
+          pageToken: pageToken,
+        });
+        
+        const files = res.data.files;
+        if (files) {
+          for (const file of files) {
+            flatFolders.push({
+              id: file.id,
+              name: file.name,
+              parent_id: parent.id,
+              modified_time: file.modifiedTime,
+            });
+            queue.push({ id: file.id, name: file.name });
+          }
+        }
+        pageToken = res.data.nextPageToken;
+      } while (pageToken);
+    }));
+  }
+  
+  return flatFolders;
+}
+
+/**
  * Fetch files only (no folders) for a specific folder ID
  */
 export async function fetchFolderFiles(folderId) {

@@ -55,7 +55,7 @@ export default function DocumentAnalyzeModal({
     issuedDate: '',
     issuer: '',
     notes: '',
-    category: 'Khác',
+    category: '',
     status: 'effective',
     receiver: '', // Nơi gửi
   });
@@ -78,7 +78,7 @@ export default function DocumentAnalyzeModal({
         issuedDate: doc.issuedDate || doc.ngay_phat_hanh || '',
         issuer: doc.issuer || doc.noi_phat_hanh || '',
         notes: doc.notes || doc.trich_yeu || '',
-        category: doc.category || doc.loai_vb || 'Khác',
+        category: doc.category || doc.loai_vb || '',
         status: doc.status || 'effective',
         receiver: doc.noi_gui || doc.receiver || '',
       });
@@ -293,7 +293,7 @@ export default function DocumentAnalyzeModal({
         <div className="flex justify-between items-center p-4 border-b border-slate-800/80 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 shadow-sm shrink-0">
           <div className="flex items-center gap-3 pr-8 min-w-0">
             <div className="p-2.5 bg-gradient-to-br from-cyan-500/20 to-blue-500/10 border border-cyan-500/30 rounded-xl shrink-0 shadow-inner">
-              <Bot className="w-6 h-6 text-cyan-400" />
+              <Sparkles className="w-6 h-6 text-cyan-400" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center">
@@ -302,10 +302,16 @@ export default function DocumentAnalyzeModal({
                 </h2>
                 {getModeBadge()}
               </div>
-              <p className="text-[11px] text-slate-400 truncate max-w-lg mt-1" title={doc.name}>
-                <FileText className="w-3 h-3 inline mr-1 text-slate-500" />
-                {doc.name}
-              </p>
+              <div className="text-[11px] text-slate-400 max-w-lg mt-1 flex flex-col gap-0.5">
+                <span className="truncate" title={doc.name || doc.file_name}>
+                  <FileText className="w-3 h-3 inline mr-1 text-slate-500" />
+                  <strong className="text-slate-300">Tên file:</strong> {doc.name || doc.file_name}
+                </span>
+                <span className="truncate" title={doc.id}>
+                  <Hash className="w-3 h-3 inline mr-1 text-slate-500" />
+                  <strong className="text-slate-300">File ID:</strong> <span className="font-mono">{doc.id}</span>
+                </span>
+              </div>
             </div>
           </div>
           <button 
@@ -370,10 +376,10 @@ export default function DocumentAnalyzeModal({
                     onClick={handleAnalyze}
                     disabled={analyzing || aiReading}
                     className="px-3 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all shadow-lg shadow-cyan-500/20"
-                    title="Phân tích AI tự điền vào form"
+                    title="Tự động phân tích và điền vào form"
                   >
-                    {analyzing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bot className="w-3.5 h-3.5" />}
-                    Phân tích AI
+                    {analyzing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                    Phân tích Tự động
                   </button>
                 </div>
               </div>
@@ -487,7 +493,7 @@ export default function DocumentAnalyzeModal({
                     name="issuer"
                     value={formData.issuer}
                     onChange={handleInputChange}
-                    placeholder="Nơi phát hành (Ban Quản lý...)"
+                    placeholder="Nơi phát hành"
                     rows={2}
                     className="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl text-sm pl-9 pr-12 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all text-slate-200 resize-none shadow-inner leading-snug"
                   />
@@ -505,7 +511,7 @@ export default function DocumentAnalyzeModal({
                     name="receiver"
                     value={formData.receiver}
                     onChange={handleInputChange}
-                    placeholder="Nơi nhận (Sở TNMT...)"
+                    placeholder="Nơi nhận"
                     rows={2}
                     className="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl text-sm pl-9 pr-12 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all text-slate-200 resize-none shadow-inner leading-snug"
                   />

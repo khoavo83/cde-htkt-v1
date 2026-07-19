@@ -3,6 +3,46 @@ import fs from 'fs';
 import path from 'path';
 import { Pool } from 'pg';
 
+function buildTree(flatFolders, rootId) {
+  const nodeMap = new Map();
+  const roots = [];
+
+  // Tạo map các node
+  flatFolders.forEach(folder => {
+    nodeMap.set(folder.folder_id || folder.id, {
+      id: folder.folder_id || folder.id,
+      name: folder.folder_name || folder.name,
+      isFolder: true,
+      children: [],
+      modifiedTime: folder.drive_modified_time || folder.modified_time
+    });
+  });
+
+  // Gắn con vào cha
+  flatFolders.forEach(folder => {
+    const node = nodeMap.get(folder.folder_id || folder.id);
+    if (folder.parent_id && nodeMap.has(folder.parent_id)) {
+      nodeMap.get(folder.parent_id).children.push(node);
+    } else {
+      // Nếu không có parent hoặc parent không nằm trong map thì coi như root
+      roots.push(node);
+    }
+  });
+
+  // Hàm sắp xếp
+  const sortTree = (nodes) => {
+    nodes.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+    for (const node of nodes) {
+      if (node.children && node.children.length > 0) {
+        sortTree(node.children);
+      }
+    }
+  };
+
+  sortTree(roots);
+  return roots;
+}
+
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -28,9 +68,10 @@ export async function GET(request) {
       });
       const client = await pool.connect();
       try {
-        const res = await client.query('SELECT data FROM drive_folders WHERE project_id = $1', [targetProjectId]);
+        const res = await client.query('SELECT * FROM drive_folders_flat WHERE project_id = $1', [targetProjectId]);
         if (res.rows && res.rows.length > 0) {
-          return NextResponse.json({ data: res.rows[0].data });
+          const tree = buildTree(res.rows, targetProjectId);
+          return NextResponse.json({ data: tree });
         }
       } catch (dbError) {
         console.error('Error reading from Supabase:', dbError);
@@ -45,8 +86,13 @@ export async function GET(request) {
     if (!fs.existsSync(cachePath)) {
       return NextResponse.json({ data: [], message: 'Cache chưa được tạo. Vui lòng đồng bộ dữ liệu.' });
     }
-    const data = fs.readFileSync(cachePath, 'utf8');
-    return NextResponse.json({ data: JSON.parse(data) });
+    const data = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
+    // If the cache is a flat array, build the tree
+    if (Array.isArray(data) && data.length > 0 && !data[0].children) {
+        const tree = buildTree(data, targetProjectId);
+        return NextResponse.json({ data: tree });
+    }
+    return NextResponse.json({ data: data }); // Fallback to old format
   } catch (error) {
     console.error('Error reading cache:', error);
     return NextResponse.json({ error: 'Không thể đọc dữ liệu cache' }, { status: 500 });

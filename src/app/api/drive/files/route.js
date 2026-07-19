@@ -75,24 +75,20 @@ export async function GET(request) {
       const existing = metadataMap.get(file.id);
       const driveModifiedTime = file.modifiedTime ? new Date(file.modifiedTime) : new Date();
       
-      let needsAi = false;
+      let needsAi = false; // Luôn false theo yêu cầu mới, không tự động quét AI
       let dbModifiedTime = existing && existing.modified_time ? new Date(existing.modified_time) : null;
 
       if (!existing) {
-        needsAi = true;
         await client.query(`
           INSERT INTO drive_file_metadata (file_id, file_name, web_view_link, modified_time)
           VALUES ($1, $2, $3, $4)
         `, [file.id, file.name, file.webViewLink, driveModifiedTime]);
       } else if (!existing.manually_edited && (!dbModifiedTime || driveModifiedTime.getTime() > dbModifiedTime.getTime())) {
-        needsAi = true;
         await client.query(`
           UPDATE drive_file_metadata 
           SET modified_time = $1, file_name = $2, web_view_link = $3
           WHERE file_id = $4
         `, [driveModifiedTime, file.name, file.webViewLink, file.id]);
-      } else {
-        needsAi = (!existing.extracted_at && !existing.manually_edited && !existing.loai_vb);
       }
 
       const mergedFile = {

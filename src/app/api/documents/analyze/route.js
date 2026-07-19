@@ -59,7 +59,7 @@ Nhưng có file không theo format chuẩn này.
 Hãy phân tích và trả về JSON với cấu trúc CHÍNH XÁC sau (không thêm markdown code fence):
 {
   "documentNumber": "Số hiệu văn bản (VD: 1209/BQLĐSĐT-HTKT). Nếu không rõ thì ghi 'Chưa xác định'",
-  "issuedDate": "Ngày ban hành format YYYY-MM-DD. Nếu không rõ ghi ngày hôm nay",
+  "issuedDate": "Ngày ban hành format DD/MM/YYYY. Nếu không rõ ghi ngày hôm nay (DD/MM/YYYY)",
   "issuer": "Cơ quan ban hành đầy đủ bằng tiếng Việt có dấu",
   "notes": "Trích yếu nội dung văn bản bằng tiếng Việt có dấu, viết thành câu hoàn chỉnh",
   "category": "Một trong: Quy hoạch, Sở ngành, Đất đai, Rà phá bom mìn, Phú Mỹ Hưng, Khác",
@@ -168,7 +168,7 @@ export async function POST(request) {
           success: true,
           analysis: {
             documentNumber: parsed.documentNumber || 'Chưa xác định',
-            issuedDate: parsed.issuedDate || new Date().toISOString().split('T')[0],
+            issuedDate: parsed.issuedDate || (() => { const d = new Date(); return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}` })(),
             issuer: parsed.issuer || 'Ban Quản lý Đường sắt Đô thị TP.HCM',
             notes: parsed.notes || fileName,
             category: parsed.category || 'Khác',
