@@ -234,8 +234,9 @@ const DocRow = ({ file, idx, onUpdate, onAnalyze, provided, snapshot }) => {
 // =========================================================
 // Main Component
 // =========================================================
-export default function FolderTree({ projectId }) {
+export default function FolderTree({ projectId, allDocuments = [] }) {
   const [data, setData]         = useState([]);
+  const [totalPdfCount, setTotalPdfCount] = useState(0);
   const [loading, setLoading]   = useState(true);
   const [syncing, setSyncing]   = useState(false);
   const [error, setError]       = useState(null);
@@ -246,6 +247,14 @@ export default function FolderTree({ projectId }) {
   const [folderFiles, setFolderFiles]       = useState([]);
   const [loadingFiles, setLoadingFiles]     = useState(false);
   const [search, setSearch]     = useState('');
+  const [docCategory, setDocCategory] = useState('Tất cả');
+  const [searchNgayPhatHanh, setSearchNgayPhatHanh] = useState('');
+  const [searchNoiPhatHanh, setSearchNoiPhatHanh] = useState('');
+  
+  // States for Global Search via Supabase
+  const [isSearching, setIsSearching] = useState(false);
+  const [globalSearchResults, setGlobalSearchResults] = useState([]);
+  const [isGlobalSearchActive, setIsGlobalSearchActive] = useState(false);
 
   const [selectedFolder, setSelectedFolder] = useState(null);
 
@@ -254,7 +263,10 @@ export default function FolderTree({ projectId }) {
     try {
       const url  = projectId ? `/api/drive/tree?projectId=${projectId}` : '/api/drive/tree';
       const json = await fetch(url).then(r => r.json());
-      if (json.data) setData(json.data);
+      if (json.data) {
+        setData(json.data);
+        if (json.totalPdfCount !== undefined) setTotalPdfCount(json.totalPdfCount);
+      }
       else if (json.message) setError(json.message);
     } catch { setError('Lỗi kết nối server'); }
     finally  { setLoading(false); }
@@ -282,8 +294,9 @@ export default function FolderTree({ projectId }) {
     setSelectedFolder(folder);
     setLoadingFiles(true);
     setFolderFiles([]);
+    setIsGlobalSearchActive(false);
 
-    fetch(`/api/drive/files?folderId=${folder.id}`)
+    fetch(`/api/drive/files?folderId=${folder.id}&folderName=${encodeURIComponent(folder.name)}`)
       .then(r => r.json())
       .then(json => {
         if (!json.success || !json.data) return;
@@ -291,8 +304,32 @@ export default function FolderTree({ projectId }) {
         // Lọc file PDF
         const pdfFiles = json.data.filter(f => f.mimeType === 'application/pdf');
         
+        const rows = pdfFiles.map(f => {
+          const fileName = f.name || f.file_name || '';
+          let parsedNgay = f.ngay_phat_hanh;
+          let parsedSoVb = f.so_vb;
+          let parsedTrichYeu = f.trich_yeu;
 
-        const rows = pdfFiles.map(f => ({ ...f, _loading: false }));
+          const nameWithoutExt = fileName.replace(/\.pdf$/i, '');
+          const parts = nameWithoutExt.split('_');
+
+          // Kiểm tra xem filename có đúng cấu trúc yyyy-mm-dd_x_y không
+          if (parts.length >= 3 && /^(\d{4})-(\d{2})-(\d{2})$/.test(parts[0])) {
+            const dateMatch = parts[0].match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            parsedNgay = `${dateMatch[3]}/${dateMatch[2]}/${dateMatch[1]}`;
+            parsedTrichYeu = parts[parts.length - 1];
+            parsedSoVb = parts.slice(1, parts.length - 1).join('/');
+          }
+
+          return { 
+            ...f, 
+            ngay_phat_hanh: parsedNgay || f.ngay_phat_hanh,
+            so_vb: parsedSoVb || f.so_vb,
+            trich_yeu: parsedTrichYeu || f.trich_yeu,
+            _loading: false 
+          };
+        });
+
         // Sắp xếp ngày phát hành (nhỏ đến lớn) -> custom_order_index
         rows.sort((a, b) => {
           const timeA = parseDateString(a.ngay_phat_hanh);
@@ -309,6 +346,12 @@ export default function FolderTree({ projectId }) {
 
   const onDragEnd = async (result) => {
     if (!result.destination) return;
+    
+    if (isGlobalSearchActive || search || docCategory !== 'Tất cả') {
+      alert("Không thể sắp xếp khi đang tìm kiếm hoặc lọc văn bản. Vui lòng xóa bộ lọc để sắp xếp.");
+      return;
+    }
+
     const sourceIndex = result.source.index;
     const destinationIndex = result.destination.index;
     if (sourceIndex === destinationIndex) return;
@@ -353,20 +396,52 @@ export default function FolderTree({ projectId }) {
     }
   };
 
-  const flattenFolders = (nodes, query) => {
-    const result = []; const lq = query.toLowerCase();
-    const traverse = list => {
-      for (const n of list) {
-        if (n.isFolder && n.name.toLowerCase().includes(lq)) result.push(n);
-        if (n.children) traverse(n.children);
-      }
-    };
-    traverse(nodes); return result;
-  };
-
-  const displayData = search ? flattenFolders(data, search) : data.filter(n => n.isFolder);
+  const displayData = data.filter(n => n.isFolder);
   const anyLoading  = folderFiles.some(f => f._loading);
   const pdfCount    = folderFiles.length;
+
+  const handleGlobalSearch = async () => {
+    if (!search.trim() && docCategory === 'Tất cả' && !searchNgayPhatHanh.trim() && !searchNoiPhatHanh.trim()) {
+      setIsGlobalSearchActive(false);
+      return;
+    }
+
+    setIsSearching(true);
+    setError(null);
+    try {
+      const url = `/api/drive/search?q=${encodeURIComponent(search)}&category=${encodeURIComponent(docCategory)}&ngayPhatHanh=${encodeURIComponent(searchNgayPhatHanh)}&noiPhatHanh=${encodeURIComponent(searchNoiPhatHanh)}`;
+      const res = await fetch(url).then(r => r.json());
+      
+      if (res.success && res.data) {
+        setGlobalSearchResults(res.data);
+        setIsGlobalSearchActive(true);
+        setSelectedFolder(null); // Bỏ chọn thư mục để hiện kết quả toàn cục
+      } else {
+        setError(res.error || 'Lỗi khi tìm kiếm');
+      }
+    } catch (err) {
+      setError('Không thể kết nối đến máy chủ tìm kiếm');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const currentFilesToDisplay = isGlobalSearchActive ? globalSearchResults : (selectedFolder ? folderFiles : []);
+
+  const filteredFiles = currentFilesToDisplay.filter(f => {
+    if (isGlobalSearchActive) return true; // Đã lọc ở backend
+    const q = search.toLowerCase();
+    const name = (f.name || f.file_name || '').toLowerCase();
+    const trichYeu = (f.trich_yeu || '').toLowerCase();
+    const soVb = (f.so_vb || '').toLowerCase();
+    const matchSearch = name.includes(q) || trichYeu.includes(q) || soVb.includes(q);
+    
+    // So sánh linh hoạt loại VB hoặc category
+    const docType = f.loai_vb || f.category || '';
+    const matchCategory = docCategory === 'Tất cả' || docType === docCategory;
+    
+    return matchSearch && matchCategory;
+  });
 
   return (
     <div className="flex flex-col h-full rounded-xl bg-transparent backdrop-blur-md border border-transparent dark:border-slate-800 overflow-hidden">
@@ -376,14 +451,50 @@ export default function FolderTree({ projectId }) {
         <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold">
           <Network size={20}/>
           <span>Cấu trúc dữ liệu</span>
+          {totalPdfCount > 0 && (
+            <span className="text-xs bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full shrink-0 ml-1">
+              {totalPdfCount} PDF
+            </span>
+          )}
         </div>
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <div className="relative w-full sm:w-64">
+        <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
+          <div className="relative w-full sm:w-56 flex items-center shrink-0">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"/>
-            <input type="text" placeholder="Tìm kiếm thư mục..." value={search}
+            <input type="text" placeholder="Tìm kiếm văn bản..." value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 rounded-lg bg-white/50 dark:bg-black/20 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 text-sm"/>
+              onKeyDown={e => e.key === 'Enter' && handleGlobalSearch()}
+              className="w-full pl-9 pr-3 py-2 rounded-l-lg bg-white/50 dark:bg-black/20 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 text-xs"/>
           </div>
+          <input type="text" placeholder="Ngày phát hành" value={searchNgayPhatHanh}
+            onChange={e => setSearchNgayPhatHanh(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleGlobalSearch()}
+            className="w-full sm:w-28 px-3 py-2 bg-white/50 dark:bg-black/20 border-y border-r border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 text-xs shrink-0"/>
+          <input type="text" placeholder="Nơi phát hành" value={searchNoiPhatHanh}
+            onChange={e => setSearchNoiPhatHanh(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleGlobalSearch()}
+            className="w-full sm:w-32 px-3 py-2 bg-white/50 dark:bg-black/20 border-y border-r border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 text-xs shrink-0"/>
+          <select
+            value={docCategory}
+            onChange={(e) => setDocCategory(e.target.value)}
+            className="px-2 py-2 bg-white/50 dark:bg-black/20 border-y border-r border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 text-xs text-slate-600 dark:text-slate-300 appearance-none cursor-pointer shrink-0"
+          >
+            <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Tất cả">Tất cả loại VB</option>
+            <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Quyết định">Quyết định</option>
+            <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Công văn">Công văn</option>
+            <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Tờ trình">Tờ trình</option>
+            <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Báo cáo">Báo cáo</option>
+            <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Thông báo">Thông báo</option>
+            <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Biên bản">Biên bản</option>
+            <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Hợp đồng">Hợp đồng</option>
+          </select>
+          <button onClick={handleGlobalSearch} disabled={isSearching}
+            className="flex items-center gap-1.5 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-r-lg transition-colors disabled:opacity-50 text-xs font-medium whitespace-nowrap shrink-0">
+            {isSearching ? <RefreshCw size={16} className="animate-spin"/> : <Search size={16}/>}
+            <span className="hidden sm:inline">Tìm</span>
+          </button>
+          
+          <div className="w-px h-8 bg-slate-300 dark:bg-slate-700 mx-2 hidden sm:block"></div>
+          
           <button onClick={handleSync} disabled={syncing}
             className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors disabled:opacity-50 text-sm font-medium whitespace-nowrap">
             <RefreshCw size={16} className={syncing ? 'animate-spin' : ''}/>
@@ -411,7 +522,7 @@ export default function FolderTree({ projectId }) {
           ) : displayData.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-3">
               <Folder size={44} className="opacity-20"/>
-              <p className="text-sm text-center">{search ? 'Không tìm thấy thư mục.' : 'Chưa có dữ liệu.\nBấm Đồng bộ.'}</p>
+              <p className="text-sm text-center">Chưa có dữ liệu.<br/>Bấm Đồng bộ.</p>
             </div>
           ) : (
             <div className="p-1">
@@ -425,7 +536,7 @@ export default function FolderTree({ projectId }) {
 
         {/* RIGHT: Bảng văn bản */}
         <div className="flex-1 overflow-hidden flex flex-col min-w-0">
-          {!selectedFolder ? (
+          {!selectedFolder && !isGlobalSearchActive ? (
             <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-4">
               <Folder size={64} className="opacity-10"/>
               <p className="text-sm">Chọn một thư mục bên trái để xem danh sách văn bản</p>
@@ -436,10 +547,12 @@ export default function FolderTree({ projectId }) {
               <div className="px-4 py-2.5 border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2">
                   <FolderOpen size={16} className="text-emerald-500"/>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200 truncate text-sm">{selectedFolder.name}</span>
-                  {pdfCount > 0 && (
+                  <span className="font-semibold text-slate-800 dark:text-slate-200 truncate text-sm">
+                    {selectedFolder ? selectedFolder.name : "Kết quả tìm kiếm toàn cục"}
+                  </span>
+                  {filteredFiles.length > 0 && (
                     <span className="text-xs bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full shrink-0">
-                      {pdfCount} PDF
+                      {filteredFiles.length} kết quả
                     </span>
                   )}
                 </div>
@@ -461,10 +574,10 @@ export default function FolderTree({ projectId }) {
                     <RefreshCw size={24} className="animate-spin text-emerald-500"/>
                     <p className="text-sm">Đang tải danh sách file...</p>
                   </div>
-                ) : folderFiles.length === 0 ? (
+                ) : filteredFiles.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-40 text-slate-400 gap-3">
                     <File size={40} className="opacity-20"/>
-                    <p className="text-sm">Không có file PDF trong thư mục này</p>
+                    <p className="text-sm">Không tìm thấy file phù hợp</p>
                   </div>
                 ) : (
                   <table className="w-full text-sm border-collapse">
@@ -481,7 +594,7 @@ export default function FolderTree({ projectId }) {
                       <Droppable droppableId="document-list">
                         {(provided) => (
                           <tbody ref={provided.innerRef} {...provided.droppableProps}>
-                            {folderFiles.map((file, idx) => (
+                            {filteredFiles.map((file, idx) => (
                               <Draggable key={file.id} draggableId={file.id} index={idx}>
                                 {(provided, snapshot) => (
                                   <DocRow 

@@ -2,6 +2,15 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import { google } from 'googleapis';
+import { Pool } from 'pg';
+
+const pool = process.env.DATABASE_URL 
+  ? new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }
+    })
+  : null;
+
 
 const FOLDER_ID = "1ZjUVuusk_wD8GnsXXhBthpj8BvyG3fz2";
 
@@ -202,15 +211,16 @@ function parseReportFile() {
 export async function GET() {
   try {
     const data = readDb();
+    let source = 'unknown';
+    let documentsList = [];
+    let initialDocs = [];
     
     // Nếu trong db.json đã có danh sách documents, trả về trực tiếp
     if (data.documents && data.documents.length > 0) {
-      return NextResponse.json({ source: 'database', documents: data.documents });
-    }
-
-    // Nếu chưa có, tiến hành seeding dữ liệu ban đầu
-    let initialDocs = [];
-    let source = 'local_report_file';
+      documentsList = data.documents;
+      source = 'database';
+    } else {
+      source = 'local_report_file';
 
     const tokenPath = path.join(process.cwd(), 'token.json');
     const credentialsPath = path.join(process.cwd(), 'credentials.json');
@@ -280,33 +290,76 @@ export async function GET() {
     if (initialDocs.length === 0) {
       initialDocs = parseReportFile();
     }
+    } // ĐÓNG BLOCK ELSE Ở ĐÂY
 
-    // Thực hiện liên kết hai chiều từ dữ liệu mẫu của thửa đất sang văn bản
-    if (data.plots && data.plots.length > 0) {
-      data.plots.forEach(plot => {
-        if (plot.documents && plot.documents.length > 0) {
-          plot.documents.forEach(plotDocName => {
-            // Tìm văn bản tương ứng có tên gần giống hoặc chứa tên trong mảng documents của plot
-            const matchedDoc = initialDocs.find(doc => 
-              doc.name === plotDocName || 
-              doc.name.includes(plotDocName) || 
-              plotDocName.includes(doc.name)
-            );
-            if (matchedDoc) {
-              if (!matchedDoc.plots.includes(plot.code)) {
-                matchedDoc.plots.push(plot.code);
+    if (source !== 'database') {
+      documentsList = initialDocs;
+      
+      // Thực hiện liên kết hai chiều từ dữ liệu mẫu của thửa đất sang văn bản
+      if (data.plots && data.plots.length > 0) {
+        data.plots.forEach(plot => {
+          if (plot.documents && plot.documents.length > 0) {
+            plot.documents.forEach(plotDocName => {
+              const matchedDoc = documentsList.find(doc => 
+                doc.name === plotDocName || 
+                doc.name.includes(plotDocName) || 
+                plotDocName.includes(doc.name)
+              );
+              if (matchedDoc) {
+                if (!matchedDoc.plots.includes(plot.code)) {
+                  matchedDoc.plots.push(plot.code);
+                }
               }
-            }
-          });
-        }
-      });
+            });
+          }
+        });
+      }
+      
+      data.documents = documentsList;
+      writeDb(data);
     }
 
-    // Ghi danh sách văn bản ban đầu vào db.json để lưu trữ lâu dài
-    data.documents = initialDocs;
-    writeDb(data);
+    // --- MERGE WITH SUPABASE METADATA ---
+    if (pool) {
+      try {
+        const client = await pool.connect();
+        // Lấy tất cả metadata từ Supabase
+        const { rows } = await client.query('SELECT * FROM drive_file_metadata');
+        client.release();
+        
+        const metaMap = new Map();
+        rows.forEach(row => {
+           if (row.file_id) metaMap.set(row.file_id, row);
+           if (row.file_name) metaMap.set(row.file_name, row);
+        });
 
-    return NextResponse.json({ source, documents: initialDocs });
+        documentsList = documentsList.map(doc => {
+          const meta = metaMap.get(doc.id) || metaMap.get(doc.name);
+          if (meta) {
+            return {
+              ...doc,
+              category: meta.loai_vb && meta.loai_vb !== 'Khác' ? meta.loai_vb : doc.category,
+              documentType: meta.loai_vb || doc.documentType,
+              documentNumber: meta.so_vb || doc.documentNumber,
+              issuedDate: meta.ngay_phat_hanh || doc.issuedDate,
+              issuer: meta.noi_phat_hanh || doc.issuer,
+              notes: meta.trich_yeu || doc.notes,
+              receivingAgency: meta.noi_gui || doc.receivingAgency,
+              driveUrl: meta.web_view_link || doc.driveUrl,
+              draftFiles: meta.draft_files || doc.draftFiles || [],
+              isFromSupabase: true
+            };
+          }
+          return doc;
+        });
+        
+        source = 'live_supabase_db';
+      } catch (e) {
+        console.error("Lỗi khi merge dữ liệu từ Supabase:", e);
+      }
+    }
+
+    return NextResponse.json({ source, documents: documentsList });
 
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

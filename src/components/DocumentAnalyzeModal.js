@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { 
   X, Save, Bot, CheckCircle2, AlertTriangle, 
   FileText, Sparkles, Loader2, Shield,
-  Calendar, User, Tag, Hash, FolderOpen, Send, Copy, Type, XCircle, ScanEye
+  Calendar, User, Tag, Hash, FolderOpen, Send, Copy, Type, XCircle, ScanEye, Link2, Plus, ExternalLink
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -38,6 +38,7 @@ export default function DocumentAnalyzeModal({
   isOpen,
   onClose,
   onSave,
+  allDocuments = [],
 }) {
   const [analyzing, setAnalyzing] = useState(false);
   const [extracting, setExtracting] = useState(false);
@@ -58,10 +59,14 @@ export default function DocumentAnalyzeModal({
     category: '',
     status: 'effective',
     receiver: '', // Nơi gửi
+    draftFiles: [], // File dự thảo/đính kèm
   });
+  
+  const [selectedDraftFile, setSelectedDraftFile] = useState('');
   
   const [saving, setSaving] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
 
   useEffect(() => {
     if (isOpen && doc) {
@@ -73,6 +78,7 @@ export default function DocumentAnalyzeModal({
       setWarning('');
       setError('');
       setShowConfirm(false);
+      setShowCloseConfirm(false);
       setFormData({
         documentNumber: doc.documentNumber || doc.so_vb || '',
         issuedDate: doc.issuedDate || doc.ngay_phat_hanh || '',
@@ -81,16 +87,21 @@ export default function DocumentAnalyzeModal({
         category: doc.category || doc.loai_vb || '',
         status: doc.status || 'effective',
         receiver: doc.noi_gui || doc.receiver || '',
+        draftFiles: doc.draftFiles || doc.draft_files || [],
       });
+      setSelectedDraftFile('');
     }
   }, [isOpen, doc]);
 
   if (!isOpen || !doc) return null;
 
   const handleClose = () => {
-    if (window.confirm("Bạn có chắc chắn muốn thoát? Dữ liệu chưa lưu sẽ bị mất.")) {
-      onClose();
-    }
+    setShowCloseConfirm(true);
+  };
+
+  const confirmClose = () => {
+    setShowCloseConfirm(false);
+    onClose();
   };
 
   const handleAnalyze = async () => {
@@ -223,6 +234,7 @@ export default function DocumentAnalyzeModal({
         trich_yeu: formData.notes,
         loai_vb: formData.category,
         noi_gui: formData.receiver,
+        draftFiles: formData.draftFiles,
       };
 
       await fetch('/api/drive/extract', {
@@ -237,7 +249,8 @@ export default function DocumentAnalyzeModal({
           ngay_phat_hanh: updatedDoc.ngay_phat_hanh,
           noi_phat_hanh: updatedDoc.noi_phat_hanh,
           trich_yeu: updatedDoc.trich_yeu,
-          noi_gui: updatedDoc.noi_gui
+          noi_gui: updatedDoc.noi_gui,
+          draftFiles: updatedDoc.draftFiles
         })
       });
 
@@ -253,11 +266,11 @@ export default function DocumentAnalyzeModal({
 
   const getModeBadge = () => {
     if (!analysisMode) return null;
-    if (analysisMode === 'gemini_2.0_flash') {
+    if (analysisMode?.includes('gemini')) {
       return (
         <span className="inline-flex items-center gap-1 text-[10px] px-2.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 font-bold ml-2">
           <Sparkles className="w-3 h-3" />
-          Gemini 2.0 AI
+          Gemini Flash AI
         </span>
       );
     }
@@ -283,7 +296,7 @@ export default function DocumentAnalyzeModal({
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/80 backdrop-blur-md"
-        onClick={() => !showConfirm && handleClose()}
+        onClick={() => !showConfirm && !showCloseConfirm && handleClose()}
       />
 
       {/* Modal Container */}
@@ -317,7 +330,7 @@ export default function DocumentAnalyzeModal({
           <button 
             onClick={handleClose}
             className="p-2 bg-red-500/10 hover:bg-red-500/30 border border-red-500/30 rounded-lg text-red-400 hover:text-red-300 transition-colors shrink-0"
-            disabled={showConfirm}
+            disabled={showConfirm || showCloseConfirm}
             title="Đóng"
           >
             <X className="w-5 h-5" />
@@ -348,32 +361,6 @@ export default function DocumentAnalyzeModal({
           <div className="flex-1 lg:w-[45%] flex flex-col h-full max-h-full bg-slate-900 relative min-h-0">
             <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-5 custom-scrollbar min-h-0">
               
-              {/* Toolbar */}
-              <div className="flex flex-col gap-2 mb-2 bg-slate-800/40 p-2.5 rounded-xl border border-slate-700/50">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-slate-400 font-medium pl-1">Công cụ trích xuất</p>
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <button
-                    onClick={handleExtractText}
-                    disabled={extracting}
-                    className="px-3 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-slate-200 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all border border-slate-600/50 shadow-sm"
-                    title="Trích xuất chữ bằng thư viện code (nhanh, có thể sai font)"
-                  >
-                    {extracting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Type className="w-3.5 h-3.5" />}
-                    OCR Code
-                  </button>
-                  <button
-                    onClick={handleAnalyze}
-                    disabled={analyzing}
-                    className="px-3 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all shadow-lg shadow-cyan-500/20"
-                    title="Tự động phân tích và điền vào form"
-                  >
-                    {analyzing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                    Phân tích Tự động
-                  </button>
-                </div>
-              </div>
 
               {/* Messages */}
               {warning && (
@@ -528,24 +515,136 @@ export default function DocumentAnalyzeModal({
                     <ConfidenceBadge value={analysisResult?.confidence?.notes} />
                   </div>
                 </div>
+
+                {/* File dự thảo đính kèm */}
+                <div className="col-span-12 relative mt-2 border-t border-slate-800/80 pt-4">
+                  <h3 className="text-xs font-bold text-slate-200 flex items-center gap-1.5 mb-3">
+                    <Link2 className="w-4 h-4 text-cyan-400" />
+                    File dự thảo / Đính kèm ({formData.draftFiles?.length || 0})
+                  </h3>
+                  
+                  <div className="flex gap-2 mb-3">
+                    <select
+                      value={selectedDraftFile}
+                      onChange={(e) => setSelectedDraftFile(e.target.value)}
+                      className="flex-1 bg-slate-950/80 border border-slate-700/60 rounded-xl text-xs px-3 py-2 focus:outline-none focus:border-cyan-500 cursor-pointer text-slate-200"
+                    >
+                      <option value="">-- Chọn file đính kèm --</option>
+                      {allDocuments.filter(d => d.id !== doc.id && !formData.draftFiles?.includes(d.id)).map(d => (
+                        <option key={d.id} value={d.id}>
+                          {d.name || d.file_name}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => {
+                        if (!selectedDraftFile) return;
+                        setFormData(prev => ({
+                          ...prev,
+                          draftFiles: [...(prev.draftFiles || []), selectedDraftFile]
+                        }));
+                        setSelectedDraftFile('');
+                      }}
+                      type="button"
+                      disabled={!selectedDraftFile}
+                      className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors shrink-0"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Gán
+                    </button>
+                  </div>
+                  
+                  <div className="space-y-2 max-h-[150px] overflow-y-auto pr-1 custom-scrollbar">
+                    {(formData.draftFiles || []).map((fileId) => {
+                      const linkedDoc = allDocuments.find(d => d.id === fileId);
+                      return (
+                        <div key={fileId} className="flex items-center justify-between p-2.5 bg-slate-950/40 border border-slate-800/80 rounded-xl group hover:border-slate-700/80 transition-colors">
+                          <div className="min-w-0 flex-1 flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-slate-400 shrink-0" />
+                            <span className="text-[11px] text-slate-200 truncate font-medium" title={linkedDoc ? (linkedDoc.name || linkedDoc.file_name) : fileId}>
+                              {linkedDoc ? (linkedDoc.name || linkedDoc.file_name) : fileId}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                            {linkedDoc && (
+                              <a
+                                href={`/api/documents/view?path=${encodeURIComponent(linkedDoc.path)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-1 hover:bg-slate-800 rounded text-cyan-400 hover:text-cyan-300"
+                                title="Xem file"
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  draftFiles: prev.draftFiles.filter(id => id !== fileId)
+                                }));
+                              }}
+                              className="p-1 hover:bg-slate-800 rounded text-red-400 hover:text-red-300"
+                              title="Gỡ liên kết"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {(!formData.draftFiles || formData.draftFiles.length === 0) && (
+                      <div className="text-center py-4 text-slate-500 border border-dashed border-slate-700/60 rounded-xl text-xs">
+                        Chưa có file đính kèm nào.
+                      </div>
+                    )}
+                  </div>
+                </div>
                 
                 {/* Nút hành động */}
                 <div className="col-span-12 pt-4 mt-2 border-t border-slate-800/80">
-                  <div className="flex items-center justify-end gap-4">
-                    <button
-                      onClick={handleClose}
-                      className="px-6 py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
-                    >
-                      <XCircle className="w-4 h-4" />
-                      Hủy thao tác
-                    </button>
-                    <button
-                      onClick={() => setShowConfirm(true)}
-                      className="px-8 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/20"
-                    >
-                      <Save className="w-4 h-4" />
-                      Lưu thông tin văn bản
-                    </button>
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    
+                    {/* Các công cụ trích xuất AI */}
+                    <div className="flex items-center justify-center sm:justify-start gap-2 w-full sm:w-auto">
+                      <button
+                        onClick={handleExtractText}
+                        disabled={extracting}
+                        className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-slate-200 rounded-xl text-sm font-bold flex items-center gap-2 transition-all border border-slate-600/50 shadow-sm"
+                        title="Trích xuất chữ bằng thư viện code (nhanh, có thể sai font)"
+                      >
+                        {extracting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Type className="w-4 h-4" />}
+                        OCR Code
+                      </button>
+                      <button
+                        onClick={handleAnalyze}
+                        disabled={analyzing}
+                        className="px-5 py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-lg shadow-cyan-500/20"
+                        title="Tự động phân tích và điền vào form"
+                      >
+                        {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                        Phân tích Tự động
+                      </button>
+                    </div>
+
+                    {/* Các nút Hủy / Lưu */}
+                    <div className="flex items-center justify-center sm:justify-end gap-3 w-full sm:w-auto">
+                      <button
+                        onClick={handleClose}
+                        className="px-5 py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
+                      >
+                        <XCircle className="w-4 h-4" />
+                        Hủy
+                      </button>
+                      <button
+                        onClick={() => setShowConfirm(true)}
+                        className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/20"
+                      >
+                        <Save className="w-4 h-4" />
+                        Lưu thông tin
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -555,16 +654,15 @@ export default function DocumentAnalyzeModal({
               <div className="h-6"></div>
             </div>
             
-            {/* Confirmation Overlay */}
+            {/* Save Confirmation Overlay */}
             {showConfirm && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-6">
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-6 animate-in fade-in duration-200">
                 <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-2xl w-full max-w-sm animate-in zoom-in-95 duration-200">
                   <h3 className="text-lg font-bold text-slate-100 mb-2 flex items-center gap-2">
-                    <AlertTriangle className="w-5 h-5 text-amber-500" />
-                    Xác nhận lưu
+                    <Save className="w-5 h-5 text-emerald-500"/> Xác nhận Lưu
                   </h3>
-                  <p className="text-sm text-slate-300 mb-6">
-                    Bạn có chắc chắn muốn lưu các thông tin đã chỉnh sửa cho văn bản này không? Dữ liệu cũ sẽ bị ghi đè.
+                  <p className="text-slate-400 text-sm mb-6 leading-relaxed">
+                    Bạn có chắc chắn muốn lưu các thay đổi này vào cơ sở dữ liệu? Dữ liệu cũ sẽ bị ghi đè.
                   </p>
                   <div className="flex justify-end gap-3">
                     <button
@@ -576,11 +674,11 @@ export default function DocumentAnalyzeModal({
                     </button>
                     <button
                       onClick={handleSaveConfirm}
+                      className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-colors shadow-lg shadow-emerald-500/20"
                       disabled={saving}
-                      className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-colors"
                     >
                       {saving ? (
-                        <><Loader2 className="w-4 h-4 animate-spin" /> Đang lưu...</>
+                        <><Loader2 className="w-4 h-4 animate-spin"/> Đang lưu...</>
                       ) : (
                         <><CheckCircle2 className="w-4 h-4" /> Đồng ý lưu</>
                       )}
@@ -590,6 +688,34 @@ export default function DocumentAnalyzeModal({
               </div>
             )}
             
+            {/* Close Confirmation Overlay */}
+            {showCloseConfirm && (
+              <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-6 animate-in fade-in duration-200">
+                <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-2xl w-full max-w-sm animate-in zoom-in-95 duration-200">
+                  <h3 className="text-lg font-bold text-slate-100 mb-2 flex items-center gap-2">
+                    <X className="w-5 h-5 text-red-500"/> Xác nhận thoát
+                  </h3>
+                  <p className="text-slate-400 text-sm mb-6 leading-relaxed">
+                    Bạn có chắc chắn muốn thoát? Các dữ liệu chưa được lưu sẽ bị mất.
+                  </p>
+                  <div className="flex justify-end gap-3">
+                    <button
+                      onClick={() => setShowCloseConfirm(false)}
+                      className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl text-sm font-medium transition-colors"
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      onClick={confirmClose}
+                      className="px-6 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-colors shadow-lg shadow-red-500/20"
+                    >
+                      Đồng ý thoát
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
       </div>

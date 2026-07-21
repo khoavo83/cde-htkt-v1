@@ -24,6 +24,7 @@ async function ensureTable(client) {
       noi_gui        TEXT,
       web_view_link  TEXT,
       manually_edited BOOLEAN DEFAULT FALSE,
+      draft_files    JSONB DEFAULT '[]'::jsonb,
       extracted_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `);
@@ -31,6 +32,10 @@ async function ensureTable(client) {
   await client.query(`
     ALTER TABLE drive_file_metadata
     ADD COLUMN IF NOT EXISTS manually_edited BOOLEAN DEFAULT FALSE;
+  `).catch(() => {});
+  await client.query(`
+    ALTER TABLE drive_file_metadata
+    ADD COLUMN IF NOT EXISTS draft_files JSONB DEFAULT '[]'::jsonb;
   `).catch(() => {});
 }
 
@@ -43,10 +48,11 @@ async function getCached(client, fileId) {
 }
 
 async function saveToCache(client, fileId, fileName, metadata, webViewLink, manuallyEdited = false) {
+  const draftFilesJson = JSON.stringify(metadata.draftFiles || []);
   await client.query(`
     INSERT INTO drive_file_metadata
-      (file_id, file_name, loai_vb, so_vb, ngay_phat_hanh, noi_phat_hanh, trich_yeu, noi_gui, web_view_link, manually_edited, extracted_at)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,CURRENT_TIMESTAMP)
+      (file_id, file_name, loai_vb, so_vb, ngay_phat_hanh, noi_phat_hanh, trich_yeu, noi_gui, web_view_link, manually_edited, draft_files, extracted_at)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,CURRENT_TIMESTAMP)
     ON CONFLICT (file_id) DO UPDATE SET
       file_name      = EXCLUDED.file_name,
       loai_vb        = EXCLUDED.loai_vb,
@@ -57,11 +63,12 @@ async function saveToCache(client, fileId, fileName, metadata, webViewLink, manu
       noi_gui        = EXCLUDED.noi_gui,
       web_view_link  = EXCLUDED.web_view_link,
       manually_edited = EXCLUDED.manually_edited,
+      draft_files    = EXCLUDED.draft_files,
       extracted_at   = CURRENT_TIMESTAMP;
   `, [fileId, fileName,
       metadata.loai_vb, metadata.so_vb, metadata.ngay_phat_hanh,
       metadata.noi_phat_hanh, metadata.trich_yeu, metadata.noi_gui,
-      webViewLink, manuallyEdited]);
+      webViewLink, manuallyEdited, draftFilesJson]);
 }
 
 // Download nội dung PDF dưới dạng Base64
@@ -219,6 +226,7 @@ export async function GET(request) {
       if (!forceRefresh) {
         const cached = await getCached(client, fileId);
         if (cached) {
+          cached.draftFiles = cached.draft_files || [];
           return NextResponse.json({ success: true, data: cached, fromCache: true });
         }
       }

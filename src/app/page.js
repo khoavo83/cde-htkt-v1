@@ -695,7 +695,7 @@ export default function Home() {
             <div className="flex-1 min-h-0 overflow-y-auto">
               {projectSubTab === 'folders' && (
                 <div className="h-full w-full">
-                  <FolderTree projectId={currentProjectId} />
+                  <FolderTree projectId={currentProjectId} allDocuments={documents} />
                 </div>
               )}
               
@@ -839,6 +839,7 @@ export default function Home() {
         <DocumentAnalyzeModal 
           document={analyzingDoc} 
           isOpen={!!analyzingDoc} 
+          allDocuments={documents}
           onClose={() => setAnalyzingDoc(null)} 
           onSave={(updatedDoc) => {
             // Update local state if necessary or re-fetch data

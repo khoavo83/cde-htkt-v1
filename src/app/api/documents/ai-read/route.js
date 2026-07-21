@@ -88,7 +88,7 @@ export async function POST(request) {
     await throttle();
 
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-2.0-flash',
+      model: 'gemini-flash-latest',
       generationConfig: {
         temperature: 0.05,     // Cực kỳ chính xác, không sáng tạo
         maxOutputTokens: 4096, // Đủ cho toàn bộ trang đầu

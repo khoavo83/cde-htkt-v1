@@ -48,20 +48,20 @@ function getGeminiClient() {
 // ─── Prompt template cho Gemini ──────────────────────────────────
 function buildAnalysisPrompt(fileName, folderName, hasPdf = false) {
   return `Bạn là chuyên gia phân tích văn bản hành chính nhà nước Việt Nam. 
-${hasPdf ? 'Hãy đọc toàn bộ tài liệu đính kèm' : 'Hãy phân tích tên file sau'} và trích xuất thông tin chi tiết.
+${hasPdf ? 'Hãy đọc toàn bộ tài liệu đính kèm' : 'Hãy phân tích tên file sau'} và trích xuất thông tin chi tiết dựa theo tiêu chuẩn của **Nghị định 30/2020/NĐ-CP** về công tác văn thư.
 
 **Tên file:** ${fileName}
 **Thư mục chứa:** ${folderName}
 
-Quy ước đặt tên file thường theo format: YYYY-MM-DD_SốHiệu_KýHiệuCơQuan_TrịchYếuNộiDung.ext
+Quy ước đặt tên file thường theo format: YYYY-MM-DD_SốHiệu_KýHiệuCơQuan_TríchYếuNộiDung.ext
 Nhưng có file không theo format chuẩn này.
 
 Hãy phân tích và trả về JSON với cấu trúc CHÍNH XÁC sau (không thêm markdown code fence):
 {
-  "documentNumber": "Số hiệu văn bản (VD: 1209/BQLĐSĐT-HTKT). Nếu không rõ thì ghi 'Chưa xác định'",
-  "issuedDate": "Ngày ban hành format DD/MM/YYYY. Nếu không rõ ghi ngày hôm nay (DD/MM/YYYY)",
-  "issuer": "Cơ quan ban hành đầy đủ bằng tiếng Việt có dấu",
-  "notes": "Trích yếu nội dung văn bản bằng tiếng Việt có dấu, viết thành câu hoàn chỉnh",
+  "documentNumber": "Số, ký hiệu văn bản (VD: 1209/BQLĐSĐT-HTKT). Trích xuất chính xác theo Nghị định 30. Nếu không rõ thì ghi 'Chưa xác định'",
+  "issuedDate": "Ngày, tháng, năm ban hành format DD/MM/YYYY. Nếu không rõ ghi ngày hôm nay (DD/MM/YYYY)",
+  "issuer": "Tên cơ quan, tổ chức ban hành văn bản đầy đủ bằng tiếng Việt có dấu theo Nghị định 30",
+  "notes": "Trích yếu nội dung văn bản bằng tiếng Việt có dấu, viết thành câu hoàn chỉnh tóm tắt chính xác nội dung",
   "category": "Một trong: Quy hoạch, Sở ngành, Đất đai, Rà phá bom mìn, Phú Mỹ Hưng, Khác",
   "confidence": {
     "documentNumber": 0.0-1.0,
@@ -110,7 +110,7 @@ export async function POST(request) {
         await throttle(); // Chờ nếu gọi quá nhanh
 
         const model = genAI.getGenerativeModel({ 
-          model: 'gemini-2.0-flash',
+          model: 'gemini-flash-latest',
           generationConfig: {
             temperature: 0.1,      // Rất chính xác
             maxOutputTokens: 800,  // Giới hạn output
@@ -178,7 +178,7 @@ export async function POST(request) {
               issuer: 0.7,
               notes: 0.7,
             },
-            analysisMode: 'gemini_2.0_flash',
+            analysisMode: 'gemini_flash_latest',
           },
         });
       } catch (aiError) {

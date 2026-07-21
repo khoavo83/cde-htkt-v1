@@ -69,9 +69,18 @@ export async function GET(request) {
       const client = await pool.connect();
       try {
         const res = await client.query('SELECT * FROM drive_folders_flat WHERE project_id = $1', [targetProjectId]);
+        
+        let totalPdfCount = 0;
+        try {
+          const countRes = await client.query("SELECT COUNT(DISTINCT file_id) as count FROM drive_file_metadata");
+          totalPdfCount = parseInt(countRes.rows[0].count, 10);
+        } catch (e) {
+          console.error("Lỗi khi đếm số file PDF:", e);
+        }
+
         if (res.rows && res.rows.length > 0) {
           const tree = buildTree(res.rows, targetProjectId);
-          return NextResponse.json({ data: tree });
+          return NextResponse.json({ data: tree, totalPdfCount });
         }
       } catch (dbError) {
         console.error('Error reading from Supabase:', dbError);
@@ -82,17 +91,36 @@ export async function GET(request) {
     }
 
     const cachePath = path.join(process.cwd(), 'data', `drive_cache_${targetProjectId}.json`);
+    
+    // Đếm tổng số file PDF từ DB (dùng chung cho cả nhánh cache)
+    let totalPdfCount = 0;
+    if (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes("[YOUR_PASSWORD]")) {
+      const pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false }
+      });
+      try {
+        const client = await pool.connect();
+        const countRes = await client.query("SELECT COUNT(DISTINCT file_id) as count FROM drive_file_metadata");
+        totalPdfCount = parseInt(countRes.rows[0].count, 10);
+        client.release();
+      } catch (e) {
+        console.error("Lỗi khi đếm số file PDF:", e);
+      } finally {
+        await pool.end();
+      }
+    }
 
     if (!fs.existsSync(cachePath)) {
-      return NextResponse.json({ data: [], message: 'Cache chưa được tạo. Vui lòng đồng bộ dữ liệu.' });
+      return NextResponse.json({ data: [], message: 'Cache chưa được tạo. Vui lòng đồng bộ dữ liệu.', totalPdfCount });
     }
     const data = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
     // If the cache is a flat array, build the tree
     if (Array.isArray(data) && data.length > 0 && !data[0].children) {
         const tree = buildTree(data, targetProjectId);
-        return NextResponse.json({ data: tree });
+        return NextResponse.json({ data: tree, totalPdfCount });
     }
-    return NextResponse.json({ data: data }); // Fallback to old format
+    return NextResponse.json({ data: data, totalPdfCount }); // Fallback to old format
   } catch (error) {
     console.error('Error reading cache:', error);
     return NextResponse.json({ error: 'Không thể đọc dữ liệu cache' }, { status: 500 });
