@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { X, Save, AlertTriangle, FileText } from 'lucide-react';
 
 const CATEGORIES = [
-  "Quy hoạch",
-  "Sở ngành",
-  "Đất đai",
-  "Rà phá bom mìn",
-  "Phú Mỹ Hưng",
+  "Quyết định",
+  "Công văn",
+  "Tờ trình",
+  "Báo cáo",
+  "Thông báo",
+  "Biên bản",
+  "Hợp đồng",
   "Khác"
 ];
 

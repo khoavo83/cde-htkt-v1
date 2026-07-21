@@ -11,19 +11,34 @@ const TOKEN_PATH = path.join(process.cwd(), 'token.json');
  */
 async function loadSavedCredentialsIfExist() {
   try {
-    const content = fs.readFileSync(TOKEN_PATH, 'utf8');
-    const credentials = JSON.parse(content);
+    const tokenContent = fs.readFileSync(TOKEN_PATH, 'utf8');
+    const tokenData = JSON.parse(tokenContent);
     
-    // Parse Python's google-auth token.json format
+    let clientId = tokenData.client_id;
+    let clientSecret = tokenData.client_secret;
+
+    // Fallback: read from credentials.json if token.json doesn't have them
+    if (!clientId || !clientSecret) {
+      if (fs.existsSync(CREDENTIALS_PATH)) {
+        const credsContent = fs.readFileSync(CREDENTIALS_PATH, 'utf8');
+        const creds = JSON.parse(credsContent);
+        const keys = creds.installed || creds.web;
+        if (keys) {
+          clientId = clientId || keys.client_id;
+          clientSecret = clientSecret || keys.client_secret;
+        }
+      }
+    }
+    
     const oAuth2Client = new google.auth.OAuth2(
-      credentials.client_id,
-      credentials.client_secret
+      clientId,
+      clientSecret
     );
     
     oAuth2Client.setCredentials({
-      access_token: credentials.token,
-      refresh_token: credentials.refresh_token,
-      expiry_date: credentials.expiry ? new Date(credentials.expiry).getTime() : null,
+      access_token: tokenData.access_token || tokenData.token, // Support both Node and Python formats
+      refresh_token: tokenData.refresh_token,
+      expiry_date: tokenData.expiry_date || (tokenData.expiry ? new Date(tokenData.expiry).getTime() : null),
     });
     
     return oAuth2Client;
@@ -236,4 +251,19 @@ export async function fetchFolderFiles(folderId) {
   filesList.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
   
   return filesList;
+}
+
+/**
+ * Rename a file on Google Drive
+ */
+export async function renameFile(fileId, newName) {
+  const drive = await getDriveClient();
+  const res = await drive.files.update({
+    fileId: fileId,
+    requestBody: {
+      name: newName
+    },
+    fields: 'id, name'
+  });
+  return res.data;
 }

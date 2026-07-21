@@ -49,10 +49,11 @@ async function getCached(client, fileId) {
 
 async function saveToCache(client, fileId, fileName, metadata, webViewLink, manuallyEdited = false) {
   const draftFilesJson = JSON.stringify(metadata.draftFiles || []);
+  const isOutgoing = metadata.is_outgoing || false;
   await client.query(`
     INSERT INTO drive_file_metadata
-      (file_id, file_name, loai_vb, so_vb, ngay_phat_hanh, noi_phat_hanh, trich_yeu, noi_gui, web_view_link, manually_edited, draft_files, extracted_at)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,CURRENT_TIMESTAMP)
+      (file_id, file_name, loai_vb, so_vb, ngay_phat_hanh, noi_phat_hanh, trich_yeu, noi_gui, web_view_link, manually_edited, draft_files, is_outgoing, extracted_at)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,CURRENT_TIMESTAMP)
     ON CONFLICT (file_id) DO UPDATE SET
       file_name      = EXCLUDED.file_name,
       loai_vb        = EXCLUDED.loai_vb,
@@ -64,11 +65,12 @@ async function saveToCache(client, fileId, fileName, metadata, webViewLink, manu
       web_view_link  = EXCLUDED.web_view_link,
       manually_edited = EXCLUDED.manually_edited,
       draft_files    = EXCLUDED.draft_files,
+      is_outgoing    = EXCLUDED.is_outgoing,
       extracted_at   = CURRENT_TIMESTAMP;
   `, [fileId, fileName,
       metadata.loai_vb, metadata.so_vb, metadata.ngay_phat_hanh,
       metadata.noi_phat_hanh, metadata.trich_yeu, metadata.noi_gui,
-      webViewLink, manuallyEdited, draftFilesJson]);
+      webViewLink, manuallyEdited, draftFilesJson, isOutgoing]);
 }
 
 // Download nội dung PDF dưới dạng Base64

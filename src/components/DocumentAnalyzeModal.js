@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import AgencyCombobox from './AgencyCombobox';
 import { 
   X, Save, Bot, CheckCircle2, AlertTriangle, 
   FileText, Sparkles, Loader2, Shield,
@@ -39,6 +40,8 @@ export default function DocumentAnalyzeModal({
   onClose,
   onSave,
   allDocuments = [],
+  allFolderFiles = [],
+  agencies = [],
 }) {
   const [analyzing, setAnalyzing] = useState(false);
   const [extracting, setExtracting] = useState(false);
@@ -463,39 +466,25 @@ export default function DocumentAnalyzeModal({
                 </div>
 
                 {/* Nơi phát hành */}
-                <div className="col-span-12 sm:col-span-6 relative">
-                  <div className="absolute top-3 left-3 pointer-events-none">
-                    <User className="w-4 h-4 text-slate-500" />
-                  </div>
-                  <textarea
-                    name="issuer"
+                <div className="col-span-12 sm:col-span-6">
+                  <AgencyCombobox
                     value={formData.issuer}
-                    onChange={handleInputChange}
-                    placeholder="Nơi phát hành"
-                    rows={2}
-                    className="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl text-sm pl-9 pr-12 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all text-slate-200 resize-none shadow-inner leading-snug"
+                    agencies={agencies}
+                    placeholder="Gõ để tìm Nơi phát hành..."
+                    onChange={(val) => setFormData(prev => ({ ...prev, issuer: val }))}
+                    confidence={<ConfidenceBadge value={analysisResult?.confidence?.issuer} />}
                   />
-                  <div className="absolute top-2 right-2 pointer-events-none">
-                    <ConfidenceBadge value={analysisResult?.confidence?.issuer} />
-                  </div>
                 </div>
 
                 {/* Nơi gửi */}
-                <div className="col-span-12 sm:col-span-6 relative">
-                  <div className="absolute top-3 left-3 pointer-events-none">
-                    <Send className="w-4 h-4 text-slate-500" />
-                  </div>
-                  <textarea
-                    name="receiver"
+                <div className="col-span-12 sm:col-span-6">
+                  <AgencyCombobox
                     value={formData.receiver}
-                    onChange={handleInputChange}
-                    placeholder="Nơi nhận"
-                    rows={2}
-                    className="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl text-sm pl-9 pr-12 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all text-slate-200 resize-none shadow-inner leading-snug"
+                    agencies={agencies}
+                    placeholder="Gõ để tìm Nơi nhận..."
+                    onChange={(val) => setFormData(prev => ({ ...prev, receiver: val }))}
+                    confidence={<ConfidenceBadge value={analysisResult?.confidence?.receiver} />}
                   />
-                  <div className="absolute top-2 right-2 pointer-events-none">
-                    <ConfidenceBadge value={analysisResult?.confidence?.receiver} />
-                  </div>
                 </div>
                 
                 {/* Trích yếu nội dung */}

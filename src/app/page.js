@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useTheme } from 'next-themes';
 import FolderTree from '@/components/FolderTree';
 import DocumentAnalyzeModal from '@/components/DocumentAnalyzeModal';
+import SettingsTab from '@/components/SettingsTab';
 import { 
   FileText, 
   Layers, 
@@ -458,6 +459,7 @@ export default function Home() {
             { id: 'documents', label: 'Quản lý Văn bản', icon: FolderOpen, count: filteredDocuments.length },
             { id: 'projects', label: 'Quản lý Dự án', icon: Briefcase, count: tasks.length },
             { id: 'gis', label: 'Bản đồ GIS', icon: MapPin, count: null },
+            { id: 'settings', label: 'Cài đặt', icon: Settings, count: null },
           ].map(tab => (
             <button
               key={tab.id}
@@ -775,7 +777,9 @@ export default function Home() {
           </div>
         )}
 
-      </main>
+        {activeMainTab === 'settings' && (<SettingsTab />)}
+
+        </main>
       
       {/* Modal Thêm Dự án */}
       {isProjectModalOpen && (

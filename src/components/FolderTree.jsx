@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Folder, FolderOpen, File, HardDrive, RefreshCw, Network,
   ChevronRight, ChevronDown, Search, ExternalLink,
-  Pencil, Check, X, RotateCcw, CheckCircle2, Sparkles, ScanSearch, GripVertical
+  Pencil, Check, X, RotateCcw, CheckCircle2, Sparkles, ScanSearch, GripVertical, FileText, ArrowUpRight, ArrowDownRight, Link2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -139,8 +139,14 @@ const parseDateString = (dateStr) => {
 // =========================================================
 // Hàng dữ liệu có edit + re-extract
 // =========================================================
-const DocRow = ({ file, idx, onUpdate, onAnalyze, provided, snapshot }) => {
+const DocRow = ({ file, idx, onUpdate, onAnalyze, onAttachClick, provided, snapshot, agencies }) => {
   const isDraggingClass = snapshot?.isDragging ? 'bg-emerald-50 dark:bg-emerald-900/30 shadow-lg' : '';
+
+  const getAbbreviation = (fullName) => {
+    if (!fullName || !agencies) return fullName;
+    const agency = agencies.find(a => a.name === fullName);
+    return agency?.abbreviation || fullName;
+  };
 
   if (file._loading) {
     return (
@@ -182,16 +188,40 @@ const DocRow = ({ file, idx, onUpdate, onAnalyze, provided, snapshot }) => {
             </div>
           )}
           <div className="flex flex-col items-center gap-1">
-            <span>{idx + 1}</span>
-            {file.manually_edited && <CheckCircle2 size={10} className="text-emerald-500" title="Đã chỉnh sửa thủ công"/>}
+            <span 
+              className={`font-medium ${file.manually_edited ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-500 dark:text-slate-400'}`}
+              title={file.manually_edited ? 'Đã chỉnh sửa thủ công' : ''}
+            >
+              {idx + 1}
+            </span>
+            <div className="flex gap-1 mt-0.5">
+              {file.mimeType === 'application/pdf' && (
+                file.is_outgoing ? (
+                  <div className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-amber-100 text-amber-700" title="Văn bản đi"><ArrowUpRight size={10} strokeWidth={3}/></div>
+                ) : (
+                  <div className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-blue-100 text-blue-700" title="Văn bản đến"><ArrowDownRight size={10} strokeWidth={3}/></div>
+                )
+              )}
+            </div>
           </div>
         </div>
       </td>
 
-      <td className={cellClass} onClick={onAnalyze}>{file.loai_vb || '—'}</td>
-      <td className={cellClass + " font-mono"} onClick={onAnalyze}>{file.so_vb || '—'}</td>
+      <td className={cellClass} onClick={onAnalyze}>
+        <div className="flex items-center gap-1">
+          {file.mimeType && file.mimeType.includes('word') ? (
+            <FileText size={14} className="text-blue-500" title="File Word dự thảo"/>
+          ) : (
+            <File size={14} className="text-red-500" title="File PDF chính"/>
+          )}
+          {file.loai_vb || '—'}
+        </div>
+      </td>
+      <td className={cellClass + " font-mono min-w-[120px] whitespace-normal break-words"} onClick={onAnalyze}>
+        {file.so_vb || '—'}
+      </td>
       <td className={cellClass} onClick={onAnalyze}>{file.ngay_phat_hanh || '—'}</td>
-      <td className={cellClass} onClick={onAnalyze}>{file.noi_phat_hanh || '—'}</td>
+      <td className={cellClass} onClick={onAnalyze} title={file.noi_phat_hanh}>{getAbbreviation(file.noi_phat_hanh) || '—'}</td>
       <td className={notesClass} onClick={onAnalyze}>
         <div className="line-clamp-2" title={file.trich_yeu || file.name || file.file_name}>{file.trich_yeu || file.name || file.file_name}</div>
       </td>
@@ -199,13 +229,23 @@ const DocRow = ({ file, idx, onUpdate, onAnalyze, provided, snapshot }) => {
       {/* Actions */}
       <td className="px-3 py-2.5">
         <div className="flex items-center gap-1.5 justify-center">
-          <button
-            onClick={onAnalyze}
-            className="w-7 h-7 flex items-center justify-center rounded-md bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white transition-all shadow-sm shadow-amber-500/20"
-            title="Sửa / Phân tích chi tiết"
-          >
-            <Pencil size={13} className="drop-shadow-md" />
-          </button>
+          {file.mimeType && file.mimeType.includes('word') ? (
+            <button
+              onClick={() => onAttachClick && onAttachClick(file)}
+              className="w-7 h-7 flex items-center justify-center rounded-md bg-cyan-500/10 text-cyan-600 hover:bg-cyan-500 hover:text-white transition-all shadow-sm shadow-cyan-500/20"
+              title="Gắn vào file PDF"
+            >
+              <Link2 size={13} className="drop-shadow-md" />
+            </button>
+          ) : (
+            <button
+              onClick={onAnalyze}
+              className="w-7 h-7 flex items-center justify-center rounded-md bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white transition-all shadow-sm shadow-amber-500/20"
+              title="Sửa / Phân tích chi tiết"
+            >
+              <Pencil size={13} className="drop-shadow-md" />
+            </button>
+          )}
           
           <button
             onClick={() => alert('Tính năng quét OCR đang được phát triển làm phương án dự phòng.')}
@@ -236,6 +276,7 @@ const DocRow = ({ file, idx, onUpdate, onAnalyze, provided, snapshot }) => {
 // =========================================================
 export default function FolderTree({ projectId, allDocuments = [] }) {
   const [data, setData]         = useState([]);
+  const [agencies, setAgencies] = useState([]);
   const [totalPdfCount, setTotalPdfCount] = useState(0);
   const [loading, setLoading]   = useState(true);
   const [syncing, setSyncing]   = useState(false);
@@ -268,9 +309,20 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
         if (json.totalPdfCount !== undefined) setTotalPdfCount(json.totalPdfCount);
       }
       else if (json.message) setError(json.message);
+
+      try {
+        const agenciesRes = await fetch('/api/settings/agencies').then(r => r.json());
+        if (agenciesRes.success) setAgencies(agenciesRes.data);
+      } catch(e) { console.error('Lỗi tải nơi phát hành', e); }
+
     } catch { setError('Lỗi kết nối server'); }
     finally  { setLoading(false); }
   };
+
+  const [attachingFile, setAttachingFile] = useState(null);
+  const [attachTargetId, setAttachTargetId] = useState('');
+  const [attachSearchTerm, setAttachSearchTerm] = useState('');
+  const [isAttaching, setIsAttaching] = useState(false);
 
   useEffect(() => { loadData(); setSelectedFolder(null); setFolderFiles([]); }, [projectId]);
 
@@ -301,10 +353,10 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
       .then(json => {
         if (!json.success || !json.data) return;
 
-        // Lọc file PDF
-        const pdfFiles = json.data.filter(f => f.mimeType === 'application/pdf');
+        // Không lọc PDF nữa, lấy hết file do API trả về (đã lọc PDF và Word trong route)
+        const allAllowedFiles = json.data;
         
-        const rows = pdfFiles.map(f => {
+        const rows = allAllowedFiles.map(f => {
           const fileName = f.name || f.file_name || '';
           let parsedNgay = f.ngay_phat_hanh;
           let parsedSoVb = f.so_vb;
@@ -348,7 +400,7 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
     if (!result.destination) return;
     
     if (isGlobalSearchActive || search || docCategory !== 'Tất cả') {
-      alert("Không thể sắp xếp khi đang tìm kiếm hoặc lọc văn bản. Vui lòng xóa bộ lọc để sắp xếp.");
+      alert("Không thể sắp xếp khi đang tìm kiếm hoặc lọc văn bản. Vui lòng xóa bộ lọc.");
       return;
     }
 
@@ -429,6 +481,7 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
   const currentFilesToDisplay = isGlobalSearchActive ? globalSearchResults : (selectedFolder ? folderFiles : []);
 
   const filteredFiles = currentFilesToDisplay.filter(f => {
+    if (f.parent_id) return false; // Không hiển thị file con (file đã được đính kèm)
     if (isGlobalSearchActive) return true; // Đã lọc ở backend
     const q = search.toLowerCase();
     const name = (f.name || f.file_name || '').toLowerCase();
@@ -599,7 +652,12 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
                                 {(provided, snapshot) => (
                                   <DocRow 
                                     file={file} idx={idx} onUpdate={updateRow} onAnalyze={() => setAnalyzingDoc(file)} 
-                                    provided={provided} snapshot={snapshot}
+                                    onAttachClick={(f) => {
+                                      setAttachingFile(f);
+                                      setAttachTargetId('');
+                                      setAttachSearchTerm('');
+                                    }}
+                                    provided={provided} snapshot={snapshot} agencies={agencies}
                                   />
                                 )}
                               </Draggable>
@@ -620,13 +678,143 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
         <DocumentAnalyzeModal 
           document={analyzingDoc} 
           isOpen={!!analyzingDoc} 
+          allFolderFiles={currentFilesToDisplay}
           onClose={() => setAnalyzingDoc(null)} 
           onSave={(updatedDoc) => {
             // Update the local list
             updateRow(updatedDoc.id, updatedDoc);
             setAnalyzingDoc(null);
           }} 
+          agencies={agencies}
         />
+      )}
+
+      {/* Attach Modal */}
+      {attachingFile && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-slate-700/60 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-4 border-b border-slate-800 flex justify-between items-center">
+              <h3 className="font-bold text-slate-100 flex items-center gap-2">
+                <Link2 className="w-5 h-5 text-cyan-500" /> Gắn file Word vào PDF
+              </h3>
+              <button 
+                onClick={() => setAttachingFile(null)} 
+                className="text-slate-400 hover:text-red-400"
+                disabled={isAttaching}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-sm text-slate-300 mb-2">
+                Chọn một file PDF bên dưới để gắn file Word dự thảo <strong>{attachingFile.name || attachingFile.file_name}</strong> vào:
+              </p>
+
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                  <Search className="w-4 h-4 text-slate-500" />
+                </div>
+                <input 
+                  type="text"
+                  placeholder="Nhập Số VB hoặc Tên file để tìm nhanh PDF..."
+                  value={attachSearchTerm}
+                  onChange={(e) => setAttachSearchTerm(e.target.value)}
+                  className="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:border-cyan-500 text-slate-200 mb-3"
+                  disabled={isAttaching}
+                />
+              </div>
+              
+              <div className="relative max-h-[40vh] overflow-y-auto border border-slate-700/60 rounded-xl bg-slate-950/80 p-1.5 space-y-1 custom-scrollbar">
+                  {currentFilesToDisplay
+                    .filter(f => {
+                       if (f.mimeType !== 'application/pdf' || f.id === attachingFile.id || f.parent_id || f.folder !== attachingFile.folder) return false;
+                       if (attachSearchTerm) {
+                         const term = attachSearchTerm.toLowerCase();
+                         const nameMatch = (f.name || f.file_name || '').toLowerCase().includes(term);
+                         const soVbMatch = (f.so_vb || '').toLowerCase().includes(term);
+                         return nameMatch || soVbMatch;
+                       }
+                       return true;
+                    })
+                    .map(f => (
+                    <div 
+                      key={f.id} 
+                      onClick={() => setAttachTargetId(f.id)}
+                      className={`px-3 py-2.5 rounded-lg cursor-pointer text-sm transition-colors flex items-center gap-3 ${
+                        attachTargetId === f.id 
+                          ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50' 
+                          : 'text-slate-300 hover:bg-slate-800 border border-transparent'
+                      }`}
+                    >
+                      <div className={`w-4 h-4 rounded-full border flex-shrink-0 flex items-center justify-center ${attachTargetId === f.id ? 'border-cyan-500' : 'border-slate-500'}`}>
+                         {attachTargetId === f.id && <div className="w-2 h-2 rounded-full bg-cyan-500" />}
+                      </div>
+                      <div className="overflow-hidden">
+                        <div className="font-medium truncate" title={f.name || f.file_name}>{f.name || f.file_name}</div>
+                        {f.so_vb && <div className="text-xs text-slate-500 mt-0.5">Số VB: {f.so_vb}</div>}
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {currentFilesToDisplay.filter(f => f.mimeType === 'application/pdf' && f.id !== attachingFile.id && !f.parent_id && f.folder === attachingFile.folder).length === 0 && (
+                    <div className="p-4 text-center text-sm text-slate-500">
+                      Không có file PDF nào trong thư mục này.
+                    </div>
+                  )}
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800/80 mt-4">
+                 <button 
+                   onClick={() => setAttachingFile(null)} 
+                   className="px-4 py-2.5 bg-slate-800 text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-700 transition-colors"
+                   disabled={isAttaching}
+                 >
+                   Hủy
+                 </button>
+                 <button 
+                   disabled={!attachTargetId || isAttaching}
+                   onClick={async () => {
+                     setIsAttaching(true);
+                     try {
+                        const targetFile = currentFilesToDisplay.find(f => f.id === attachTargetId);
+                        const res = await fetch('/api/drive/attach', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ 
+                            action: 'attach', 
+                            child_id: attachingFile.id, 
+                            parent_id: attachTargetId,
+                            child_name: attachingFile.name || attachingFile.file_name,
+                            parent_name: targetFile?.name || targetFile?.file_name
+                          })
+                        });
+                        const json = await res.json();
+                        if (json.success) {
+                           setFolderFiles(prev => prev.map(f => f.id === attachingFile.id ? { 
+                             ...f, 
+                             parent_id: attachTargetId,
+                             name: json.newName || f.name,
+                             file_name: json.newName || f.file_name
+                           } : f));
+                           setAttachingFile(null);
+                        } else {
+                           alert('Lỗi đính kèm: ' + json.error);
+                        }
+                     } catch(e) { 
+                        alert('Lỗi kết nối'); 
+                     } finally { 
+                        setIsAttaching(false); 
+                     }
+                   }}
+                   className="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white rounded-lg text-sm font-bold flex items-center gap-2 transition-colors shadow-lg shadow-cyan-500/20"
+                 >
+                   {isAttaching ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
+                   Đồng ý gán
+                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
