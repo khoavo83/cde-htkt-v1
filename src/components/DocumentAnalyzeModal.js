@@ -90,11 +90,42 @@ export default function DocumentAnalyzeModal({
         category: doc.category || doc.loai_vb || '',
         status: doc.status || 'effective',
         receiver: doc.noi_gui || doc.receiver || '',
-        draftFiles: doc.draftFiles || doc.draft_files || [],
+        // Kết hợp cả 2 nguồn: legacy array + file đính kèm mới qua parent_id
+        draftFiles: Array.from(new Set([
+          ...(doc.draftFiles || doc.draft_files || []),
+          ...allFolderFiles.filter(f => f.parent_id === doc.id).map(f => f.id)
+        ])),
       });
       setSelectedDraftFile('');
     }
   }, [isOpen, doc]);
+
+  // Xử lý phím tắt
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!isOpen) return;
+      
+      // Ctrl + S để lưu
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        // Giả lập click nút Lưu (hoặc gọi trực tiếp hàm xử lý lưu, nhưng phải đảm bảo confirm)
+        if (!showConfirm && !showCloseConfirm && !saving) {
+          setShowConfirm(true);
+        }
+      }
+      
+      // Esc để đóng
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        if (showConfirm) setShowConfirm(false);
+        else if (showCloseConfirm) setShowCloseConfirm(false);
+        else handleClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, showConfirm, showCloseConfirm, saving]);
 
   if (!isOpen || !doc) return null;
 
@@ -290,8 +321,10 @@ export default function DocumentAnalyzeModal({
   if (doc.path) {
     // Dùng API trực tiếp với Chrome PDF viewer, yêu cầu hiển thị từng trang (view=Fit)
     embedUrl = `/api/documents/view?path=${encodeURIComponent(doc.path)}#toolbar=1&navpanes=1&scrollbar=1&view=Fit`;
-  } else if (doc.webViewLink) {
-    embedUrl = doc.webViewLink.replace(/\/view.*$/, '/preview');
+  } else if (doc.webViewLink || doc.web_view_link) {
+    const link = doc.webViewLink || doc.web_view_link;
+    // Dùng URL preview của Google Drive, nếu không dùng được thì có thể dùng fallback Google Docs Viewer nhưng Google Docs Viewer cần file public
+    embedUrl = link.replace(/\/view.*$/, '/preview');
   }
 
   return (
@@ -351,11 +384,17 @@ export default function DocumentAnalyzeModal({
                 className="w-full h-full border-0" 
                 title="Trình xem tài liệu"
                 allow="autoplay"
+                onError={(e) => {
+                  console.error("Iframe load error, fallback might be needed.");
+                }}
               />
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center text-slate-500">
                 <FileText className="w-12 h-12 mb-3 opacity-20" />
                 <p className="text-sm">Không thể xem trước tệp này.</p>
+                <a href={doc.webViewLink || doc.web_view_link} target="_blank" rel="noopener noreferrer" className="mt-4 text-cyan-500 hover:underline text-xs">
+                  Mở trên tab mới
+                </a>
               </div>
             )}
           </div>

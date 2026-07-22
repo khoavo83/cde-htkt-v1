@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Folder, FolderOpen, File, HardDrive, RefreshCw, Network,
-  ChevronRight, ChevronDown, Search, ExternalLink,
-  Pencil, Check, X, RotateCcw, CheckCircle2, Sparkles, ScanSearch, GripVertical, FileText, ArrowUpRight, ArrowDownRight, Link2
+  ChevronRight, ChevronLeft, ChevronDown, Search, ExternalLink,
+  Pencil, Check, X, RotateCcw, CheckCircle2, Sparkles, ScanSearch, GripVertical, FileText, ArrowUpRight, ArrowDownRight, Link2, Download, ScanEye, CornerDownRight, Unlink2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -256,13 +256,89 @@ const DocRow = ({ file, idx, onUpdate, onAnalyze, onAttachClick, provided, snaps
           </button>
 
           {(file.webViewLink || file.web_view_link) && (
+            <button
+              onClick={onAnalyze}
+              className="w-7 h-7 flex items-center justify-center rounded-md bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all shadow-sm shadow-emerald-500/20"
+              title="Xem trước tài liệu"
+            >
+              <ScanEye size={13} className="drop-shadow-md"/>
+            </button>
+          )}
+        </div>
+      </td>
+    </tr>
+  );
+};
+
+// =========================================================
+// ChildRow: Hiển thị file đính kèm (Word dự thảo) thụt lề dưới file PDF cha
+// =========================================================
+const ChildRow = ({ file, onDetach }) => {
+  const isWord = file.mimeType && file.mimeType.includes('word');
+  return (
+    <tr className="border-b border-slate-100/60 dark:border-slate-800/50 bg-slate-50/60 dark:bg-slate-900/40 hover:bg-cyan-50/40 dark:hover:bg-cyan-900/10 transition-colors">
+      {/* # column */}
+      <td className="pl-8 pr-3 py-2 text-slate-300 dark:text-slate-600 text-xs w-12">
+        <CornerDownRight size={12} className="text-cyan-400/70" />
+      </td>
+
+      {/* Loại VB */}
+      <td className="px-3 py-2 text-xs text-slate-400 dark:text-slate-500" colSpan={1}>
+        <div className="flex items-center gap-1">
+          {isWord ? (
+            <FileText size={12} className="text-blue-400" title="File Word dự thảo" />
+          ) : (
+            <File size={12} className="text-slate-400" />
+          )}
+          <span className="italic text-slate-400 dark:text-slate-500">Dự thảo</span>
+        </div>
+      </td>
+
+      {/* Số VB - trống */}
+      <td className="px-3 py-2" />
+
+      {/* Ngày PH - trống */}
+      <td className="px-3 py-2" />
+
+      {/* Nơi PH - trống */}
+      <td className="px-3 py-2" />
+
+      {/* Tên file */}
+      <td className="px-3 py-2">
+        <div className="flex items-center gap-1.5">
+          <a
+            href={(file.webViewLink || file.web_view_link) || '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-cyan-600 dark:text-cyan-400 hover:underline truncate max-w-[250px]"
+            title={file.name || file.file_name}
+          >
+            {file.name || file.file_name || '(không có tên)'}
+          </a>
+        </div>
+      </td>
+
+      {/* Actions */}
+      <td className="px-3 py-2">
+        <div className="flex items-center gap-1 justify-center">
+          {onDetach && (
+            <button
+              onClick={() => onDetach(file)}
+              className="w-6 h-6 flex items-center justify-center rounded-md bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all"
+              title="Gỡ đính kèm"
+            >
+              <Unlink2 size={11} />
+            </button>
+          )}
+          {(file.webViewLink || file.web_view_link) && (
             <a
               href={file.webViewLink || file.web_view_link}
-              target="_blank" rel="noopener noreferrer"
-              className="w-7 h-7 flex items-center justify-center rounded-md bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all"
-              title="Mở văn bản trên Drive"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-6 h-6 flex items-center justify-center rounded-md bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all"
+              title="Mở file"
             >
-              <ExternalLink size={12}/>
+              <ScanEye size={11} />
             </a>
           )}
         </div>
@@ -280,6 +356,7 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
   const [totalPdfCount, setTotalPdfCount] = useState(0);
   const [loading, setLoading]   = useState(true);
   const [syncing, setSyncing]   = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [error, setError]       = useState(null);
   const [rootPath, setRootPath] = useState('H:/My Drive/Bồi thường BT-CG');
   const [selectedFolderId, setSelectedFolderId] = useState(null);
@@ -287,6 +364,8 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
   const [analyzingDoc, setAnalyzingDoc] = useState(null);
   const [folderFiles, setFolderFiles]       = useState([]);
   const [loadingFiles, setLoadingFiles]     = useState(false);
+  const [currentPage, setCurrentPage]       = useState(1);
+  const [itemsPerPage, setItemsPerPage]     = useState(20);
   const [search, setSearch]     = useState('');
   const [docCategory, setDocCategory] = useState('Tất cả');
   const [searchNgayPhatHanh, setSearchNgayPhatHanh] = useState('');
@@ -337,10 +416,98 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
     finally  { setSyncing(false); }
   };
 
+  const handleExportExcel = async () => {
+    try {
+      setExporting(true);
+      setError(null);
+      
+      // Lấy danh sách ID của thư mục hiện tại và tất cả thư mục con
+      let folderIds = [];
+      if (selectedFolder) {
+        const findNode = (nodes, id) => {
+          for (const node of nodes) {
+            if (node.id === id) return node;
+            if (node.children) {
+              const found = findNode(node.children, id);
+              if (found) return found;
+            }
+          }
+          return null;
+        };
+
+        const getAllIds = (node) => {
+          let ids = [node.id];
+          if (node.children) {
+            for (const child of node.children) {
+              ids = ids.concat(getAllIds(child));
+            }
+          }
+          return ids;
+        };
+
+        const selectedNode = findNode(data, selectedFolder.id);
+        if (selectedNode) {
+          folderIds = getAllIds(selectedNode);
+        } else {
+          folderIds = [selectedFolder.id]; // Fallback
+        }
+      }
+
+      const queryParams = new URLSearchParams({
+        folderIds: folderIds.join(','),
+        folderName: selectedFolder ? selectedFolder.name : rootPath,
+        q: search,
+        category: docCategory !== 'Tất cả' ? docCategory : '',
+        ngayPhatHanh: searchNgayPhatHanh,
+        noiPhatHanh: searchNoiPhatHanh
+      });
+
+      const response = await fetch(`/api/documents/export?${queryParams.toString()}`, {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        throw new Error('Lỗi khi xuất file Excel');
+      }
+
+      // Download file
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Danh_Sach_Van_Ban_${new Date().getTime()}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+    } catch (err) {
+      setError(err.message || 'Có lỗi xảy ra khi xuất Excel');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   // Cập nhật 1 dòng trong bảng
   const updateRow = useCallback((fileId, updatedData) => {
     setFolderFiles(prev => prev.map(f => f.id === fileId ? { ...f, ...updatedData } : f));
   }, []);
+
+  // Gỡ đính kèm file con khỏi file cha (xóa parent_id trong DB)
+  const handleDetach = async (childFile) => {
+    if (!confirm(`Xác nhận gỡ đính kèm file "${childFile.name || childFile.file_name}" khỏi văn bản cha?`)) return;
+    try {
+      await fetch('/api/drive/attach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'detach', child_id: childFile.id }),
+      });
+      // Cập nhật local state: xóa parent_id của file con
+      setFolderFiles(prev => prev.map(f => f.id === childFile.id ? { ...f, parent_id: null } : f));
+    } catch (err) {
+      alert('Lỗi khi gỡ đính kèm: ' + err.message);
+    }
+  };
 
   const handleSelectFolder = (folder) => {
     setSelectedFolder(folder);
@@ -404,15 +571,18 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
       return;
     }
 
-    const sourceIndex = result.source.index;
-    const destinationIndex = result.destination.index;
-    if (sourceIndex === destinationIndex) return;
+    const absoluteSourceIndex = (currentPage - 1) * itemsPerPage + result.source.index;
+    const absoluteDestinationIndex = (currentPage - 1) * itemsPerPage + result.destination.index;
+    if (absoluteSourceIndex === absoluteDestinationIndex) return;
 
-    const newFiles = Array.from(folderFiles);
-    const draggedItem = newFiles[sourceIndex];
-    
+    // Lấy danh sách các file đang được hiển thị ở cấp cao nhất (không phải file đính kèm)
+    const topLevelFiles = folderFiles.filter(f => !f.parent_id);
+    const draggedItem = topLevelFiles[absoluteSourceIndex];
+    const targetItem = topLevelFiles[absoluteDestinationIndex];
+
+    if (!draggedItem || !targetItem) return;
+
     // Ràng buộc không vượt quá ngày phát hành
-    const targetItem = newFiles[destinationIndex];
     const draggedTime = parseDateString(draggedItem.ngay_phat_hanh);
     const targetTime = parseDateString(targetItem.ngay_phat_hanh);
 
@@ -421,12 +591,17 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
       return; 
     }
 
+    const newFiles = Array.from(folderFiles);
+    // Tìm index thực sự trong folderFiles
+    const realSourceIndex = newFiles.findIndex(f => f.id === draggedItem.id);
+    const realDestIndex = newFiles.findIndex(f => f.id === targetItem.id);
+
     // Cập nhật lại mảng
-    newFiles.splice(sourceIndex, 1);
-    newFiles.splice(destinationIndex, 0, draggedItem);
+    newFiles.splice(realSourceIndex, 1);
+    newFiles.splice(realDestIndex, 0, draggedItem);
 
     // Tính toán lại custom_order_index cho các item có cùng ngày
-    const sameDateItems = newFiles.filter(f => parseDateString(f.ngay_phat_hanh) === draggedTime);
+    const sameDateItems = newFiles.filter(f => parseDateString(f.ngay_phat_hanh) === draggedTime && !f.parent_id);
     
     const updates = [];
     sameDateItems.forEach((f, idx) => {
@@ -496,6 +671,13 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
     return matchSearch && matchCategory;
   });
 
+  const totalPages = Math.ceil(filteredFiles.length / itemsPerPage) || 1;
+  const paginatedFiles = filteredFiles.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, docCategory, searchNgayPhatHanh, searchNoiPhatHanh, selectedFolder]);
+
   return (
     <div className="flex flex-col h-full rounded-xl bg-transparent backdrop-blur-md border border-transparent dark:border-slate-800 overflow-hidden">
 
@@ -548,6 +730,12 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
           
           <div className="w-px h-8 bg-slate-300 dark:bg-slate-700 mx-2 hidden sm:block"></div>
           
+          <button onClick={handleExportExcel} disabled={exporting}
+            className="flex items-center gap-2 px-3 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors disabled:opacity-50 text-sm font-medium whitespace-nowrap">
+            <Download size={16} className={exporting ? 'animate-bounce' : ''}/>
+            <span className="hidden sm:inline">{exporting ? 'Đang xuất...' : 'Xuất Excel'}</span>
+          </button>
+
           <button onClick={handleSync} disabled={syncing}
             className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors disabled:opacity-50 text-sm font-medium whitespace-nowrap">
             <RefreshCw size={16} className={syncing ? 'animate-spin' : ''}/>
@@ -597,27 +785,58 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
           ) : (
             <div className="flex flex-col h-full">
               {/* Header */}
-              <div className="px-4 py-2.5 border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-2">
-                  <FolderOpen size={16} className="text-emerald-500"/>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200 truncate text-sm">
-                    {selectedFolder ? selectedFolder.name : "Kết quả tìm kiếm toàn cục"}
-                  </span>
-                  {filteredFiles.length > 0 && (
-                    <span className="text-xs bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full shrink-0">
-                      {filteredFiles.length} kết quả
+              <div className="px-4 py-2.5 border-b border-slate-200/50 dark:border-slate-800/50 flex flex-col gap-2 shrink-0">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FolderOpen size={16} className="text-emerald-500"/>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 truncate text-sm">
+                      {selectedFolder ? selectedFolder.name : "Kết quả tìm kiếm toàn cục"}
                     </span>
-                  )}
+                    {filteredFiles.length > 0 && (
+                      <span className="text-xs bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full shrink-0">
+                        {filteredFiles.length} kết quả
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {anyLoading && (
+                      <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                        <RefreshCw size={11} className="animate-spin"/>
+                        <span>AI đang phân tích...</span>
+                      </div>
+                    )}
+                    <span className="text-xs text-slate-400 hidden sm:inline">Nhấp vào ô để sửa • 🔄 Phân tích lại</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  {anyLoading && (
-                    <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
-                      <RefreshCw size={11} className="animate-spin"/>
-                      <span>AI đang phân tích...</span>
+                
+                {/* Pagination Controls */}
+                {filteredFiles.length > 0 && (
+                  <div className="text-[10px] text-slate-500 flex flex-wrap justify-between items-center shrink-0">
+                    <span>Trang <strong className="text-slate-700 dark:text-slate-200">{currentPage}</strong>/{totalPages}</span>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={itemsPerPage}
+                        onChange={e => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                        className="bg-white/50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-md px-2 py-1 text-[10px] text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      >
+                        <option value={10}>10 / trang</option>
+                        <option value={20}>20 / trang</option>
+                        <option value={50}>50 / trang</option>
+                      </select>
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1}
+                          className="p-1 rounded-md bg-white/50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 disabled:opacity-30 transition-colors">
+                          <ChevronLeft className="w-3.5 h-3.5" />
+                        </button>
+                        <span className="text-slate-700 dark:text-slate-300 font-bold px-1 min-w-[16px] text-center">{currentPage}</span>
+                        <button onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages}
+                          className="p-1 rounded-md bg-white/50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 disabled:opacity-30 transition-colors">
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
-                  )}
-                  <span className="text-xs text-slate-400 hidden sm:inline">Nhấp vào ô để sửa • 🔄 Phân tích lại</span>
-                </div>
+                  </div>
+                )}
               </div>
 
               {/* Table */}
@@ -647,21 +866,32 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
                       <Droppable droppableId="document-list">
                         {(provided) => (
                           <tbody ref={provided.innerRef} {...provided.droppableProps}>
-                            {filteredFiles.map((file, idx) => (
-                              <Draggable key={file.id} draggableId={file.id} index={idx}>
-                                {(provided, snapshot) => (
-                                  <DocRow 
-                                    file={file} idx={idx} onUpdate={updateRow} onAnalyze={() => setAnalyzingDoc(file)} 
-                                    onAttachClick={(f) => {
-                                      setAttachingFile(f);
-                                      setAttachTargetId('');
-                                      setAttachSearchTerm('');
-                                    }}
-                                    provided={provided} snapshot={snapshot} agencies={agencies}
-                                  />
-                                )}
-                              </Draggable>
-                            ))}
+                            {paginatedFiles.map((file, idx) => {
+                              const absoluteIndex = (currentPage - 1) * itemsPerPage + idx;
+                              // Tìm tất cả file con (dự thảo đính kèm) của file này
+                              const childFiles = currentFilesToDisplay.filter(f => f.parent_id === file.id);
+                              return (
+                                <Draggable key={file.id} draggableId={file.id} index={idx}>
+                                  {(provided, snapshot) => (
+                                    <>
+                                      <DocRow 
+                                        file={file} idx={absoluteIndex} onUpdate={updateRow} onAnalyze={() => setAnalyzingDoc(file)} 
+                                        onAttachClick={(f) => {
+                                          setAttachingFile(f);
+                                          setAttachTargetId('');
+                                          setAttachSearchTerm('');
+                                        }}
+                                        provided={provided} snapshot={snapshot} agencies={agencies}
+                                      />
+                                      {/* Hiển thị file dự thảo đính kèm (con) ngay dưới file cha */}
+                                      {childFiles.map(child => (
+                                        <ChildRow key={child.id} file={child} onDetach={handleDetach} />
+                                      ))}
+                                    </>
+                                  )}
+                                </Draggable>
+                              );
+                            })}
                             {provided.placeholder}
                           </tbody>
                         )}

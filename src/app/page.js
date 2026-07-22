@@ -87,9 +87,9 @@ export default function Home() {
     try {
       setLoading(true);
       const [tasksRes, docsRes, projRes] = await Promise.all([
-        fetch('/api/tasks'),
-        fetch('/api/documents'),
-        fetch('/api/projects')
+        fetch(`/api/tasks?t=${Date.now()}`),
+        fetch(`/api/documents?t=${Date.now()}`),
+        fetch(`/api/projects?t=${Date.now()}`)
       ]);
 
       const tasksData = await tasksRes.json();
@@ -584,87 +584,109 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Danh sách văn bản - CUỘN Ở ĐÂY */}
-            <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1">
-              {loading ? (
-                <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-                  <RefreshCw className="w-8 h-8 animate-spin text-emerald-400 mb-2" />
-                  <span>Đang tải danh sách văn bản...</span>
-                </div>
-              ) : paginatedDocs.length === 0 ? (
-                <div className="text-center py-20 text-slate-500 text-xs flex flex-col items-center justify-center gap-2">
-                  <AlertTriangle className="w-8 h-8 text-slate-600" />
-                  <span>Không tìm thấy tài liệu phù hợp</span>
-                </div>
-              ) : (
-                paginatedDocs.map((doc) => {
-                  const isLinkedToSelected = selectedTask && selectedTask.documents && selectedTask.documents.includes(doc.name);
-                  const ext = doc.name.split('.').pop().toLowerCase();
-                  const isViewable = ['pdf', 'png', 'jpg', 'jpeg', 'txt', 'html'].includes(ext);
-                  const fileInfo = getFileIcon(doc.name);
-                  const IconComp = fileInfo.icon;
-                  
-                  return (
-                    <div key={doc.id}
-                      className="bg-slate-900/40 rounded-xl border border-slate-800/80 p-3 hover:border-slate-700/60 hover:bg-slate-900/50 transition-all duration-200 group flex items-start gap-3">
-                      <div onClick={() => handleOpenDocument(doc.path)}
-                        className={`p-2 bg-slate-950/80 border ${fileInfo.bg} rounded-lg group-hover:border-emerald-500/30 transition-colors shrink-0 cursor-pointer flex flex-col items-center min-w-[40px]`}
-                        title={`Mở tệp (${fileInfo.label})`}>
-                        <IconComp className={`w-5 h-5 ${fileInfo.color}`} />
-                        <span className={`text-[7px] font-bold mt-0.5 ${fileInfo.color}`}>{fileInfo.label}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 onClick={() => handleOpenDocument(doc.path)}
-                          className="text-xs font-bold text-slate-200 truncate group-hover:text-emerald-400 transition-colors cursor-pointer hover:underline"
-                          title={doc.name}>
-                          {doc.name}
-                        </h4>
-                        {doc.summary && doc.summary !== doc.name && (
-                          <p className="text-[10px] text-slate-400 mt-0.5 line-clamp-1 italic" title={doc.summary}>
-                            Trích yếu: {doc.summary}
-                          </p>
-                        )}
-                        <div className="text-[9px] text-slate-500 mt-1 flex flex-wrap gap-x-3 gap-y-1 items-center">
-                          <span className="font-semibold text-slate-300 bg-slate-950/80 px-1.5 py-0.5 rounded border border-slate-800 shrink-0">{doc.category}</span>
-                          {doc.documentDate && <span className="shrink-0">Ngày: {doc.documentDate}</span>}
-                          {doc.issuingAgency && doc.issuingAgency !== 'Đang cập nhật' && <span className="shrink-0">CQ: {doc.issuingAgency}</span>}
-                          <span className="shrink-0">{doc.size}</span>
-                        </div>
-                      </div>
-                      <div className="shrink-0 self-center flex items-center gap-1.5">
-                        {isViewable && (
-                          <a href={`/api/documents/view?path=${encodeURIComponent(doc.path)}`} target="_blank" rel="noopener noreferrer"
-                            className="p-1.5 bg-slate-950/80 border border-slate-800 hover:border-emerald-500/40 rounded-lg text-slate-400 hover:text-emerald-400 sm:opacity-0 sm:group-hover:opacity-100 transition-all"
-                            title="Xem nhanh">
-                            <Eye className="w-3.5 h-3.5" />
-                          </a>
-                        )}
-                        <button onClick={() => handleOpenDocument(doc.path)}
-                          className="p-1.5 bg-slate-950/80 border border-slate-800 hover:border-emerald-500/40 rounded-lg text-slate-400 hover:text-emerald-400 sm:opacity-0 sm:group-hover:opacity-100 transition-all"
-                          title="Mở bằng app">
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={() => setAnalyzingDoc(doc)}
-                          className="p-1.5 bg-slate-950/80 border border-slate-800 hover:border-amber-500/40 rounded-lg text-slate-400 hover:text-amber-400 sm:opacity-0 sm:group-hover:opacity-100 transition-all"
-                          title="Chỉnh sửa thông tin">
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        {isLinkedToSelected ? (
-                          <span className="inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-full font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                            ✓ Liên kết
-                          </span>
-                        ) : (
-                          <button onClick={() => handleLinkDocumentToTask(doc.path, doc.name)}
-                            className="p-1.5 bg-slate-950/80 border border-slate-800 hover:border-emerald-500/40 rounded-lg text-slate-400 hover:text-emerald-400 sm:opacity-0 sm:group-hover:opacity-100 transition-all flex items-center gap-1 text-[10px] font-semibold"
-                            title={`Liên kết: ${selectedTask?.title}`}>
-                            <LinkIcon className="w-3 h-3" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })
-              )}
+            {/* Danh sách văn bản - Dạng Table */}
+            <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead className="sticky top-0 bg-slate-900/95 backdrop-blur z-10 border-b border-slate-800">
+                  <tr>
+                    <th className="py-2.5 px-3 font-semibold text-slate-400">#</th>
+                    <th className="py-2.5 px-3 font-semibold text-slate-400">LOẠI VB</th>
+                    <th className="py-2.5 px-3 font-semibold text-slate-400">SỐ VB</th>
+                    <th className="py-2.5 px-3 font-semibold text-slate-400">NGÀY PH</th>
+                    <th className="py-2.5 px-3 font-semibold text-slate-400">NƠI PHÁT HÀNH</th>
+                    <th className="py-2.5 px-3 font-semibold text-slate-400 w-1/3">TRÍCH YẾU NỘI DUNG</th>
+                    <th className="py-2.5 px-3 font-semibold text-slate-400 text-right">THAO TÁC</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan="7" className="py-20 text-center text-slate-400">
+                        <RefreshCw className="w-8 h-8 animate-spin text-emerald-400 mb-2 mx-auto" />
+                        <span>Đang tải danh sách văn bản...</span>
+                      </td>
+                    </tr>
+                  ) : paginatedDocs.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className="py-20 text-center text-slate-500">
+                        <AlertTriangle className="w-8 h-8 text-slate-600 mb-2 mx-auto" />
+                        <span>Không tìm thấy tài liệu phù hợp</span>
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedDocs.map((doc, idx) => {
+                      const isLinkedToSelected = selectedTask && selectedTask.documents && selectedTask.documents.includes(doc.name);
+                      const fileInfo = getFileIcon(doc.name);
+                      const IconComp = fileInfo.icon;
+                      const actualIndex = (currentPage - 1) * itemsPerPage + idx + 1;
+                      
+                      return (
+                        <tr key={doc.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors group">
+                          <td className="py-2 px-3 align-top">
+                            <div className="flex items-center gap-2">
+                              <span className="text-slate-500 font-mono w-5">{actualIndex}</span>
+                              <div onClick={() => handleOpenDocument(doc.path)}
+                                className={`p-1.5 border ${fileInfo.bg} rounded-md border-transparent group-hover:border-emerald-500/30 transition-colors cursor-pointer flex items-center justify-center`}
+                                title={`Mở tệp (${fileInfo.label})`}>
+                                <IconComp className={`w-4 h-4 ${fileInfo.color}`} />
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-2 px-3 align-top text-slate-300">
+                            <div className="flex items-center gap-1">
+                              <FileText className="w-3.5 h-3.5 text-slate-400" />
+                              <span className="truncate max-w-[100px] block" title={doc.category}>{doc.category}</span>
+                            </div>
+                          </td>
+                          <td className="py-2 px-3 align-top">
+                            <span className="font-semibold text-emerald-400 hover:underline cursor-pointer" onClick={() => handleOpenDocument(doc.path)} title={doc.documentNumber || doc.name}>
+                              {doc.documentNumber || doc.name.substring(0, 15) + '...'}
+                            </span>
+                          </td>
+                          <td className="py-2 px-3 align-top text-slate-400 whitespace-nowrap">
+                            {doc.issuedDate || doc.documentDate || '---'}
+                          </td>
+                          <td className="py-2 px-3 align-top text-slate-300">
+                            <span className="line-clamp-2" title={doc.issuer || doc.issuingAgency}>
+                              {doc.issuer || doc.issuingAgency || 'Đang cập nhật'}
+                            </span>
+                          </td>
+                          <td className="py-2 px-3 align-top">
+                            <p className="text-slate-300 line-clamp-2" title={doc.summary || doc.name}>
+                              {doc.summary || doc.name}
+                            </p>
+                          </td>
+                          <td className="py-2 px-3 align-top text-right">
+                            <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button onClick={() => setAnalyzingDoc(doc)}
+                                className="p-1.5 hover:bg-amber-500/20 text-slate-400 hover:text-amber-400 rounded transition-colors"
+                                title="Chỉnh sửa thông tin">
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button onClick={() => handleOpenDocument(doc.path)}
+                                className="p-1.5 hover:bg-emerald-500/20 text-slate-400 hover:text-emerald-400 rounded transition-colors"
+                                title="Mở bằng app">
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </button>
+                              {isLinkedToSelected ? (
+                                <span className="inline-flex items-center justify-center p-1.5 text-emerald-400 rounded" title="Đã liên kết">
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                </span>
+                              ) : (
+                                <button onClick={() => handleLinkDocumentToTask(doc.path, doc.name)}
+                                  className="p-1.5 hover:bg-emerald-500/20 text-slate-400 hover:text-emerald-400 rounded transition-colors"
+                                  title={`Liên kết: ${selectedTask?.title}`}>
+                                  <LinkIcon className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         )}

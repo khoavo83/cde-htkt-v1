@@ -182,6 +182,8 @@ export async function GET(request) {
         custom_order_index: existing?.custom_order_index || 0,
         is_outgoing: existing?.is_outgoing || false,
         parent_id: existing?.parent_id || null,
+        // Trả về mảng draftFiles (legacy) để frontend không ghi đè bằng [] khi lưu
+        draftFiles: existing?.draft_files || [],
       };
 
       updatedFiles.push(mergedFile);

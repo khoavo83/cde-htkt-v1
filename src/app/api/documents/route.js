@@ -4,6 +4,8 @@ import path from 'path';
 import { google } from 'googleapis';
 import { Pool } from 'pg';
 
+export const dynamic = 'force-dynamic';
+
 const pool = process.env.DATABASE_URL 
   ? new Pool({
       connectionString: process.env.DATABASE_URL,
@@ -210,156 +212,53 @@ function parseReportFile() {
 
 export async function GET() {
   try {
-    const data = readDb();
-    let source = 'unknown';
-    let documentsList = [];
-    let initialDocs = [];
-    
-    // Nếu trong db.json đã có danh sách documents, trả về trực tiếp
-    if (data.documents && data.documents.length > 0) {
-      documentsList = data.documents;
-      source = 'database';
-    } else {
-      source = 'local_report_file';
-
-    const tokenPath = path.join(process.cwd(), 'token.json');
-    const credentialsPath = path.join(process.cwd(), 'credentials.json');
-
-    // Thử kết nối Google Drive API trước
-    if (fs.existsSync(tokenPath) && fs.existsSync(credentialsPath)) {
-      try {
-        const credentials = JSON.parse(fs.readFileSync(credentialsPath, 'utf-8'));
-        const token = JSON.parse(fs.readFileSync(tokenPath, 'utf-8'));
-
-        const { client_secret, client_id, redirect_uris } = credentials.installed || credentials.web;
-        const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris ? redirect_uris[0] : "http://localhost");
-        oAuth2Client.setCredentials(token);
-
-        const drive = google.drive({ version: 'v3', auth: oAuth2Client });
-        
-        const response = await drive.files.list({
-          q: `'${FOLDER_ID}' in parents or (mimeType = 'application/vnd.google-apps.folder' and trashed = false)`,
-          fields: 'files(id, name, mimeType, modifiedTime, size, parents)',
-          pageSize: 200,
-        });
-
-        const items = response.data.files || [];
-        const foldersMap = {};
-        
-        items.forEach(item => {
-          if (item.mimeType === 'application/vnd.google-apps.folder') {
-            foldersMap[item.id] = item.name;
-          }
-        });
-
-        initialDocs = items
-          .filter(item => item.mimeType !== 'application/vnd.google-apps.folder')
-          .map((item, index) => {
-            const parentId = item.parents ? item.parents[0] : null;
-            const parentName = foldersMap[parentId] || "Bồi thường BT-CG";
-            
-            let category = "Khác";
-            if (parentName.includes("Quy hoạch")) category = "Quy hoạch";
-            else if (parentName.includes("Sở NNMT") || parentName.includes("Sở NN")) category = "Sở ngành";
-            else if (parentName.includes("ĐKĐĐ") || parentName.includes("Địa chính")) category = "Đất đai";
-            else if (parentName.includes("bom mìn") || parentName.includes("RPBM") || parentName.includes("Lũng Lô") || parentName.includes("Thành An") || parentName.includes("Lữ đoàn")) category = "Rà phá bom mìn";
-            else if (parentName.includes("Phú Mỹ Hưng") || parentName.includes("PMH")) category = "Phú Mỹ Hưng";
-
-            const details = parseDocDetails(item.name, parentName, category);
-
-            return {
-              id: item.id,
-              name: item.name,
-              folder: parentName,
-              category: category,
-              updatedAt: item.modifiedTime,
-              size: item.size ? `${(parseInt(item.size) / 1024 / 1024).toFixed(2)} MB` : "N/A",
-              status: "effective",
-              plots: [],
-              ...details
-            };
-          });
-
-        source = 'live_google_drive';
-      } catch (driveError) {
-        console.error("Lỗi Google Drive API, chuyển sang dùng báo cáo nội bộ:", driveError);
-      }
-    }
-
-    // Nếu không kết nối được Google Drive hoặc không có file, dùng báo cáo nội bộ
-    if (initialDocs.length === 0) {
-      initialDocs = parseReportFile();
-    }
-    } // ĐÓNG BLOCK ELSE Ở ĐÂY
-
-    if (source !== 'database') {
-      documentsList = initialDocs;
-      
-      // Thực hiện liên kết hai chiều từ dữ liệu mẫu của thửa đất sang văn bản
-      if (data.plots && data.plots.length > 0) {
-        data.plots.forEach(plot => {
-          if (plot.documents && plot.documents.length > 0) {
-            plot.documents.forEach(plotDocName => {
-              const matchedDoc = documentsList.find(doc => 
-                doc.name === plotDocName || 
-                doc.name.includes(plotDocName) || 
-                plotDocName.includes(doc.name)
-              );
-              if (matchedDoc) {
-                if (!matchedDoc.plots.includes(plot.code)) {
-                  matchedDoc.plots.push(plot.code);
-                }
-              }
-            });
-          }
-        });
-      }
-      
-      data.documents = documentsList;
-      writeDb(data);
-    }
-
-    // --- MERGE WITH SUPABASE METADATA ---
+    // 1. Thử kết nối Supabase và đọc trực tiếp từ bảng documents
     if (pool) {
       try {
         const client = await pool.connect();
-        // Lấy tất cả metadata từ Supabase
-        const { rows } = await client.query('SELECT * FROM drive_file_metadata');
+        const { rows } = await client.query(`
+          SELECT 
+            id, name, file_path as path, folder, category, 
+            document_type as "documentType", 
+            document_date as "documentDate", 
+            issuing_agency as "issuingAgency", 
+            receiving_agency as "receivingAgency", 
+            summary, size, updated_at as "updatedAt"
+          FROM documents
+          ORDER BY name ASC
+        `);
         client.release();
-        
-        const metaMap = new Map();
-        rows.forEach(row => {
-           if (row.file_id) metaMap.set(row.file_id, row);
-           if (row.file_name) metaMap.set(row.file_name, row);
+
+        // Định dạng lại ngày tháng để hiển thị đúng ở Frontend
+        const formattedDocs = rows.map(doc => {
+          const fmtDate = (d) => d ? new Date(d).toISOString().split('T')[0] : null;
+          return {
+            ...doc,
+            documentDate: fmtDate(doc.documentDate),
+            updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : null
+          };
         });
 
-        documentsList = documentsList.map(doc => {
-          const meta = metaMap.get(doc.id) || metaMap.get(doc.name);
-          if (meta) {
-            return {
-              ...doc,
-              category: meta.loai_vb && meta.loai_vb !== 'Khác' ? meta.loai_vb : doc.category,
-              documentType: meta.loai_vb || doc.documentType,
-              documentNumber: meta.so_vb || doc.documentNumber,
-              issuedDate: meta.ngay_phat_hanh || doc.issuedDate,
-              issuer: meta.noi_phat_hanh || doc.issuer,
-              notes: meta.trich_yeu || doc.notes,
-              receivingAgency: meta.noi_gui || doc.receivingAgency,
-              driveUrl: meta.web_view_link || doc.driveUrl,
-              draftFiles: meta.draft_files || doc.draftFiles || [],
-              isFromSupabase: true
-            };
-          }
-          return doc;
-        });
-        
-        source = 'live_supabase_db';
-      } catch (e) {
-        console.error("Lỗi khi merge dữ liệu từ Supabase:", e);
+        console.log(`Lấy thành công ${formattedDocs.length} tài liệu từ Supabase.`);
+        return NextResponse.json({ source: 'live_supabase_db', documents: formattedDocs });
+      } catch (dbError) {
+        console.error("Lỗi truy vấn bảng documents trên Supabase, chuyển sang dùng dữ liệu cục bộ:", dbError.message);
       }
     }
 
-    return NextResponse.json({ source, documents: documentsList });
+    // 2. Fallback: Đọc từ db.json cục bộ
+    const data = readDb();
+    if (data.documents && data.documents.length > 0) {
+      const formattedDocs = data.documents.map(doc => ({
+        ...doc,
+        path: doc.path || doc.filePath || `H:/My Drive/Bồi thường BT-CG/${doc.folder}/${doc.name}`
+      }));
+      return NextResponse.json({ source: 'local_db_file', documents: formattedDocs });
+    }
+
+    // 3. Fallback 2: Đọc từ folder_structure_report.txt
+    const reportDocs = parseReportFile();
+    return NextResponse.json({ source: 'local_report_file', documents: reportDocs });
 
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
