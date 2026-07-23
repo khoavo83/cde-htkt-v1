@@ -5,7 +5,7 @@ import AgencyCombobox from './AgencyCombobox';
 import { 
   X, Save, Bot, CheckCircle2, AlertTriangle, 
   FileText, Sparkles, Loader2, Shield,
-  Calendar, User, Tag, Hash, FolderOpen, Send, Copy, Type, XCircle, ScanEye, Link2, Plus, ExternalLink
+  Calendar, User, Tag, Hash, FolderOpen, Send, Copy, Type, XCircle, ScanEye, Link2, Plus, ExternalLink, Download
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -558,7 +558,7 @@ export default function DocumentAnalyzeModal({
                       className="flex-1 bg-slate-950/80 border border-slate-700/60 rounded-xl text-xs px-3 py-2 focus:outline-none focus:border-cyan-500 cursor-pointer text-slate-200"
                     >
                       <option value="">-- Chọn file đính kèm --</option>
-                      {allDocuments.filter(d => d.id !== doc.id && !formData.draftFiles?.includes(d.id)).map(d => (
+                      {allFolderFiles.filter(d => d.id !== doc.id && !formData.draftFiles?.includes(d.id)).map(d => (
                         <option key={d.id} value={d.id}>
                           {d.name || d.file_name}
                         </option>
@@ -584,7 +584,7 @@ export default function DocumentAnalyzeModal({
                   
                   <div className="space-y-2 max-h-[150px] overflow-y-auto pr-1 custom-scrollbar">
                     {(formData.draftFiles || []).map((fileId) => {
-                      const linkedDoc = allDocuments.find(d => d.id === fileId);
+                      const linkedDoc = allFolderFiles.find(d => d.id === fileId);
                       return (
                         <div key={fileId} className="flex items-center justify-between p-2.5 bg-slate-950/40 border border-slate-800/80 rounded-xl group hover:border-slate-700/80 transition-colors">
                           <div className="min-w-0 flex-1 flex items-center gap-2">
@@ -595,15 +595,30 @@ export default function DocumentAnalyzeModal({
                           </div>
                           <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                             {linkedDoc && (
-                              <a
-                                href={`/api/documents/view?path=${encodeURIComponent(linkedDoc.path)}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-1 hover:bg-slate-800 rounded text-cyan-400 hover:text-cyan-300"
-                                title="Xem file"
-                              >
-                                <ExternalLink className="w-3 h-3" />
-                              </a>
+                              <>
+                                {(linkedDoc.webContentLink || linkedDoc.web_content_link) && (
+                                  <a
+                                    href={linkedDoc.webContentLink || linkedDoc.web_content_link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-1 hover:bg-slate-800 rounded text-green-400 hover:text-green-300"
+                                    title="Tải file về máy"
+                                  >
+                                    <Download className="w-3 h-3" />
+                                  </a>
+                                )}
+                                {(linkedDoc.webViewLink || linkedDoc.web_view_link) && (
+                                  <a
+                                    href={linkedDoc.webViewLink || linkedDoc.web_view_link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-1 hover:bg-slate-800 rounded text-cyan-400 hover:text-cyan-300"
+                                    title="Xem trên Drive"
+                                  >
+                                    <ExternalLink className="w-3 h-3" />
+                                  </a>
+                                )}
+                              </>
                             )}
                             <button
                               type="button"
