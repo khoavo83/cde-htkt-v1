@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { Pool } from 'pg';
 
 const pool = new Pool({
@@ -10,18 +10,18 @@ const pool = new Pool({
 export async function GET() {
   try {
     const issuerRes = await pool.query(`
-      SELECT DISTINCT TRIM(issuer) as value, COUNT(*) as count
+      SELECT DISTINCT TRIM(noi_phat_hanh) as value, COUNT(*) as count
       FROM drive_file_metadata 
-      WHERE issuer IS NOT NULL AND issuer != ''
-      GROUP BY TRIM(issuer)
+      WHERE noi_phat_hanh IS NOT NULL AND noi_phat_hanh != ''
+      GROUP BY TRIM(noi_phat_hanh)
       ORDER BY count DESC
     `);
 
     const receiverRes = await pool.query(`
-      SELECT DISTINCT TRIM(receiver) as value, COUNT(*) as count
+      SELECT DISTINCT TRIM(noi_gui) as value, COUNT(*) as count
       FROM drive_file_metadata 
-      WHERE receiver IS NOT NULL AND receiver != ''
-      GROUP BY TRIM(receiver)
+      WHERE noi_gui IS NOT NULL AND noi_gui != ''
+      GROUP BY TRIM(noi_gui)
       ORDER BY count DESC
     `);
 
@@ -88,7 +88,7 @@ export async function POST(req) {
     let totalUpdated = 0;
     for (const m of mappings) {
       if (!m.original || !m.target_name || m.original === m.target_name) continue;
-      const field = m.field === 'receiver' ? 'receiver' : 'issuer';
+      const field = m.field === 'receiver' ? 'noi_gui' : 'noi_phat_hanh';
       const res = await pool.query(
         `UPDATE drive_file_metadata SET ${field} = $1 WHERE TRIM(${field}) = $2`,
         [m.target_name, m.original.trim()]

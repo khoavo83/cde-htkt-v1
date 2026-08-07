@@ -5,11 +5,15 @@ import AgencyCombobox from './AgencyCombobox';
 import { 
   X, Save, Bot, CheckCircle2, AlertTriangle, 
   FileText, Sparkles, Loader2, Shield,
-  Calendar, User, Tag, Hash, FolderOpen, Send, Copy, Type, XCircle, ScanEye, Link2, Plus, ExternalLink, Download
+  Calendar, User, Tag, Hash, FolderOpen, Send, Copy, Type, XCircle, ScanEye, Link2, Plus, ExternalLink, Download, FileCheck, Unlink2
 } from 'lucide-react';
 
 const CATEGORIES = [
-  "Quy hoạch", "Sở ngành", "Đất đai", "Rà phá bom mìn", "Phú Mỹ Hưng", "Khác"
+  "Công văn",
+  "Giấy mời",
+  "Quyết định",
+  "Phiếu trình",
+  "Hợp đồng"
 ];
 
 const STATUS_OPTIONS = [
@@ -39,6 +43,8 @@ export default function DocumentAnalyzeModal({
   isOpen,
   onClose,
   onSave,
+  onDetachPhieuTrinh,
+  onAttachPhieuTrinhClick,
   allDocuments = [],
   allFolderFiles = [],
   agencies = [],
@@ -62,6 +68,7 @@ export default function DocumentAnalyzeModal({
     category: '',
     status: 'effective',
     receiver: '', // Nơi gửi
+    is_outgoing: false, // Công văn đi
     draftFiles: [], // File dự thảo/đính kèm
   });
   
@@ -84,12 +91,13 @@ export default function DocumentAnalyzeModal({
       setShowCloseConfirm(false);
       setFormData({
         documentNumber: doc.documentNumber || doc.so_vb || '',
-        issuedDate: doc.issuedDate || doc.ngay_phat_hanh || '',
-        issuer: doc.issuer || doc.noi_phat_hanh || '',
-        notes: doc.notes || doc.trich_yeu || '',
+        issuedDate: doc.documentDate || doc.issuedDate || doc.ngay_phat_hanh || '',
+        issuer: doc.issuingAgency || doc.issuer || doc.noi_phat_hanh || '',
+        notes: doc.summary || doc.notes || doc.trich_yeu || '',
         category: doc.category || doc.loai_vb || '',
         status: doc.status || 'effective',
-        receiver: doc.noi_gui || doc.receiver || '',
+        receiver: doc.receivingAgency || doc.noi_gui || doc.receiver || '',
+        is_outgoing: doc.is_outgoing || false,
         // Kết hợp cả 2 nguồn: legacy array + file đính kèm mới qua parent_id
         draftFiles: Array.from(new Set([
           ...(doc.draftFiles || doc.draft_files || []),
@@ -261,6 +269,7 @@ export default function DocumentAnalyzeModal({
         category: formData.category,
         status: formData.status,
         receiver: formData.receiver,
+        is_outgoing: formData.is_outgoing,
         
         so_vb: formData.documentNumber,
         ngay_phat_hanh: formData.issuedDate,
@@ -284,6 +293,7 @@ export default function DocumentAnalyzeModal({
           noi_phat_hanh: updatedDoc.noi_phat_hanh,
           trich_yeu: updatedDoc.trich_yeu,
           noi_gui: updatedDoc.noi_gui,
+          is_outgoing: updatedDoc.is_outgoing,
           draftFiles: updatedDoc.draftFiles
         })
       });
@@ -443,6 +453,61 @@ export default function DocumentAnalyzeModal({
                   </div>
                 </div>
               )}
+
+              {/* Nút check Công văn đi */}
+              <div className="mb-4">
+                <div className="flex items-center gap-3 flex-wrap">
+                  {/* Checkbox Văn bản đi */}
+                  <label className="inline-flex items-center gap-2 cursor-pointer bg-slate-800 px-4 py-2 rounded-xl border border-slate-700 hover:bg-slate-700/80 transition-colors shadow-sm">
+                    <input 
+                      type="checkbox" 
+                      checked={formData.is_outgoing}
+                      onChange={(e) => setFormData(prev => ({ ...prev, is_outgoing: e.target.checked }))}
+                      className="w-5 h-5 rounded text-emerald-500 focus:ring-emerald-500 cursor-pointer border-slate-600 bg-slate-900"
+                    />
+                    <span className="text-sm font-semibold text-slate-200 select-none">
+                      Văn bản đi (Phát hành)
+                    </span>
+                  </label>
+
+                  {/* Phiếu trình — hiện khi là Văn bản đi VÀ đã có Phiếu trình */}
+                  {formData.is_outgoing && doc?.phieu_trinh && (
+                    <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-xl px-3 py-2">
+                      <FileCheck className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                      <a
+                        href={doc.phieu_trinh.webViewLink || '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-amber-400 text-sm font-medium hover:underline truncate max-w-[220px]"
+                        title={`Mở Phiếu trình: ${doc.phieu_trinh.name}`}
+                      >
+                        {doc.phieu_trinh.name?.replace(/\.pdf$/i, '') || 'Phiếu trình'}
+                      </a>
+                      {onDetachPhieuTrinh && (
+                        <button
+                          onClick={() => onDetachPhieuTrinh(doc.phieu_trinh.id)}
+                          className="ml-1 text-red-400 hover:text-red-300 flex-shrink-0"
+                          title="Gỡ Phiếu trình"
+                        >
+                          <Unlink2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Thông báo khi là Văn bản đi nhưng chưa có Phiếu trình */}
+                  {formData.is_outgoing && !doc?.phieu_trinh && (
+                    <button
+                      onClick={() => onAttachPhieuTrinhClick && onAttachPhieuTrinhClick(doc)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/30 rounded-xl text-sm font-medium transition-colors"
+                      title="Gắn file Phiếu trình"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Gắn Phiếu trình
+                    </button>
+                  )}
+                </div>
+              </div>
 
               {/* Form Fields */}
               <div className="grid grid-cols-12 gap-3 sm:gap-4">

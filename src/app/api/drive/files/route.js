@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { fetchFolderFiles, renameFile } from '@/lib/drive';
 import { Pool } from 'pg';
 
+export const dynamic = 'force-dynamic';
+
 const pool = process.env.DATABASE_URL 
   ? new Pool({
       connectionString: process.env.DATABASE_URL,
@@ -103,72 +105,52 @@ export async function GET(request) {
           parsedTrichYeu = fileNameStr;
         }
       } else {
-        // Đối với file Word hoặc file khác: không bóc tách, giữ nguyên toàn bộ tên file làm Trích yếu
         parsedTrichYeu = fileNameStr;
       }
 
       if (!existing) {
+        // File mới: chỉ insert với dữ liệu parse từ tên file (dữ liệu thô ban đầu)
         await client.query(`
           INSERT INTO drive_file_metadata (file_id, file_name, web_view_link, modified_time, ngay_phat_hanh, so_vb, trich_yeu, folder_id, folder_name, is_outgoing, parent_id)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         `, [file.id, file.name, file.webViewLink, driveModifiedTime, parsedNgay, parsedSoVb, parsedTrichYeu, folderId, folderName, false, null]);
-      } else if (!existing.manually_edited) {
-        const isModifiedOnDrive = (!dbModifiedTime || driveModifiedTime.getTime() > dbModifiedTime.getTime());
-        const hasNewExtractedData = (parsedNgay && existing.ngay_phat_hanh !== parsedNgay) ||
-                                    (parsedSoVb && existing.so_vb !== parsedSoVb) ||
-                                    (parsedTrichYeu && existing.trich_yeu !== parsedTrichYeu);
+      } else {
+        // File đã có trong Supabase: KHÔNG BAO GIỜ ghi đè so_vb, trich_yeu, ngay_phat_hanh, noi_phat_hanh
+        // Chỉ cập nhật thông tin kỹ thuật: tên file, link Drive, thư mục, thời gian sửa
         const isNameChanged = (file.name !== existing.file_name);
-
-        if (isModifiedOnDrive || hasNewExtractedData || existing.folder_id !== folderId || isNameChanged) {
-          let finalNgay, finalSoVb, finalTrichYeu;
-          if (file.mimeType === 'application/pdf') {
-            finalNgay = parsedNgay || existing.ngay_phat_hanh;
-            finalSoVb = parsedSoVb || existing.so_vb;
-            finalTrichYeu = parsedTrichYeu || existing.trich_yeu;
-          } else {
-            // Force clear for non-PDFs
-            finalNgay = null;
-            finalSoVb = null;
-            finalTrichYeu = parsedTrichYeu; // this is the full file name
-          }
-
+        if (isNameChanged || existing.folder_id !== folderId || existing.web_view_link !== file.webViewLink) {
           await client.query(`
             UPDATE drive_file_metadata 
-            SET modified_time = $1, file_name = $2, web_view_link = $3, ngay_phat_hanh = $5, so_vb = $6, trich_yeu = $7, folder_id = $8, folder_name = $9
-            WHERE file_id = $4
-          `, [driveModifiedTime, file.name, file.webViewLink, file.id, finalNgay, finalSoVb, finalTrichYeu, folderId, folderName]);
-          
+            SET modified_time = $1, file_name = $2, web_view_link = $3, folder_id = $4, folder_name = $5
+            WHERE file_id = $6
+          `, [driveModifiedTime, file.name, file.webViewLink, folderId, folderName, file.id]);
+
           // Tự động đổi tên các file đính kèm (Word) nếu PDF đổi tên
           if (isNameChanged && file.mimeType === 'application/pdf') {
-             const resChildren = await client.query('SELECT file_id, file_name FROM drive_file_metadata WHERE parent_id = $1', [file.id]);
-             for (const child of resChildren.rows) {
-                const childExt = child.file_name.includes('.') ? child.file_name.split('.').pop() : 'doc';
-                const pdfBase = file.name.replace(/\.pdf$/i, '');
-                const newChildName = `${pdfBase}.${childExt}`;
-                
-                if (newChildName !== child.file_name) {
-                  try {
-                    await renameFile(child.file_id, newChildName);
-                    await client.query('UPDATE drive_file_metadata SET file_name = $1 WHERE file_id = $2', [newChildName, child.file_id]);
-                    const childInDriveFiles = driveFiles.find(f => f.id === child.file_id);
-                    if (childInDriveFiles) {
-                       childInDriveFiles.name = newChildName;
-                    }
-                  } catch (e) {
-                    console.error('Lỗi tự động đổi tên file đính kèm:', e);
-                  }
+            const resChildren = await client.query('SELECT file_id, file_name FROM drive_file_metadata WHERE parent_id = $1', [file.id]);
+            for (const child of resChildren.rows) {
+              const childExt = child.file_name.includes('.') ? child.file_name.split('.').pop() : 'doc';
+              const pdfBase = file.name.replace(/\.pdf$/i, '');
+              const newChildName = `${pdfBase}.${childExt}`;
+              if (newChildName !== child.file_name) {
+                try {
+                  await renameFile(child.file_id, newChildName);
+                  await client.query('UPDATE drive_file_metadata SET file_name = $1 WHERE file_id = $2', [newChildName, child.file_id]);
+                  const childInDriveFiles = driveFiles.find(f => f.id === child.file_id);
+                  if (childInDriveFiles) childInDriveFiles.name = newChildName;
+                } catch (e) {
+                  console.error('Lỗi tự động đổi tên file đính kèm:', e);
                 }
-             }
+              }
+            }
           }
 
-          // Update in-memory existing object so mergedFile gets the latest
-          existing.ngay_phat_hanh = finalNgay;
-          existing.so_vb = finalSoVb;
-          existing.trich_yeu = finalTrichYeu;
           existing.file_name = file.name;
         }
       }
 
+      // Nguồn sự thật duy nhất = Supabase (existing)
+      // Nếu Supabase chưa có dữ liệu (record mới vừa insert), dùng parsed từ tên file làm fallback hiển thị
       const mergedFile = {
         ...file,
         needs_ai: needsAi,
@@ -182,14 +164,40 @@ export async function GET(request) {
         custom_order_index: existing?.custom_order_index || 0,
         is_outgoing: existing?.is_outgoing || false,
         parent_id: existing?.parent_id || null,
-        // Trả về mảng draftFiles (legacy) để frontend không ghi đè bằng [] khi lưu
+        loai_vb: existing?.loai_vb || '',
         draftFiles: existing?.draft_files || [],
       };
 
       updatedFiles.push(mergedFile);
     }
 
-    return NextResponse.json({ success: true, data: updatedFiles });
+    // ── Xử lý Phiếu trình ───────────────────────────────────────────────────
+    // Phiếu trình (loai_vb='Phiếu trình' + parent_id!=null) được gắn vào Công văn đi cha
+    // và ẩn khỏi danh sách hiển thị chính
+    const phieuTrinhMap = new Map(); // parent_id => phieu_trinh object
+    const finalFiles = [];
+
+    for (const f of updatedFiles) {
+      if (f.loai_vb === 'Phiếu trình' && f.parent_id) {
+        phieuTrinhMap.set(f.parent_id, {
+          id: f.id,
+          name: f.name || f.file_name,
+          webViewLink: f.webViewLink || f.web_view_link || '',
+        });
+        // Không push vào finalFiles — ẩn khỏi bảng chính
+      } else {
+        finalFiles.push(f);
+      }
+    }
+
+    // Gắn phieu_trinh vào Công văn đi cha
+    for (const f of finalFiles) {
+      if (phieuTrinhMap.has(f.id)) {
+        f.phieu_trinh = phieuTrinhMap.get(f.id);
+      }
+    }
+
+    return NextResponse.json({ success: true, data: finalFiles });
   } catch (error) {
     console.error('Error fetching files:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -197,3 +205,4 @@ export async function GET(request) {
     if (client) client.release();
   }
 }
+

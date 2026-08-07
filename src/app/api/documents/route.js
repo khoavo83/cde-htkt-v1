@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-import { google } from 'googleapis';
 import { Pool } from 'pg';
 
 export const dynamic = 'force-dynamic';
@@ -9,12 +8,10 @@ export const dynamic = 'force-dynamic';
 const pool = process.env.DATABASE_URL 
   ? new Pool({
       connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false }
+      ssl: process.env.DATABASE_URL.includes('127.0.0.1') ? false : { rejectUnauthorized: false }
     })
   : null;
 
-
-const FOLDER_ID = "1ZjUVuusk_wD8GnsXXhBthpj8BvyG3fz2";
 
 const getDbPath = () => path.join(process.cwd(), 'src', 'data', 'db.json');
 
@@ -218,14 +215,24 @@ export async function GET() {
         const client = await pool.connect();
         const { rows } = await client.query(`
           SELECT 
-            id, name, file_path as path, folder, category, 
-            document_type as "documentType", 
-            document_date as "documentDate", 
-            issuing_agency as "issuingAgency", 
-            receiving_agency as "receivingAgency", 
-            summary, size, updated_at as "updatedAt"
+            id,
+            COALESCE(name, file_name) AS name,
+            file_path AS path,
+            drive_file_id AS "driveFileId",
+            drive_web_link AS "driveWebLink",
+            folder,
+            category,
+            document_type AS "documentType",
+            document_number AS "documentNumber",
+            document_date AS "documentDate",
+            issuing_agency AS "issuingAgency",
+            receiving_agency AS "receivingAgency",
+            summary,
+            is_outgoing AS "is_outgoing",
+            COALESCE(size, file_size) AS size,
+            updated_at AS "updatedAt"
           FROM documents
-          ORDER BY name ASC
+          ORDER BY COALESCE(name, file_name) ASC
         `);
         client.release();
 

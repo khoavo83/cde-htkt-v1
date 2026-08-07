@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { Pool } from 'pg';
-import * as xlsx from 'xlsx';
 
 const pool = process.env.DATABASE_URL 
   ? new Pool({
@@ -9,19 +8,21 @@ const pool = process.env.DATABASE_URL
     })
   : null;
 
-export async function GET(request) {
+import ExcelJS from 'exceljs';
+
+export async function POST(request) {
   if (!pool) {
     return NextResponse.json({ error: 'Chưa kết nối database' }, { status: 500 });
   }
 
   let client = null;
   try {
-    const { searchParams } = new URL(request.url);
-    const q = searchParams.get('q') || '';
-    const folderIdsStr = searchParams.get('folderIds') || '';
-    const category = searchParams.get('category') || '';
-    const ngayPhatHanh = searchParams.get('ngayPhatHanh') || '';
-    const noiPhatHanh = searchParams.get('noiPhatHanh') || '';
+    const body = await request.json();
+    const q = body.q || '';
+    const folderIdsArr = body.folderIds || [];
+    const category = body.category || '';
+    const ngayPhatHanh = body.ngayPhatHanh || '';
+    const noiPhatHanh = body.noiPhatHanh || '';
     
     client = await pool.connect();
     let queryText = 'SELECT * FROM drive_file_metadata WHERE 1=1';
@@ -48,84 +49,100 @@ export async function GET(request) {
       queryText += ` AND noi_phat_hanh ILIKE $${queryParamsArgs.length}`;
     }
 
-    // Lấy đệ quy (thư mục con) bằng cách truyền mảng folderIds từ frontend
-    // Nếu có folderIds và không search, chỉ lấy trong các thư mục đó
-    if (folderIdsStr && q.trim() === '' && ngayPhatHanh.trim() === '' && noiPhatHanh.trim() === '') {
-        const folderIdsArr = folderIdsStr.split(',');
+    // Lấy đệ quy (thư mục con)
+    let isFolderSearch = false;
+    if (folderIdsArr.length > 0 && q.trim() === '' && ngayPhatHanh.trim() === '' && noiPhatHanh.trim() === '') {
         queryParamsArgs.push(folderIdsArr);
         queryText += ` AND folder_id = ANY($${queryParamsArgs.length})`;
+        isFolderSearch = true;
     }
 
-    // Sắp xếp theo thư mục để gom nhóm (folder_name), sau đó theo ngày phát hành
-    queryText += ' ORDER BY folder_name ASC, folder_id ASC, ngay_phat_hanh DESC, file_name ASC';
+    // Sắp xếp: Nếu xuất theo thư mục, dùng array_position để giữ đúng thứ tự cha/con từ frontend truyền xuống
+    if (isFolderSearch) {
+        queryText += ` ORDER BY array_position($${queryParamsArgs.length}, folder_id), ngay_phat_hanh DESC, file_name ASC`;
+    } else {
+        queryText += ' ORDER BY folder_name ASC, folder_id ASC, ngay_phat_hanh DESC, file_name ASC';
+    }
 
     const { rows } = await client.query(queryText, queryParamsArgs);
 
-    // Xử lý tạo dữ liệu cho Excel (Group by folder)
-    const excelData = [];
-    let currentFolderId = null;
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Danh_Sach_Van_Ban');
 
-    rows.forEach((row, index) => {
+    // Thiết lập Header (đã bỏ cột Link, thêm Loại văn bản)
+    worksheet.columns = [
+      { header: 'STT', key: 'stt', width: 10 },
+      { header: 'Loại văn bản', key: 'loai_vb', width: 20 },
+      { header: 'Số văn bản', key: 'so_vb', width: 25 },
+      { header: 'Ngày phát hành', key: 'ngay_phat_hanh', width: 15 },
+      { header: 'Nơi phát hành', key: 'noi_phat_hanh', width: 25 },
+      { header: 'Trích yếu nội dung', key: 'trich_yeu', width: 60 },
+      { header: 'fileName', key: 'file_name', width: 60 },
+      { header: 'fileID', key: 'file_id', width: 40 },
+      { header: 'folderName', key: 'folder_name', width: 20 },
+      { header: 'FolderID', key: 'folder_id', width: 40 },
+    ];
+
+    // Style Header của bảng: In đậm, Times New Roman size 14
+    worksheet.getRow(1).font = { name: 'Times New Roman', size: 14, bold: true };
+
+    let currentFolderId = null;
+    let stt = 1;
+
+    rows.forEach((row) => {
       // Nếu chuyển sang một thư mục mới, chèn một dòng Tiêu đề thư mục
       if (row.folder_id !== currentFolderId) {
         currentFolderId = row.folder_id;
         
         // Thêm dòng trống để cách điệu
-        if (excelData.length > 0) {
-          excelData.push({});
+        if (worksheet.rowCount > 1) {
+          worksheet.addRow({});
         }
 
         // Dòng header của Group Thư mục
-        excelData.push({
-          'Tên File': `📂 THƯ MỤC: ${row.folder_name || 'Không xác định'}`,
-          'Số VB': '',
-          'Ngày Ban Hành': '',
-          'Nơi Phát Hành': '',
-          'Trích Yếu': '',
-          'Link Drive': '',
-          'File ID': '',
-          'Folder Name': '',
-          'Folder ID': row.folder_id || ''
+        const folderRow = worksheet.addRow({
+          stt: row.folder_name || 'Không xác định',
         });
+        
+        // Trộn ô (Merge cells) từ cột 1 đến 10 (vì có tổng cộng 10 cột)
+        worksheet.mergeCells(folderRow.number, 1, folderRow.number, 10);
+        
+        // In đậm, nền vàng, chữ Times New Roman 14
+        folderRow.font = { name: 'Times New Roman', size: 14, bold: true };
+        folderRow.getCell(1).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFFFCC' } // Màu vàng theo yêu cầu
+        };
       }
 
       // Thêm dòng dữ liệu file
-      excelData.push({
-        'Tên File': row.file_name || '',
-        'Số VB': row.so_vb || '',
-        'Ngày Ban Hành': row.ngay_phat_hanh || '',
-        'Nơi Phát Hành': row.noi_phat_hanh || '',
-        'Trích Yếu': row.trich_yeu || '',
-        'Link Drive': row.web_view_link || '',
-        'File ID': row.file_id || '',
-        'Folder Name': row.folder_name || '',
-        'Folder ID': row.folder_id || ''
+      const dataRow = worksheet.addRow({
+        stt: stt++,
+        loai_vb: row.loai_vb || '',
+        so_vb: row.so_vb || '',
+        ngay_phat_hanh: row.ngay_phat_hanh || '',
+        noi_phat_hanh: row.noi_phat_hanh || '',
+        trich_yeu: row.trich_yeu || '',
+        file_name: row.web_view_link ? { text: row.file_name || '', hyperlink: row.web_view_link } : (row.file_name || ''),
+        file_id: row.file_id || '',
+        folder_name: row.folder_name || '',
+        folder_id: row.folder_id || ''
       });
+
+      // Style cho dòng dữ liệu
+      dataRow.font = { name: 'Times New Roman', size: 14 };
+
+      // Định dạng fileName có gạch chân, màu xanh nếu có link
+      if (row.web_view_link) {
+        dataRow.getCell('file_name').font = { name: 'Times New Roman', size: 14, color: { argb: 'FF0563C1' }, underline: true };
+      }
     });
 
-    // Tạo workbook và worksheet
-    const worksheet = xlsx.utils.json_to_sheet(excelData);
-    
-    // Tùy chỉnh độ rộng cột
-    const wscols = [
-      { wch: 50 }, // Tên File
-      { wch: 20 }, // Số VB
-      { wch: 15 }, // Ngày Ban Hành
-      { wch: 25 }, // Nơi Phát Hành
-      { wch: 60 }, // Trích Yếu
-      { wch: 50 }, // Link Drive
-      { wch: 40 }, // File ID
-      { wch: 20 }, // Folder Name
-      { wch: 40 }, // Folder ID
-    ];
-    worksheet['!cols'] = wscols;
+    // Tạo buffer và trả về response
+    const buffer = await workbook.xlsx.writeBuffer();
 
-    const workbook = xlsx.utils.book_new();
-    xlsx.utils.book_append_sheet(workbook, worksheet, 'Danh_Sach_Van_Ban');
-
-    const buf = xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-
-    return new Response(buf, {
+    return new Response(buffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

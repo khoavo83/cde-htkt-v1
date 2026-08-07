@@ -1,0 +1,488 @@
+[
+  {
+    "name": "run_command",
+    "args": {
+      "CommandLine": "Select-String -Path \"D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx\" -Pattern \"pdf|PDF|count|total|170\" -CaseSensitive:$false | Select-Object LineNumber, Line | Format-Table -AutoSize",
+      "Cwd": "D:\\Webapp CDE-HTKT\\webapp",
+      "WaitMsBeforeAsync": 8000,
+      "toolAction": "Searching FolderTree.jsx for PDF count logic",
+      "toolSummary": "Tìm logic đếm PDF trong FolderTree"
+    }
+  },
+  {
+    "name": "multi_replace_file_content",
+    "args": {
+      "Description": "Nâng cấp nút Đồng bộ: thêm state syncProgress để hiển thị tiến trình (X thư mục, Y file), hiện thông báo thành công với số file đã index, đổi text nút thành \"Đồng bộ Toàn bộ\" để rõ ràng hơn.",
+      "Instruction": "Thêm state syncProgress, cập nhật handleSync để đọc kết quả trả về và hiển thị progress, sửa nút UI",
+      "ReplacementChunks": [
+        {
+          "AllowMultiple": false,
+          "EndLine": 358,
+          "ReplacementContent": "  const [totalPdfCount, setTotalPdfCount] = useState(0);\n  const [loading, setLoading]   = useState(true);\n  const [syncing, setSyncing]   = useState(false);\n  const [syncProgress, setSyncProgress] = useState(null); // { folderCount, fileCount, totalPdfCount }",
+          "StartLine": 356,
+          "TargetContent": "  const [totalPdfCount, setTotalPdfCount] = useState(0);\n  const [loading, setLoading]   = useState(true);\n  const [syncing, setSyncing]   = useState(false);"
+        },
+        {
+          "AllowMultiple": false,
+          "EndLine": 417,
+          "ReplacementContent": "  const handleSync = async () => {\n    setSyncing(true); setError(null); setSyncProgress(null);\n    try {\n      const url = projectId ? `/api/drive/sync?projectId=${projectId}` : '/api/drive/sync';\n      const json = await fetch(url, { method: 'POST' }).then(r => r.json());\n      if (json.success) {\n        // Cập nhật progress từ response\n        if (json.totalPdfCount !== undefined) {\n          setTotalPdfCount(json.totalPdfCount);\n          setSyncProgress({\n            folderCount: json.folderCount || 0,\n            fileCount: json.fileCount || 0,\n            totalPdfCount: json.totalPdfCount\n          });\n        }\n        await loadData();\n      } else {\n        setError(json.error || 'Đồng bộ thất bại');\n      }\n    } catch { setError('Lỗi kết nối khi đồng bộ'); }\n    finally  { setSyncing(false); }\n  };",
+          "StartLine": 408,
+          "TargetContent": "  const handleSync = async () => {\n    setSyncing(true); setError(null);\n    try {\n      const url  = projectId ? `/api/drive/sync?projectId=${projectId}` : '/api/drive/sync';\n      const json = await fetch(url, { method: 'POST' }).then(r => r.json());\n      if (json.success) await loadData();\n      else setError(json.error || 'Đồng bộ thất bại');\n    } catch { setError('Lỗi khi đồng bộ'); }\n    finally  { setSyncing(false); }\n  };"
+        },
+        {
+          "AllowMultiple": false,
+          "EndLine": 751,
+          "ReplacementContent": "      {error && (\n        <div className=\"mx-4 mt-3 p-3 rounded-lg bg-red-100/80 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-sm shrink-0\">\n          <span className=\"font-semibold mr-2\">Lỗi:</span>{error}\n        </div>\n      )}\n\n      {syncProgress && !syncing && (\n        <div className=\"mx-4 mt-3 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-400 text-xs shrink-0 flex items-center gap-2\">\n          <RefreshCw size={14} className=\"shrink-0\"/>\n          <span>\n            Đồng bộ hoàn tất: <strong>{syncProgress.folderCount}</strong> thư mục,{' '}\n            <strong>{syncProgress.fileCount}</strong> file đã index.{' '}\n            Tổng PDF trong DB: <strong className=\"text-emerald-500\">{syncProgress.totalPdfCount}</strong>\n          </span>\n          <button onClick={() => setSyncProgress(null)} className=\"ml-auto text-slate-400 hover:text-slate-600\">✕</button>\n        </div>\n      )}",
+          "StartLine": 747,
+          "TargetContent": "      {error && (\n        <div className=\"mx-4 mt-3 p-3 rounded-lg bg-red-100/80 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-sm shrink-0\">\n          <span className=\"font-semibold mr-2\">Lỗi:</span>{error}\n        </div>\n      )}"
+        },
+        {
+          "AllowMultiple": false,
+          "EndLine": 743,
+          "ReplacementContent": "          <button onClick={handleSync} disabled={syncing}\n            className=\"flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors disabled:opacity-50 text-sm font-medium whitespace-nowrap\">\n            <RefreshCw size={16} className={syncing ? 'animate-spin' : ''}/>\n            <span className=\"hidden sm:inline\">\n              {syncing ? 'Đang đồng bộ toàn bộ...' : 'Đồng bộ Toàn bộ'}\n            </span>\n          </button>",
+          "StartLine": 739,
+          "TargetContent": "          <button onClick={handleSync} disabled={syncing}\n            className=\"flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors disabled:opacity-50 text-sm font-medium whitespace-nowrap\">\n            <RefreshCw size={16} className={syncing ? 'animate-spin' : ''}/>\n            <span className=\"hidden sm:inline\">{syncing ? 'Đang đồng bộ...' : 'Đồng bộ'}</span>\n          </button>"
+        }
+      ],
+      "TargetFile": "D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx",
+      "toolAction": "Updating FolderTree UI for sync progress",
+      "toolSummary": "Sửa UI FolderTree cho progress sync"
+    }
+  },
+  {
+    "name": "run_command",
+    "args": {
+      "CommandLine": "Select-String -Pattern \"is_outgoing|Công văn đi|Công văn\" -Path \"D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx\"",
+      "Cwd": "D:\\Webapp CDE-HTKT\\webapp",
+      "WaitMsBeforeAsync": 500,
+      "toolAction": "Searching for is_outgoing logic",
+      "toolSummary": "Tìm kiếm logic Công văn đi trong FolderTree"
+    }
+  },
+  {
+    "name": "run_command",
+    "args": {
+      "CommandLine": "Select-String -Pattern \"handleSaveEdit\" -Path \"D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx\" -Context 5, 20",
+      "Cwd": "D:\\Webapp CDE-HTKT\\webapp",
+      "WaitMsBeforeAsync": 500,
+      "toolAction": "Searching for handleSaveEdit logic",
+      "toolSummary": "Tìm hàm handleSaveEdit trong FolderTree"
+    }
+  },
+  {
+    "name": "run_command",
+    "args": {
+      "CommandLine": "Select-String -Pattern \"editingFile\" -Path \"D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx\" -Context 2, 5",
+      "Cwd": "D:\\Webapp CDE-HTKT\\webapp",
+      "WaitMsBeforeAsync": 500,
+      "toolAction": "Searching for editingFile state",
+      "toolSummary": "Tìm editingFile state trong FolderTree"
+    }
+  },
+  {
+    "name": "run_command",
+    "args": {
+      "CommandLine": "Select-String -Pattern \"editingFile\" -Path \"D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx\"",
+      "Cwd": "D:\\Webapp CDE-HTKT\\webapp",
+      "WaitMsBeforeAsync": 500,
+      "toolAction": "Searching for editingFile state",
+      "toolSummary": "Tìm editingFile state"
+    }
+  },
+  {
+    "name": "run_command",
+    "args": {
+      "CommandLine": "Select-String -Pattern \"form|Form|modal|Modal|Lưu|Hủy|Sửa\" -Path \"D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx\"",
+      "Cwd": "D:\\Webapp CDE-HTKT\\webapp",
+      "WaitMsBeforeAsync": 500,
+      "toolAction": "Searching for form keywords",
+      "toolSummary": "Tìm form sửa thông tin file"
+    }
+  },
+  {
+    "name": "run_command",
+    "args": {
+      "CommandLine": "Select-String -Pattern \"file.trich_yeu\" -Path \"D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx\" -Context 3, 3",
+      "Cwd": "D:\\Webapp CDE-HTKT\\webapp",
+      "WaitMsBeforeAsync": 500,
+      "toolAction": "Checking FolderTree for trich_yeu",
+      "toolSummary": "Kiểm tra cách hiển thị trích yếu trong giao diện"
+    }
+  },
+  {
+    "name": "run_command",
+    "args": {
+      "CommandLine": "Select-String -Pattern \"setFolderFiles\" -Path \"D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx\" -Context 2, 5",
+      "Cwd": "D:\\Webapp CDE-HTKT\\webapp",
+      "WaitMsBeforeAsync": 500,
+      "toolAction": "Searching setFolderFiles in FolderTree",
+      "toolSummary": "Tìm hàm cập nhật danh sách file trong FolderTree"
+    }
+  },
+  {
+    "name": "run_command",
+    "args": {
+      "CommandLine": "Select-String -Pattern \"/api/\" -Path \"D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx\"",
+      "Cwd": "D:\\Webapp CDE-HTKT\\webapp",
+      "WaitMsBeforeAsync": 500,
+      "toolAction": "Searching for API calls in FolderTree",
+      "toolSummary": "Kiểm tra các API calls trong FolderTree"
+    }
+  },
+  {
+    "name": "multi_replace_file_content",
+    "args": {
+      "Description": "Đồng bộ cập nhật state của globalSearchResults khi lưu file để UI phản hồi ngay lập tức",
+      "Instruction": "Update the updateRow function to also update globalSearchResults so that if the user edits a file while in search mode, the UI updates.",
+      "ReplacementChunks": [
+        {
+          "AllowMultiple": false,
+          "EndLine": 507,
+          "ReplacementContent": "  const updateRow = useCallback((fileId, updatedData) => {\n    setFolderFiles(prev => prev.map(f => f.id === fileId ? { ...f, ...updatedData } : f));\n    setGlobalSearchResults(prev => prev.map(f => f.id === fileId ? { ...f, ...updatedData } : f));\n  }, []);",
+          "StartLine": 504,
+          "TargetContent": "  // C?p nh?t 1 dng trong b?ng\n  const updateRow = useCallback((fileId, updatedData) => {\n    setFolderFiles(prev => prev.map(f => f.id === fileId ? { ...f, ...updatedData } : f));\n  }, []);"
+        }
+      ],
+      "TargetFile": "D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx",
+      "toolAction": "Fixing updateRow bug",
+      "toolSummary": "Sửa lỗi không cập nhật UI khi search"
+    }
+  },
+  {
+    "name": "run_command",
+    "args": {
+      "CommandLine": "cat \"D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx\"",
+      "Cwd": "D:\\Webapp CDE-HTKT\\webapp",
+      "WaitMsBeforeAsync": 500,
+      "toolAction": "Reading FolderTree.jsx",
+      "toolSummary": "Xem toàn bộ component FolderTree.jsx"
+    }
+  },
+  {
+    "name": "multi_replace_file_content",
+    "args": {
+      "Description": "Thêm tham số chống cache vào URL để tránh lỗi Next.js hoặc trình duyệt tự động cache dữ liệu cũ",
+      "Instruction": "Add `&_t=${Date.now()}` to fetch calls in FolderTree.jsx to bust browser/Next.js cache.",
+      "ReplacementChunks": [
+        {
+          "AllowMultiple": false,
+          "EndLine": 385,
+          "ReplacementContent": "      const url  = projectId ? `/api/drive/tree?projectId=${projectId}&_t=${Date.now()}` : `/api/drive/tree?_t=${Date.now()}`;",
+          "StartLine": 385,
+          "TargetContent": "      const url  = projectId ? `/api/drive/tree?projectId=${projectId}` : '/api/drive/tree';"
+        },
+        {
+          "AllowMultiple": false,
+          "EndLine": 531,
+          "ReplacementContent": "    fetch(`/api/drive/files?folderId=${folder.id}&folderName=${encodeURIComponent(folder.name)}&_t=${Date.now()}`)",
+          "StartLine": 531,
+          "TargetContent": "    fetch(`/api/drive/files?folderId=${folder.id}&folderName=${encodeURIComponent(folder.name)}`)"
+        },
+        {
+          "AllowMultiple": false,
+          "EndLine": 652,
+          "ReplacementContent": "      const url = `/api/drive/search?q=${encodeURIComponent(search)}&category=${encodeURIComponent(docCategory)}&ngayPhatHanh=${encodeURIComponent(searchNgayPhatHanh)}&noiPhatHanh=${encodeURIComponent(searchNoiPhatHanh)}&_t=${Date.now()}`;",
+          "StartLine": 652,
+          "TargetContent": "      const url = `/api/drive/search?q=${encodeURIComponent(search)}&category=${encodeURIComponent(docCategory)}&ngayPhatHanh=${encodeURIComponent(searchNgayPhatHanh)}&noiPhatHanh=${encodeURIComponent(searchNoiPhatHanh)}`;"
+        }
+      ],
+      "TargetFile": "D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx",
+      "toolAction": "Adding cache busters",
+      "toolSummary": "Thêm _t=Date.now() vào URL fetch"
+    }
+  },
+  {
+    "name": "replace_file_content",
+    "args": {
+      "AllowMultiple": false,
+      "Description": "Xóa hoàn toàn logic parse tên file trong Frontend. API đã trả về dữ liệu sạch từ Supabase, Frontend KHÔNG được tự parse tên file rồi ghi đè lên.",
+      "EndLine": 572,
+      "Instruction": "Remove the client-side filename parsing logic. Just use the data directly from the API response (which already comes from Supabase).",
+      "ReplacementContent": "        // Dùng trực tiếp dữ liệu từ API (đã được lấy từ Supabase - không parse lại tên file)\n        const rows = allAllowedFiles.map(f => ({ ...f, _loading: false }));\n\n        // Sắp xếp ngày phát hành (nhỏ đến lớn) -> custom_order_index\n        rows.sort((a, b) => {\n          const timeA = parseDateString(a.ngay_phat_hanh);\n          const timeB = parseDateString(b.ngay_phat_hanh);\n          if (timeA !== timeB) return timeA - timeB;\n          return (a.custom_order_index || 0) - (b.custom_order_index || 0);\n        });\n        setFolderFiles(rows);",
+      "StartLine": 539,
+      "TargetContent": "        const rows = allAllowedFiles.map(f => {\n          const fileName = f.name || f.file_name || '';\n          let parsedNgay = f.ngay_phat_hanh;\n          let parsedSoVb = f.so_vb;\n          let parsedTrichYeu = f.trich_yeu;\n\n          const nameWithoutExt = fileName.replace(/\\.pdf$/i, '');\n          const parts = nameWithoutExt.split('_');\n\n          // Kiểm tra xem filename có đúng cấu trúc yyyy-mm-dd_x_y không\n          if (parts.length >= 3 && /^(\\d{4})-(\\d{2})-(\\d{2})$/.test(parts[0])) {\n            const dateMatch = parts[0].match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);\n            parsedNgay = `${dateMatch[3]}/${dateMatch[2]}/${dateMatch[1]}`;\n            parsedTrichYeu = parts[parts.length - 1];\n            parsedSoVb = parts.slice(1, parts.length - 1).join('/');\n          }\n\n          return { \n            ...f, \n            ngay_phat_hanh: parsedNgay || f.ngay_phat_hanh,\n            so_vb: parsedSoVb || f.so_vb,\n            trich_yeu: parsedTrichYeu || f.trich_yeu,\n            _loading: false \n          };\n        });\n\n        // Sắp xếp ngày phát hành (nhỏ đến lớn) -> custom_order_index\n        rows.sort((a, b) => {\n          const timeA = parseDateString(a.ngay_phat_hanh);\n          const timeB = parseDateString(b.ngay_phat_hanh);\n          if (timeA !== timeB) return timeA - timeB;\n          return (a.custom_order_index || 0) - (b.custom_order_index || 0);\n        });\n        setFolderFiles(rows);",
+      "TargetFile": "D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx",
+      "toolAction": "Removing client-side parse logic",
+      "toolSummary": "Xóa logic parse tên file ở Frontend"
+    }
+  },
+  {
+    "name": "multi_replace_file_content",
+    "args": {
+      "Description": "1. DocRow: Thêm hiển thị Phiếu trình (link + nút gỡ) kế bên icon Văn bản đi. Thêm nút Gắn Phiếu trình cho Công văn đi PDF. 2. Sửa import thêm FileCheck icon cho Phiếu trình.",
+      "Instruction": "Update DocRow to show phieu_trinh link next to outgoing badge, add attach-phieu-trinh button for outgoing PDFs. Update imports.",
+      "ReplacementChunks": [
+        {
+          "AllowMultiple": false,
+          "EndLine": 7,
+          "ReplacementContent": "  Pencil, Check, X, RotateCcw, CheckCircle2, Sparkles, ScanSearch, GripVertical, FileText, ArrowUpRight, ArrowDownRight, Link2, Download, ScanEye, CornerDownRight, Unlink2, FileCheck, ClipboardList",
+          "StartLine": 7,
+          "TargetContent": "  Pencil, Check, X, RotateCcw, CheckCircle2, Sparkles, ScanSearch, GripVertical, FileText, ArrowUpRight, ArrowDownRight, Link2, Download, ScanEye, CornerDownRight, Unlink2"
+        },
+        {
+          "AllowMultiple": false,
+          "EndLine": 142,
+          "ReplacementContent": "const DocRow = ({ file, idx, onUpdate, onAnalyze, onAttachClick, onAttachPhieuTrinhClick, onDetachPhieuTrinh, provided, snapshot, agencies }) => {",
+          "StartLine": 142,
+          "TargetContent": "const DocRow = ({ file, idx, onUpdate, onAnalyze, onAttachClick, provided, snapshot, agencies }) => {"
+        },
+        {
+          "AllowMultiple": false,
+          "EndLine": 207,
+          "ReplacementContent": "            <div className=\"flex gap-1 mt-0.5\">\r\n              {file.mimeType === 'application/pdf' && (\r\n                file.is_outgoing ? (\r\n                  <div className=\"flex items-center justify-center w-3.5 h-3.5 rounded-full bg-amber-100 text-amber-700\" title=\"Văn bản đi\"><ArrowUpRight size={10} strokeWidth={3}/></div>\r\n                ) : (\r\n                  <div className=\"flex items-center justify-center w-3.5 h-3.5 rounded-full bg-blue-100 text-blue-700\" title=\"Văn bản đến\"><ArrowDownRight size={10} strokeWidth={3}/></div>\r\n                )\r\n              )}\r\n            </div>\r\n            {/* Phiếu trình link — kế bên icon Văn bản đi */}\r\n            {file.is_outgoing && file.phieu_trinh && (\r\n              <div className=\"flex items-center gap-1 mt-1\">\r\n                <a\r\n                  href={file.phieu_trinh.webViewLink || '#'}\r\n                  target=\"_blank\"\r\n                  rel=\"noopener noreferrer\"\r\n                  className=\"flex items-center gap-0.5 text-[10px] text-amber-600 dark:text-amber-400 hover:underline truncate max-w-[80px]\"\r\n                  title={`Phiếu trình: ${file.phieu_trinh.name}`}\r\n                >\r\n                  <FileCheck size={9} className=\"flex-shrink-0\"/>\r\n                  <span className=\"truncate\">{file.phieu_trinh.name?.replace(/\\.pdf$/i,'') || 'Phiếu trình'}</span>\r\n                </a>\r\n                {onDetachPhieuTrinh && (\r\n                  <button\r\n                    onClick={() => onDetachPhieuTrinh(file.phieu_trinh.id)}\r\n                    className=\"text-red-400 hover:text-red-600 flex-shrink-0\"\r\n                    title=\"Gỡ Phiếu trình\"\r\n                  >\r\n                    <Unlink2 size={9}/>\r\n                  </button>\r\n                )}\r\n              </div>\r\n            )}\r\n          </div>",
+          "StartLine": 197,
+          "TargetContent": "            <div className=\"flex gap-1 mt-0.5\">\r\n              {file.mimeType === 'application/pdf' && (\r\n                file.is_outgoing ? (\r\n                  <div className=\"flex items-center justify-center w-3.5 h-3.5 rounded-full bg-amber-100 text-amber-700\" title=\"Văn bản đi\"><ArrowUpRight size={10} strokeWidth={3}/></div>\r\n                ) : (\r\n                  <div className=\"flex items-center justify-center w-3.5 h-3.5 rounded-full bg-blue-100 text-blue-700\" title=\"Văn bản đến\"><ArrowDownRight size={10} strokeWidth={3}/></div>\r\n                )\r\n              )}\r\n            </div>\r\n          </div>"
+        },
+        {
+          "AllowMultiple": false,
+          "EndLine": 268,
+          "ReplacementContent": "      {/* Actions */}\r\n      <td className=\"px-3 py-2.5\">\r\n        <div className=\"flex items-center gap-1.5 justify-center\">\r\n          {file.mimeType && file.mimeType.includes('word') ? (\r\n            <button\r\n              onClick={() => onAttachClick && onAttachClick(file)}\r\n              className=\"w-7 h-7 flex items-center justify-center rounded-md bg-cyan-500/10 text-cyan-600 hover:bg-cyan-500 hover:text-white transition-all shadow-sm shadow-cyan-500/20\"\r\n              title=\"Gắn vào file PDF\"\r\n            >\r\n              <Link2 size={13} className=\"drop-shadow-md\" />\r\n            </button>\r\n          ) : (\r\n            <button\r\n              onClick={onAnalyze}\r\n              className=\"w-7 h-7 flex items-center justify-center rounded-md bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white transition-all shadow-sm shadow-amber-500/20\"\r\n              title=\"Sửa / Phân tích chi tiết\"\r\n            >\r\n              <Pencil size={13} className=\"drop-shadow-md\" />\r\n            </button>\r\n          )}\r\n\r\n          {/* Nút gắn Phiếu trình — chỉ hiện với Công văn đi PDF chưa có Phiếu trình */}\r\n          {file.mimeType === 'application/pdf' && file.is_outgoing && !file.phieu_trinh && (\r\n            <button\r\n              onClick={() => onAttachPhieuTrinhClick && onAttachPhieuTrinhClick(file)}\r\n              className=\"w-7 h-7 flex items-center justify-center rounded-md bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white transition-all shadow-sm shadow-amber-500/20\"\r\n              title=\"Gắn Phiếu trình\"\r\n            >\r\n              <ClipboardList size={13} className=\"drop-shadow-md\" />\r\n            </button>\r\n          )}\r\n          \r\n          <button\r\n            onClick={() => alert('Tính năng quét OCR đang được phát triển làm phương án dự phòng.')}\r\n            className=\"w-7 h-7 flex items-center justify-center rounded-md bg-indigo-500/10 text-indigo-600 hover:bg-indigo-500 hover:text-white transition-all shadow-sm shadow-indigo-500/20\"\r\n            title=\"Quét bằng OCR (Dự phòng)\"\r\n          >\r\n            <ScanSearch size={13} className=\"drop-shadow-md\" />\r\n          </button>\r\n\r\n          {(file.webViewLink || file.web_view_link) && (\r\n            <button\r\n              onClick={onAnalyze}\r\n              className=\"w-7 h-7 flex items-center justify-center rounded-md bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all shadow-sm shadow-emerald-500/20\"\r\n              title=\"Xem trước tài liệu\"\r\n            >\r\n              <ScanEye size={13} className=\"drop-shadow-md\"/>\r\n            </button>\r\n          )}\r\n        </div>\r\n      </td>",
+          "StartLine": 229,
+          "TargetContent": "      {/* Actions */}\r\n      <td className=\"px-3 py-2.5\">\r\n        <div className=\"flex items-center gap-1.5 justify-center\">\r\n          {file.mimeType && file.mimeType.includes('word') ? (\r\n            <button\r\n              onClick={() => onAttachClick && onAttachClick(file)}\r\n              className=\"w-7 h-7 flex items-center justify-center rounded-md bg-cyan-500/10 text-cyan-600 hover:bg-cyan-500 hover:text-white transition-all shadow-sm shadow-cyan-500/20\"\r\n              title=\"Gắn vào file PDF\"\r\n            >\r\n              <Link2 size={13} className=\"drop-shadow-md\" />\r\n            </button>\r\n          ) : (\r\n            <button\r\n              onClick={onAnalyze}\r\n              className=\"w-7 h-7 flex items-center justify-center rounded-md bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white transition-all shadow-sm shadow-amber-500/20\"\r\n              title=\"Sửa / Phân tích chi tiết\"\r\n            >\r\n              <Pencil size={13} className=\"drop-shadow-md\" />\r\n            </button>\r\n          )}\r\n          \r\n          <button\r\n            onClick={() => alert('Tính năng quét OCR đang được phát triển làm phương án dự phòng.')}\r\n            className=\"w-7 h-7 flex items-center justify-center rounded-md bg-indigo-500/10 text-indigo-600 hover:bg-indigo-500 hover:text-white transition-all shadow-sm shadow-indigo-500/20\"\r\n            title=\"Quét bằng OCR (Dự phòng)\"\r\n          >\r\n            <ScanSearch size={13} className=\"drop-shadow-md\" />\r\n          </button>\r\n\r\n          {(file.webViewLink || file.web_view_link) && (\r\n            <button\r\n              onClick={onAnalyze}\r\n              className=\"w-7 h-7 flex items-center justify-center rounded-md bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all shadow-sm shadow-emerald-500/20\"\r\n              title=\"Xem trước tài liệu\"\r\n            >\r\n              <ScanEye size={13} className=\"drop-shadow-md\"/>\r\n            </button>\r\n          )}\r\n        </div>\r\n      </td>"
+        }
+      ],
+      "TargetFile": "D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx",
+      "toolAction": "Updating DocRow UI",
+      "toolSummary": "Cập nhật giao diện DocRow cho Phiếu trình"
+    }
+  },
+  {
+    "name": "multi_replace_file_content",
+    "args": {
+      "Description": "Thêm state cho modal Phiếu trình (attachingPhieuTrinh, attachPhieuTrinhTargetId, attachPhieuTrinhSearch) và các handler xử lý logic gắn/gỡ Phiếu trình.",
+      "Instruction": "Add phieu trinh state and handlers after existing attach state declarations.",
+      "ReplacementChunks": [
+        {
+          "AllowMultiple": false,
+          "EndLine": 441,
+          "ReplacementContent": "  const [attachingFile, setAttachingFile] = useState(null);\r\n  const [attachTargetId, setAttachTargetId] = useState('');\r\n  const [attachSearchTerm, setAttachSearchTerm] = useState('');\r\n  const [isAttaching, setIsAttaching] = useState(false);\r\n\r\n  // States cho modal Gắn Phiếu trình\r\n  const [attachingPhieuTrinh, setAttachingPhieuTrinh] = useState(null); // Công văn đi đang được gắn PT\r\n  const [attachPhieuTrinhTargetId, setAttachPhieuTrinhTargetId] = useState('');\r\n  const [attachPhieuTrinhSearch, setAttachPhieuTrinhSearch] = useState('');\r\n  const [isAttachingPhieuTrinh, setIsAttachingPhieuTrinh] = useState(false);",
+          "StartLine": 437,
+          "TargetContent": "  const [attachingFile, setAttachingFile] = useState(null);\r\n  const [attachTargetId, setAttachTargetId] = useState('');\r\n  const [attachSearchTerm, setAttachSearchTerm] = useState('');\r\n  const [isAttaching, setIsAttaching] = useState(false);"
+        }
+      ],
+      "TargetFile": "D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx",
+      "toolAction": "Adding phieu trinh state",
+      "toolSummary": "Thêm state cho Phiếu trình"
+    }
+  },
+  {
+    "name": "run_command",
+    "args": {
+      "CommandLine": "Select-String -Pattern \"updateRow|handleDetach|onAttachClick\" -Path \"D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx\"",
+      "Cwd": "D:\\Webapp CDE-HTKT\\webapp",
+      "WaitMsBeforeAsync": 3000,
+      "toolAction": "Searching for handlers",
+      "toolSummary": "Tìm vị trí các handler"
+    }
+  },
+  {
+    "name": "replace_file_content",
+    "args": {
+      "AllowMultiple": false,
+      "Description": "Thêm handler handleDetachPhieuTrinh và handleAttachPhieuTrinh sau handleDetach hiện có.",
+      "EndLine": 564,
+      "Instruction": "Add handlers for phieu trinh after handleDetach.",
+      "ReplacementContent": "  // Gỡ đính kèm file con khỏi file cha (xóa parent_id trong DB)\n  const handleDetach = async (childFile) => {\n    if (!confirm(`Xác nhận gỡ đính kèm file \"${childFile.name || childFile.file_name}\" khỏi văn bản cha?`)) return;\n    try {\n      await fetch('/api/drive/attach', {\n        method: 'POST',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({ action: 'detach', child_id: childFile.id }),\n      });\n      // Cập nhật local state: xóa parent_id của file con\n      setFolderFiles(prev => prev.map(f => f.id === childFile.id ? { ...f, parent_id: null } : f));\n    } catch (err) {\n      alert('Lỗi khi gỡ đính kèm: ' + err.message);\n    }\n  };\n\n  // Gỡ Phiếu trình khỏi Công văn đi\n  const handleDetachPhieuTrinh = async (phieuTrinhId, cvId) => {\n    if (!confirm('Xác nhận gỡ Phiếu trình khỏi Công văn đi này?')) return;\n    try {\n      const res = await fetch('/api/drive/attach', {\n        method: 'POST',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({ action: 'detach-phieu-trinh', child_id: phieuTrinhId }),\n      });\n      const json = await res.json();\n      if (json.success) {\n        // Xóa phieu_trinh khỏi Công văn đi trong state, đưa Phiếu trình về lại danh sách\n        setFolderFiles(prev => prev.map(f => {\n          if (f.id === cvId) return { ...f, phieu_trinh: null };\n          return f;\n        }));\n      } else {\n        alert('Lỗi: ' + json.error);\n      }\n    } catch (err) {\n      alert('Lỗi khi gỡ Phiếu trình: ' + err.message);\n    }\n  };\n\n  // Xác nhận gắn Phiếu trình vào Công văn đi\n  const handleConfirmAttachPhieuTrinh = async () => {\n    if (!attachPhieuTrinhTargetId || !attachingPhieuTrinh) return;\n    setIsAttachingPhieuTrinh(true);\n    try {\n      const res = await fetch('/api/drive/attach', {\n        method: 'POST',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({\n          action: 'attach-phieu-trinh',\n          child_id: attachPhieuTrinhTargetId,   // ID file Phiếu trình\n          parent_id: attachingPhieuTrinh.id,      // ID Công văn đi\n        }),\n      });\n      const json = await res.json();\n      if (json.success) {\n        // Cập nhật state: gắn phieu_trinh vào CV đi, ẩn file PT khỏi danh sách\n        const ptObj = json.phieu_trinh;\n        setFolderFiles(prev => {\n          // Gắn PT vào Công văn đi\n          let updated = prev.map(f => {\n            if (f.id === attachingPhieuTrinh.id) return { ...f, phieu_trinh: ptObj };\n            return f;\n          });\n          // Ẩn file Phiếu trình khỏi danh sách chính\n          updated = updated.filter(f => f.id !== attachPhieuTrinhTargetId);\n          return updated;\n        });\n        setAttachingPhieuTrinh(null);\n        setAttachPhieuTrinhTargetId('');\n        setAttachPhieuTrinhSearch('');\n      } else {\n        alert('Lỗi gắn Phiếu trình: ' + json.error);\n      }\n    } catch (err) {\n      alert('Lỗi kết nối: ' + err.message);\n    } finally {\n      setIsAttachingPhieuTrinh(false);\n    }\n  };\n",
+      "StartLine": 550,
+      "TargetContent": "  // Gỡ đính kèm file con khỏi file cha (xóa parent_id trong DB)\n  const handleDetach = async (childFile) => {\n    if (!confirm(`Xác nhận gỡ đính kèm file \"${childFile.name || childFile.file_name}\" khỏi văn bản cha?`)) return;\n    try {\n      await fetch('/api/drive/attach', {\n        method: 'POST',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({ action: 'detach', child_id: childFile.id }),\n      });\n      // Cập nhật local state: xóa parent_id của file con\n      setFolderFiles(prev => prev.map(f => f.id === childFile.id ? { ...f, parent_id: null } : f));\n    } catch (err) {\n      alert('Lỗi khi gỡ đính kèm: ' + err.message);\n    }\n  };",
+      "TargetFile": "D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx",
+      "toolAction": "Adding phieu trinh handlers",
+      "toolSummary": "Thêm các handler cho Phiếu trình"
+    }
+  },
+  {
+    "name": "multi_replace_file_content",
+    "args": {
+      "Description": "1. Thêm props onAttachPhieuTrinhClick và onDetachPhieuTrinh vào DocRow khi render. 2. Thêm Modal Gắn Phiếu trình (riêng biệt hoàn toàn) trước thẻ đóng div cuối.",
+      "Instruction": "Add phieu trinh props to DocRow and add phieu trinh modal at end of JSX.",
+      "ReplacementChunks": [
+        {
+          "AllowMultiple": false,
+          "EndLine": 996,
+          "ReplacementContent": "                                      <DocRow \r\n                                        file={file} idx={absoluteIndex} onUpdate={updateRow} onAnalyze={() => setAnalyzingDoc(file)} \r\n                                        onAttachClick={(f) => {\r\n                                          setAttachingFile(f);\r\n                                          setAttachTargetId('');\r\n                                          setAttachSearchTerm('');\r\n                                        }}\r\n                                        onAttachPhieuTrinhClick={(f) => {\r\n                                          setAttachingPhieuTrinh(f);\r\n                                          setAttachPhieuTrinhTargetId('');\r\n                                          setAttachPhieuTrinhSearch('');\r\n                                        }}\r\n                                        onDetachPhieuTrinh={(ptId) => handleDetachPhieuTrinh(ptId, file.id)}\r\n                                        provided={provided} snapshot={snapshot} agencies={agencies}\r\n                                      />",
+          "StartLine": 988,
+          "TargetContent": "                                      <DocRow \r\n                                        file={file} idx={absoluteIndex} onUpdate={updateRow} onAnalyze={() => setAnalyzingDoc(file)} \r\n                                        onAttachClick={(f) => {\r\n                                          setAttachingFile(f);\r\n                                          setAttachTargetId('');\r\n                                          setAttachSearchTerm('');\r\n                                        }}\r\n                                        provided={provided} snapshot={snapshot} agencies={agencies}\r\n                                      />"
+        },
+        {
+          "AllowMultiple": false,
+          "EndLine": 1160,
+          "ReplacementContent": "      )}\r\n\r\n      {/* Modal Gắn Phiếu trình */}\r\n      {attachingPhieuTrinh && (\r\n        <div className=\"fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4\">\r\n          <div className=\"bg-slate-900 border border-amber-500/30 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200\">\r\n            <div className=\"p-4 border-b border-slate-800 flex justify-between items-center\">\r\n              <h3 className=\"font-bold text-slate-100 flex items-center gap-2\">\r\n                <ClipboardList className=\"w-5 h-5 text-amber-500\" />\r\n                Gắn Phiếu trình cho Công văn\r\n              </h3>\r\n              <button onClick={() => setAttachingPhieuTrinh(null)} className=\"text-slate-400 hover:text-red-400\" disabled={isAttachingPhieuTrinh}>\r\n                <X className=\"w-5 h-5\" />\r\n              </button>\r\n            </div>\r\n            <div className=\"p-5 space-y-4\">\r\n              <div className=\"bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2 text-sm\">\r\n                <span className=\"text-amber-400 font-semibold\">Công văn đi:</span>\r\n                <span className=\"text-slate-300 ml-2\">{attachingPhieuTrinh.so_vb} — {attachingPhieuTrinh.trich_yeu}</span>\r\n              </div>\r\n              <p className=\"text-sm text-slate-400\">\r\n                Chọn file Phiếu trình trong cùng thư mục. File sẽ tự động đổi tên thành cấu trúc:\r\n                <code className=\"ml-1 text-amber-400 text-xs bg-slate-800 px-1.5 py-0.5 rounded\">\r\n                  {attachingPhieuTrinh.ngay_phat_hanh?.split('/').reverse().join('-')}_PTr-HTKT_{attachingPhieuTrinh.so_vb?.split('/')[0]}.pdf\r\n                </code>\r\n              </p>\r\n\r\n              <div className=\"relative\">\r\n                <div className=\"absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none\">\r\n                  <Search className=\"w-4 h-4 text-slate-500\" />\r\n                </div>\r\n                <input\r\n                  type=\"text\"\r\n                  placeholder=\"Tìm file PDF trong thư mục...\"\r\n                  value={attachPhieuTrinhSearch}\r\n                  onChange={e => setAttachPhieuTrinhSearch(e.target.value)}\r\n                  className=\"w-full bg-slate-950/80 border border-slate-700/60 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:border-amber-500 text-slate-200 mb-3\"\r\n                  disabled={isAttachingPhieuTrinh}\r\n                />\r\n              </div>\r\n\r\n              <div className=\"relative max-h-[35vh] overflow-y-auto border border-slate-700/60 rounded-xl bg-slate-950/80 p-1.5 space-y-1 custom-scrollbar\">\r\n                {currentFilesToDisplay\r\n                  .filter(f => {\r\n                    // Chỉ hiện file PDF, không phải chính nó, không đã gắn, không phải Phiếu trình đã có parent\r\n                    if (f.mimeType !== 'application/pdf') return false;\r\n                    if (f.id === attachingPhieuTrinh.id) return false;\r\n                    if (f.parent_id) return false; // Đã được gắn vào văn bản khác\r\n                    if (attachPhieuTrinhSearch) {\r\n                      const term = attachPhieuTrinhSearch.toLowerCase();\r\n                      return (f.name || f.file_name || '').toLowerCase().includes(term) ||\r\n                             (f.so_vb || '').toLowerCase().includes(term);\r\n                    }\r\n                    return true;\r\n                  })\r\n                  .map(f => (\r\n                    <div\r\n                      key={f.id}\r\n                      onClick={() => setAttachPhieuTrinhTargetId(f.id)}\r\n                      className={`px-3 py-2.5 rounded-lg cursor-pointer text-sm transition-colors flex items-center gap-3 ${\r\n                        attachPhieuTrinhTargetId === f.id\r\n                          ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50'\r\n                          : 'text-slate-300 hover:bg-slate-800 border border-transparent'\r\n                      }`}\r\n                    >\r\n                      <div className={`w-4 h-4 rounded-full border flex-shrink-0 flex items-center justify-center ${attachPhieuTrinhTargetId === f.id ? 'border-amber-500' : 'border-slate-500'}`}>\r\n                        {attachPhieuTrinhTargetId === f.id && <div className=\"w-2 h-2 rounded-full bg-amber-500\" />}\r\n                      </div>\r\n                      <div className=\"overflow-hidden\">\r\n                        <div className=\"font-medium truncate text-xs\" title={f.name || f.file_name}>{f.name || f.file_name}</div>\r\n                        {f.so_vb && <div className=\"text-xs text-slate-500 mt-0.5\">Số VB: {f.so_vb}</div>}\r\n                      </div>\r\n                    </div>\r\n                  ))\r\n                }\r\n                {currentFilesToDisplay.filter(f => f.mimeType === 'application/pdf' && f.id !== attachingPhieuTrinh.id && !f.parent_id).length === 0 && (\r\n                  <div className=\"p-4 text-center text-sm text-slate-500\">Không có file PDF nào để chọn.</div>\r\n                )}\r\n              </div>\r\n\r\n              <div className=\"flex justify-end gap-3 pt-4 border-t border-slate-800/80 mt-4\">\r\n                <button\r\n                  onClick={() => setAttachingPhieuTrinh(null)}\r\n                  className=\"px-4 py-2.5 bg-slate-800 text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-700 transition-colors\"\r\n                  disabled={isAttachingPhieuTrinh}\r\n                >\r\n                  Hủy\r\n                </button>\r\n                <button\r\n                  disabled={!attachPhieuTrinhTargetId || isAttachingPhieuTrinh}\r\n                  onClick={handleConfirmAttachPhieuTrinh}\r\n                  className=\"px-5 py-2.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white rounded-lg text-sm font-bold flex items-center gap-2 transition-colors shadow-lg shadow-amber-500/20\"\r\n                >\r\n                  {isAttachingPhieuTrinh ? <RefreshCw className=\"w-4 h-4 animate-spin\" /> : <ClipboardList className=\"w-4 h-4\" />}\r\n                  Đồng ý gắn Phiếu trình\r\n                </button>\r\n              </div>\r\n            </div>\r\n          </div>\r\n        </div>\r\n      )}\r\n    </div>\r\n  );\r\n}",
+          "StartLine": 1159,
+          "TargetContent": "      )}\r\n    </div>\r\n  );\r\n}"
+        }
+      ],
+      "TargetFile": "D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx",
+      "toolAction": "Adding phieu trinh modal",
+      "toolSummary": "Thêm modal Phiếu trình và props DocRow"
+    }
+  },
+  {
+    "name": "run_command",
+    "args": {
+      "CommandLine": "Select-String -Pattern \"Modal Gắn Phiếu trình\" -Path \"D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx\"",
+      "Cwd": "D:\\Webapp CDE-HTKT\\webapp",
+      "WaitMsBeforeAsync": 3000,
+      "toolAction": "Finding modal code",
+      "toolSummary": "Tìm vị trí modal Phiếu trình"
+    }
+  },
+  {
+    "name": "replace_file_content",
+    "args": {
+      "AllowMultiple": false,
+      "Description": "Fix 3 vấn đề: 1) Layout modal dùng flex-col + max-h-[90vh] tránh bị cắt. 2) Chỉ lọc file có 'PTr' trong tên HOẶC loai_vb='Phiếu trình', chưa được gán (parent_id null). 3) Hiển thị tên file thân thiện hơn (bỏ .pdf, hiển thị ngày/số VB riêng).",
+      "EndLine": 1265,
+      "Instruction": "Fix modal layout and filter to only show PTr files not yet attached.",
+      "ReplacementContent": "      {/* Modal Gắn Phiếu trình */}\n      {attachingPhieuTrinh && (\\r\n        <div className=\"fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4\">\\r\n          {/* max-h-[90vh] + flex flex-col để không bị cắt đầu/đuôi */}\\r\n          <div className=\"bg-slate-900 border border-amber-500/30 rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200\">\\r\n\\r\n            {/* Header — cố định */}\\r\n            <div className=\"flex-shrink-0 p-4 border-b border-slate-800 flex justify-between items-center\">\\r\n              <h3 className=\"font-bold text-slate-100 flex items-center gap-2\">\\r\n                <ClipboardList className=\"w-5 h-5 text-amber-500\" />\\r\n                Gắn Phiếu trình cho Công văn đi\\r\n              </h3>\\r\n              <button onClick={() => setAttachingPhieuTrinh(null)} className=\"text-slate-400 hover:text-red-400\" disabled={isAttachingPhieuTrinh}>\\r\n                <X className=\"w-5 h-5\" />\\r\n              </button>\\r\n            </div>\\r\n\\r\n            {/* Body — scroll được */}\\r\n            <div className=\"flex-1 overflow-y-auto p-5 space-y-4 min-h-0\">\\r\n              {/* Thông tin Công văn đi */}\\r\n              <div className=\"bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2.5 text-sm\">\\r\n                <div className=\"text-amber-400 font-semibold text-xs uppercase tracking-wide mb-1\">Công văn đi</div>\\r\n                <div className=\"text-slate-200 font-mono font-bold\">{attachingPhieuTrinh.so_vb}</div>\\r\n                <div className=\"text-slate-400 text-xs mt-0.5 line-clamp-2\">{attachingPhieuTrinh.trich_yeu}</div>\\r\n              </div>\\r\n\\r\n              {/* Tên file sẽ được đổi thành */}\\r\n              <div className=\"text-xs text-slate-400 bg-slate-800/60 rounded-lg px-3 py-2\">\\r\n                <span className=\"text-slate-500\">Phiếu trình sẽ đổi tên thành:</span>\\r\n                <div className=\"text-amber-400 font-mono mt-1\">\\r\n                  {attachingPhieuTrinh.ngay_phat_hanh?.split('/').reverse().join('-')}_PTr-HTKT_{attachingPhieuTrinh.so_vb?.split('/')[0]}.pdf\\r\n                </div>\\r\n              </div>\\r\n\\r\n              {/* Tìm kiếm */}\\r\n              <div className=\"relative\">\\r\n                <div className=\"absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none\">\\r\n                  <Search className=\"w-4 h-4 text-slate-500\" />\\r\n                </div>\\r\n                <input\\r\n                  type=\"text\"\\r\n                  placeholder=\"Tìm Phiếu trình theo tên...\"\\r\n                  value={attachPhieuTrinhSearch}\\r\n                  onChange={e => setAttachPhieuTrinhSearch(e.target.value)}\\r\n                  className=\"w-full bg-slate-950/80 border border-slate-700/60 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:border-amber-500 text-slate-200\"\\r\n                  disabled={isAttachingPhieuTrinh}\\r\n                />\\r\n              </div>\\r\n\\r\n              {/* Danh sách Phiếu trình */}\\r\n              {(() => {\\r\n                // Chỉ lọc file Phiếu trình: tên chứa \"PTr\" HOẶC loai_vb='Phiếu trình'\\r\n                // VÀ chưa được gán vào văn bản đi nào (parent_id = null)\\r\n                const phieuTrinhFiles = folderFiles.filter(f => {\\r\n                  if (f.id === attachingPhieuTrinh.id) return false;\\r\n                  if (f.parent_id) return false; // đã gán rồi\\r\n                  const fname = (f.name || f.file_name || '').toLowerCase();\\r\n                  const isPtr = fname.includes('ptr') || f.loai_vb === 'Phiếu trình';\\r\\n                  if (!isPtr) return false;\\r\n                  if (attachPhieuTrinhSearch) {\\r\n                    const term = attachPhieuTrinhSearch.toLowerCase();\\r\n                    return fname.includes(term);\\r\n                  }\\r\n                  return true;\\r\n                });\\r\n\\r\n                if (phieuTrinhFiles.length === 0) {\\r\n                  return (\\r\n                    <div className=\"text-center py-8 text-slate-500\">\\r\n                      <ClipboardList className=\"w-8 h-8 mx-auto mb-2 opacity-30\" />\\r\n                      <div className=\"text-sm\">\\r\n                        {attachPhieuTrinhSearch ? 'Không tìm thấy Phiếu trình phù hợp.' : 'Không có Phiếu trình nào chưa được gán trong thư mục này.'}\\r\n                      </div>\\r\n                      <div className=\"text-xs mt-1 text-slate-600\">File Phiếu trình cần có \"PTr\" trong tên.</div>\\r\n                    </div>\\r\n                  );\\r\n                }\\r\n\\r\n                return (\\r\n                  <div className=\"space-y-1.5\">\\r\n                    {phieuTrinhFiles.map(f => {\\r\n                      const fname = f.name || f.file_name || '';\\r\n                      const displayName = fname.replace(/\\.pdf$/i, '');\\r\n                      return (\\r\n                        <div\\r\n                          key={f.id}\\r\n                          onClick={() => setAttachPhieuTrinhTargetId(f.id)}\\r\n                          className={`px-3 py-3 rounded-lg cursor-pointer transition-all flex items-center gap-3 border ${\\r\n                            attachPhieuTrinhTargetId === f.id\\r\n                              ? 'bg-amber-500/15 border-amber-500/60 shadow-sm shadow-amber-500/10'\\r\n                              : 'border-slate-700/50 hover:border-amber-500/30 hover:bg-slate-800/60'\\r\n                          }`}\\r\n                        >\\r\n                          {/* Radio button */}\\r\n                          <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors ${\\r\n                            attachPhieuTrinhTargetId === f.id ? 'border-amber-500' : 'border-slate-500'\\r\n                          }`}>\\r\n                            {attachPhieuTrinhTargetId === f.id && <div className=\"w-2 h-2 rounded-full bg-amber-500\" />}\\r\n                          </div>\\r\n                          {/* Tên file */}\\r\n                          <div className=\"overflow-hidden flex-1 min-w-0\">\\r\n                            <div className=\"text-slate-200 text-sm font-medium truncate\" title={fname}>\\r\n                              {displayName}\\r\n                            </div>\\r\n                          </div>\\r\n                        </div>\\r\n                      );\\r\n                    })}\\r\n                  </div>\\r\n                );\\r\n              })()}\\r\n            </div>\\r\n\\r\n            {/* Footer — cố định */}\\r\n            <div className=\"flex-shrink-0 flex justify-end gap-3 p-4 border-t border-slate-800/80\">\\r\n              <button\\r\n                onClick={() => setAttachingPhieuTrinh(null)}\\r\n                className=\"px-4 py-2.5 bg-slate-800 text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-700 transition-colors\"\\r\n                disabled={isAttachingPhieuTrinh}\\r\n              >\\r\n                Hủy\\r\n              </button>\\r\n              <button\\r\n                disabled={!attachPhieuTrinhTargetId || isAttachingPhieuTrinh}\\r\n                onClick={handleConfirmAttachPhieuTrinh}\\r\n                className=\"px-5 py-2.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold flex items-center gap-2 transition-colors shadow-lg shadow-amber-500/20\"\\r\n              >\\r\n                {isAttachingPhieuTrinh ? <RefreshCw className=\"w-4 h-4 animate-spin\" /> : <ClipboardList className=\"w-4 h-4\" />}\\r\n                Đồng ý gắn Phiếu trình\\r\n              </button>\\r\n            </div>\\r\n          </div>\\r\n        </div>\\r\n      )}\n",
+      "StartLine": 1167,
+      "TargetContent": "      {/* Modal Gắn Phiếu trình */}\n      {attachingPhieuTrinh && (\n        <div className=\"fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4\">\n          <div className=\"bg-slate-900 border border-amber-500/30 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200\">\n            <div className=\"p-4 border-b border-slate-800 flex justify-between items-center\">\n              <h3 className=\"font-bold text-slate-100 flex items-center gap-2\">\n                <ClipboardList className=\"w-5 h-5 text-amber-500\" />\n                Gắn Phiếu trình cho Công văn\n              </h3>\n              <button onClick={() => setAttachingPhieuTrinh(null)} className=\"text-slate-400 hover:text-red-400\" disabled={isAttachingPhieuTrinh}>\n                <X className=\"w-5 h-5\" />\n              </button>\n            </div>\n            <div className=\"p-5 space-y-4\">\n              <div className=\"bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2 text-sm\">\n                <span className=\"text-amber-400 font-semibold\">Công văn đi:</span>\n                <span className=\"text-slate-300 ml-2\">{attachingPhieuTrinh.so_vb} — {attachingPhieuTrinh.trich_yeu}</span>\n              </div>\n              <p className=\"text-sm text-slate-400\">\n                Chọn file Phiếu trình trong cùng thư mục. File sẽ tự động đổi tên thành cấu trúc:\n                <code className=\"ml-1 text-amber-400 text-xs bg-slate-800 px-1.5 py-0.5 rounded\">\n                  {attachingPhieuTrinh.ngay_phat_hanh?.split('/').reverse().join('-')}_PTr-HTKT_{attachingPhieuTrinh.so_vb?.split('/')[0]}.pdf\n                </code>\n              </p>\n\n              <div className=\"relative\">\n                <div className=\"absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none\">\n                  <Search className=\"w-4 h-4 text-slate-500\" />\n                </div>\n                <input\n                  type=\"text\"\n                  placeholder=\"Tìm file PDF trong thư mục...\"\n                  value={attachPhieuTrinhSearch}\n                  onChange={e => setAttachPhieuTrinhSearch(e.target.value)}\n                  className=\"w-full bg-slate-950/80 border border-slate-700/60 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:border-amber-500 text-slate-200 mb-3\"\n                  disabled={isAttachingPhieuTrinh}\n                />\n              </div>\n\n              <div className=\"relative max-h-[35vh] overflow-y-auto border border-slate-700/60 rounded-xl bg-slate-950/80 p-1.5 space-y-1 custom-scrollbar\">\n                {currentFilesToDisplay\n                  .filter(f => {\n                    // Chỉ hiện file PDF, không phải chính nó, không đã gắn, không phải Phiếu trình đã có parent\n                    if (f.mimeType !== 'application/pdf') return false;\n                    if (f.id === attachingPhieuTrinh.id) return false;\n                    if (f.parent_id) return false; // Đã được gắn vào văn bản khác\n                    if (attachPhieuTrinhSearch) {\n                      const term = attachPhieuTrinhSearch.toLowerCase();\n                      return (f.name || f.file_name || '').toLowerCase().includes(term) ||\n                             (f.so_vb || '').toLowerCase().includes(term);\n                    }\n                    return true;\n                  })\n                  .map(f => (\n                    <div\n                      key={f.id}\n                      onClick={() => setAttachPhieuTrinhTargetId(f.id)}\n                      className={`px-3 py-2.5 rounded-lg cursor-pointer text-sm transition-colors flex items-center gap-3 ${\n                        attachPhieuTrinhTargetId === f.id\n                          ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50'\n                          : 'text-slate-300 hover:bg-slate-800 border border-transparent'\n                      }`}\n                    >\n                      <div className={`w-4 h-4 rounded-full border flex-shrink-0 flex items-center justify-center ${attachPhieuTrinhTargetId === f.id ? 'border-amber-500' : 'border-slate-500'}`}>\n                        {attachPhieuTrinhTargetId === f.id && <div className=\"w-2 h-2 rounded-full bg-amber-500\" />}\n                      </div>\n                      <div className=\"overflow-hidden\">\n                        <div className=\"font-medium truncate text-xs\" title={f.name || f.file_name}>{f.name || f.file_name}</div>\n                        {f.so_vb && <div className=\"text-xs text-slate-500 mt-0.5\">Số VB: {f.so_vb}</div>}\n                      </div>\n                    </div>\n                  ))\n                }\n                {currentFilesToDisplay.filter(f => f.mimeType === 'application/pdf' && f.id !== attachingPhieuTrinh.id && !f.parent_id).length === 0 && (\n                  <div className=\"p-4 text-center text-sm text-slate-500\">Không có file PDF nào để chọn.</div>\n                )}\n              </div>\n\n              <div className=\"flex justify-end gap-3 pt-4 border-t border-slate-800/80 mt-4\">\n                <button\n                  onClick={() => setAttachingPhieuTrinh(null)}\n                  className=\"px-4 py-2.5 bg-slate-800 text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-700 transition-colors\"\n                  disabled={isAttachingPhieuTrinh}\n                >\n                  Hủy\n                </button>\n                <button\n                  disabled={!attachPhieuTrinhTargetId || isAttachingPhieuTrinh}\n                  onClick={handleConfirmAttachPhieuTrinh}\n                  className=\"px-5 py-2.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white rounded-lg text-sm font-bold flex items-center gap-2 transition-colors shadow-lg shadow-amber-500/20\"\n                >\n                  {isAttachingPhieuTrinh ? <RefreshCw className=\"w-4 h-4 animate-spin\" /> : <ClipboardList className=\"w-4 h-4\" />}\n                  Đồng ý gắn Phiếu trình\n                </button>\n              </div>\n            </div>\n          </div>\n        </div>\n      )}",
+      "TargetFile": "D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx",
+      "toolAction": "Fixing phieu trinh modal",
+      "toolSummary": "Sửa layout và filter modal Phiếu trình"
+    }
+  },
+  {
+    "name": "run_command",
+    "args": {
+      "CommandLine": "Select-String -Pattern \"attachingPhieuTrinh\" -Path \"D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx\" | Select-Object -First 10",
+      "Cwd": "D:\\Webapp CDE-HTKT\\webapp",
+      "WaitMsBeforeAsync": 3000,
+      "toolAction": "Checking modal structure",
+      "toolSummary": "Kiểm tra cấu trúc modal trong file"
+    }
+  },
+  {
+    "name": "run_command",
+    "args": {
+      "CommandLine": "\n$file = \"D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx\"\n$content = Get-Content $file -Raw -Encoding UTF8\n\n# Tìm dòng bắt đầu và kết thúc của modal Phiếu trình\n$startMarker = \"      {/* Modal Gắn Phiếu trình */\"\n$endMarker = \"`r`n    </div>`r`n  );`r`n}\"\n\n$startIdx = $content.IndexOf($startMarker)\n$endIdx = $content.IndexOf($endMarker)\n\nWrite-Host \"Start index: $startIdx\"\nWrite-Host \"End index: $endIdx\"\nWrite-Host \"Total length: $($content.Length)\"\n",
+      "Cwd": "D:\\Webapp CDE-HTKT\\webapp",
+      "WaitMsBeforeAsync": 3000,
+      "toolAction": "Checking file structure",
+      "toolSummary": "Kiểm tra vị trí modal trong file"
+    }
+  },
+  {
+    "name": "run_command",
+    "args": {
+      "CommandLine": "\n$file = \"D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx\"\n$lines = Get-Content $file -Encoding UTF8\nWrite-Host \"Total lines: $($lines.Count)\"\n# Show last 10 lines\n$lines[($lines.Count-10)..($lines.Count-1)] | ForEach-Object { Write-Host $_ }\n",
+      "Cwd": "D:\\Webapp CDE-HTKT\\webapp",
+      "WaitMsBeforeAsync": 3000,
+      "toolAction": "Checking file end",
+      "toolSummary": "Kiểm tra cuối file"
+    }
+  },
+  {
+    "name": "run_command",
+    "args": {
+      "CommandLine": "\n$file = \"D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx\"\n$content = Get-Content $file -Raw -Encoding UTF8\n\n# Tìm vị trí chính xác\n$startMarker = \"      {/* Modal G\"\n$endMarkerStr = \"      )}`r`n`r`n    </div>\"\n\n# Thay thế toàn bộ phần modal\n$newModal = @'\n      {/* Modal Gắn Phiếu trình */}\n      {attachingPhieuTrinh && (\n        <div className=\"fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4\">\n          <div className=\"bg-slate-900 border border-amber-500/30 rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200\">\n            <div className=\"flex-shrink-0 p-4 border-b border-slate-800 flex justify-between items-center\">\n              <h3 className=\"font-bold text-slate-100 flex items-center gap-2\">\n                <ClipboardList className=\"w-5 h-5 text-amber-500\" />\n                Gắn Phiếu trình cho Công văn đi\n              </h3>\n              <button onClick={() => setAttachingPhieuTrinh(null)} className=\"text-slate-400 hover:text-red-400\" disabled={isAttachingPhieuTrinh}>\n                <X className=\"w-5 h-5\" />\n              </button>\n            </div>\n            <div className=\"flex-1 overflow-y-auto p-5 space-y-4 min-h-0\">\n              <div className=\"bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2.5\">\n                <div className=\"text-amber-400 font-semibold text-xs uppercase tracking-wide mb-1\">Công văn đi</div>\n                <div className=\"text-slate-200 font-mono font-bold text-sm\">{attachingPhieuTrinh.so_vb}</div>\n                <div className=\"text-slate-400 text-xs mt-0.5 line-clamp-2\">{attachingPhieuTrinh.trich_yeu}</div>\n              </div>\n              <div className=\"text-xs bg-slate-800/60 rounded-lg px-3 py-2\">\n                <span className=\"text-slate-500\">Phiếu trình sẽ đổi tên thành:</span>\n                <div className=\"text-amber-400 font-mono mt-1\">\n                  {attachingPhieuTrinh.ngay_phat_hanh?.split('/').reverse().join('-')}_PTr-HTKT_{attachingPhieuTrinh.so_vb?.split('/')[0]}.pdf\n                </div>\n              </div>\n              <div className=\"relative\">\n                <div className=\"absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none\">\n                  <Search className=\"w-4 h-4 text-slate-500\" />\n                </div>\n                <input\n                  type=\"text\"\n                  placeholder=\"Tìm Phiếu trình theo tên...\"\n                  value={attachPhieuTrinhSearch}\n                  onChange={e => setAttachPhieuTrinhSearch(e.target.value)}\n                  className=\"w-full bg-slate-950/80 border border-slate-700/60 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:border-amber-500 text-slate-200\"\n                  disabled={isAttachingPhieuTrinh}\n                />\n              </div>\n              {(() => {\n                const phieuTrinhFiles = folderFiles.filter(f => {\n                  if (f.id === attachingPhieuTrinh.id) return false;\n                  if (f.parent_id) return false;\n                  const fname = (f.name || f.file_name || '').toLowerCase();\n                  const isPtr = fname.includes('ptr') || f.loai_vb === 'Phiếu trình';\n                  if (!isPtr) return false;\n                  if (attachPhieuTrinhSearch) {\n                    return fname.includes(attachPhieuTrinhSearch.toLowerCase());\n                  }\n                  return true;\n                });\n                if (phieuTrinhFiles.length === 0) {\n                  return (\n                    <div className=\"text-center py-8 text-slate-500\">\n                      <ClipboardList className=\"w-8 h-8 mx-auto mb-2 opacity-30\" />\n                      <div className=\"text-sm\">\n                        {attachPhieuTrinhSearch ? 'Không tìm thấy Phiếu trình phù hợp.' : 'Không có Phiếu trình nào chưa được gán trong thư mục này.'}\n                      </div>\n                      <div className=\"text-xs mt-1 text-slate-600\">File Phiếu trình cần có \"PTr\" trong tên.</div>\n                    </div>\n                  );\n                }\n                return (\n                  <div className=\"space-y-1.5\">\n                    {phieuTrinhFiles.map(f => {\n                      const fname = f.name || f.file_name || '';\n                      const displayName = fname.replace(/\\.pdf$/i, '');\n                      return (\n                        <div\n                          key={f.id}\n                          onClick={() => setAttachPhieuTrinhTargetId(f.id)}\n                          className={`px-3 py-3 rounded-lg cursor-pointer transition-all flex items-center gap-3 border ${\n                            attachPhieuTrinhTargetId === f.id\n                              ? 'bg-amber-500/15 border-amber-500/60'\n                              : 'border-slate-700/50 hover:border-amber-500/30 hover:bg-slate-800/60'\n                          }`}\n                        >\n                          <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${\n                            attachPhieuTrinhTargetId === f.id ? 'border-amber-500' : 'border-slate-500'\n                          }`}>\n                            {attachPhieuTrinhTargetId === f.id && <div className=\"w-2 h-2 rounded-full bg-amber-500\" />}\n                          </div>\n                          <div className=\"overflow-hidden flex-1 min-w-0\">\n                            <div className=\"text-slate-200 text-sm font-medium truncate\" title={fname}>{displayName}</div>\n                          </div>\n                        </div>\n                      );\n                    })}\n                  </div>\n                );\n              })()}\n            </div>\n            <div className=\"flex-shrink-0 flex justify-end gap-3 p-4 border-t border-slate-800/80\">\n              <button\n                onClick={() => setAttachingPhieuTrinh(null)}\n                className=\"px-4 py-2.5 bg-slate-800 text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-700 transition-colors\"\n                disabled={isAttachingPhieuTrinh}\n              >\n                Hủy\n              </button>\n              <button\n                disabled={!attachPhieuTrinhTargetId || isAttachingPhieuTrinh}\n                onClick={handleConfirmAttachPhieuTrinh}\n                className=\"px-5 py-2.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold flex items-center gap-2 transition-colors\"\n              >\n                {isAttachingPhieuTrinh ? <RefreshCw className=\"w-4 h-4 animate-spin\" /> : <ClipboardList className=\"w-4 h-4\" />}\n                Đồng ý gắn Phiếu trình\n              </button>\n            </div>\n          </div>\n        </div>\n      )}\n\n    </div>\n  );\n}\n'@\n\n# Tìm vị trí bắt đầu modal (từ dòng 1167)\n$startIdx = $content.IndexOf(\"      {/* Modal G\")\nif ($startIdx -lt 0) { Write-Host \"Không tìm thấy!\"; exit }\n\n# Lấy phần trước modal\n$before = $content.Substring(0, $startIdx)\nWrite-Host \"Before ends with: $($before.Substring($before.Length - 50))\"\n\n# Ghi file mới\n$newContent = $before + $newModal\n[System.IO.File]::WriteAllText($file, $newContent, [System.Text.Encoding]::UTF8)\nWrite-Host \"Done. New length: $($newContent.Length)\"\n",
+      "Cwd": "D:\\Webapp CDE-HTKT\\webapp",
+      "WaitMsBeforeAsync": 5000,
+      "toolAction": "Replacing modal code cleanly",
+      "toolSummary": "Viết lại sạch modal Phiếu trình"
+    }
+  },
+  {
+    "name": "run_command",
+    "args": {
+      "CommandLine": "\n$lines = Get-Content \"D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx\" -Encoding UTF8\nWrite-Host \"Total lines: $($lines.Count)\"\n$lines[($lines.Count-15)..($lines.Count-1)] | ForEach-Object { Write-Host $_ }\n",
+      "Cwd": "D:\\Webapp CDE-HTKT\\webapp",
+      "WaitMsBeforeAsync": 3000,
+      "toolAction": "Verifying file end",
+      "toolSummary": "Kiểm tra cuối file sau sửa"
+    }
+  },
+  {
+    "name": "run_command",
+    "args": {
+      "CommandLine": "Select-String -Pattern \"isPtr|phieuTrinhFiles\" -Path \"D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx\"",
+      "Cwd": "D:\\Webapp CDE-HTKT\\webapp",
+      "WaitMsBeforeAsync": 3000,
+      "toolAction": "Checking filter logic",
+      "toolSummary": "Kiểm tra logic filter"
+    }
+  },
+  {
+    "name": "multi_replace_file_content",
+    "args": {
+      "Description": "1. DocRow: Xóa hiển thị Phiếu trình link khỏi cột STT (chỉ giữ nút gắn trong cột Actions). 2. DocumentAnalyzeModal: Thêm hiển thị link Phiếu trình + nút gỡ kế bên checkbox Văn bản đi.",
+      "Instruction": "Remove phieu_trinh display from DocRow STT column. Add phieu_trinh display in DocumentAnalyzeModal next to Văn bản đi checkbox.",
+      "ReplacementChunks": [
+        {
+          "AllowMultiple": false,
+          "EndLine": 232,
+          "ReplacementContent": "            <div className=\"flex gap-1 mt-0.5\">\r\n              {file.mimeType === 'application/pdf' && (\r\n                file.is_outgoing ? (\r\n                  <div className=\"flex items-center justify-center w-3.5 h-3.5 rounded-full bg-amber-100 text-amber-700\" title=\"Văn bản đi\"><ArrowUpRight size={10} strokeWidth={3}/></div>\r\n                ) : (\r\n                  <div className=\"flex items-center justify-center w-3.5 h-3.5 rounded-full bg-blue-100 text-blue-700\" title=\"Văn bản đến\"><ArrowDownRight size={10} strokeWidth={3}/></div>\r\n                )\r\n              )}\r\n            </div>\r\n          </div>",
+          "StartLine": 197,
+          "TargetContent": "            <div className=\"flex gap-1 mt-0.5\">\r\n              {file.mimeType === 'application/pdf' && (\r\n                file.is_outgoing ? (\r\n                  <div className=\"flex items-center justify-center w-3.5 h-3.5 rounded-full bg-amber-100 text-amber-700\" title=\"Văn bản đi\"><ArrowUpRight size={10} strokeWidth={3}/></div>\r\n                ) : (\r\n                  <div className=\"flex items-center justify-center w-3.5 h-3.5 rounded-full bg-blue-100 text-blue-700\" title=\"Văn bản đến\"><ArrowDownRight size={10} strokeWidth={3}/></div>\r\n                )\r\n              )}\r\n            </div>\r\n            {/* Phiếu trình link — kế bên icon Văn bản đi */}\r\n            {file.is_outgoing && file.phieu_trinh && (\r\n              <div className=\"flex items-center gap-1 mt-1\">\r\n                <a\r\n                  href={file.phieu_trinh.webViewLink || '#'}\r\n                  target=\"_blank\"\r\n                  rel=\"noopener noreferrer\"\r\n                  className=\"flex items-center gap-0.5 text-[10px] text-amber-600 dark:text-amber-400 hover:underline truncate max-w-[80px]\"\r\n                  title={`Phiếu trình: ${file.phieu_trinh.name}`}\r\n                >\r\n                  <FileCheck size={9} className=\"flex-shrink-0\"/>\r\n                  <span className=\"truncate\">{file.phieu_trinh.name?.replace(/\\.pdf$/i,'') || 'Phiếu trình'}</span>\r\n                </a>\r\n                {onDetachPhieuTrinh && (\r\n                  <button\r\n                    onClick={() => onDetachPhieuTrinh(file.phieu_trinh.id)}\r\n                    className=\"text-red-400 hover:text-red-600 flex-shrink-0\"\r\n                    title=\"Gỡ Phiếu trình\"\r\n                  >\r\n                    <Unlink2 size={9}/>\r\n                  </button>\r\n                )}\r\n              </div>\r\n            )}\r\n          </div>"
+        }
+      ],
+      "TargetFile": "D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx",
+      "toolAction": "Removing phieu trinh from STT column",
+      "toolSummary": "Xóa link Phiếu trình khỏi cột STT"
+    }
+  },
+  {
+    "name": "replace_file_content",
+    "args": {
+      "AllowMultiple": false,
+      "Description": "Truyền prop onDetachPhieuTrinh vào DocumentAnalyzeModal để có thể gỡ Phiếu trình từ popup chi tiết.",
+      "EndLine": 1013,
+      "Instruction": "Add onDetachPhieuTrinh prop to DocumentAnalyzeModal.",
+      "ReplacementContent": "      {analyzingDoc && (\n        <DocumentAnalyzeModal \n          document={analyzingDoc} \n          isOpen={!!analyzingDoc} \n          allFolderFiles={currentFilesToDisplay}\n          onClose={() => setAnalyzingDoc(null)} \n          onSave={(updatedDoc) => {\n            updateRow(updatedDoc.id, updatedDoc);\n            setAnalyzingDoc(null);\n          }} \n          onDetachPhieuTrinh={(ptId) => handleDetachPhieuTrinh(ptId, analyzingDoc.id)}\n          agencies={agencies}\n        />\n      )}\n",
+      "StartLine": 1000,
+      "TargetContent": "      {analyzingDoc && (\n        <DocumentAnalyzeModal \n          document={analyzingDoc} \n          isOpen={!!analyzingDoc} \n          allFolderFiles={currentFilesToDisplay}\n          onClose={() => setAnalyzingDoc(null)} \n          onSave={(updatedDoc) => {\n            // Update the local list\n            updateRow(updatedDoc.id, updatedDoc);\n            setAnalyzingDoc(null);\n          }} \n          agencies={agencies}\n        />\n      )}",
+      "TargetFile": "D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx",
+      "toolAction": "Passing handler to modal",
+      "toolSummary": "Truyền handler gỡ Phiếu trình vào modal"
+    }
+  },
+  {
+    "name": "run_command",
+    "args": {
+      "CommandLine": "git restore \"src/components/FolderTree.jsx\"",
+      "Cwd": "D:\\Webapp CDE-HTKT\\webapp",
+      "WaitMsBeforeAsync": 3000,
+      "toolAction": "Restoring FolderTree.jsx",
+      "toolSummary": "Khôi phục file FolderTree bị lỗi"
+    }
+  },
+  {
+    "name": "run_command",
+    "args": {
+      "CommandLine": "git diff src/components/FolderTree.jsx",
+      "Cwd": "D:\\Webapp CDE-HTKT\\webapp",
+      "WaitMsBeforeAsync": 3000,
+      "toolAction": "Checking diff",
+      "toolSummary": "Kiểm tra trạng thái file sau restore"
+    }
+  },
+  {
+    "name": "run_command",
+    "args": {
+      "CommandLine": "Get-Content \"D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx\" | Select-Object -Last 30",
+      "Cwd": "D:\\Webapp CDE-HTKT\\webapp",
+      "WaitMsBeforeAsync": 3000,
+      "toolAction": "Checking file end",
+      "toolSummary": "Kiểm tra phần cuối FolderTree"
+    }
+  },
+  {
+    "name": "run_command",
+    "args": {
+      "CommandLine": "Select-String -Pattern \"ClipboardList\" -Path \"D:\\Webapp CDE-HTKT\\webapp\\src\\components\\FolderTree.jsx\"",
+      "Cwd": "D:\\Webapp CDE-HTKT\\webapp",
+      "WaitMsBeforeAsync": 3000,
+      "toolAction": "Checking for ClipboardList in FolderTree.jsx",
+      "toolSummary": "Tìm ClipboardList trong FolderTree"
+    }
+  },
+  {
+    "name": "run_command",
+    "args": {
+      "CommandLine": "python -c \"\nimport json\nimport os\n\nlog_file = r'C:\\Users\\ADMIN\\.gemini\\antigravity\\brain\\df0fb165-9408-4fc8-9e6e-ab02976c49ce\\.system_generated\\logs\\transcript_full.jsonl'\ntarget = 'FolderTree.jsx'\n\ncalls = []\nwith open(log_file, 'r', encoding='utf-8') as f:\n    for line in f:\n        try:\n            data = json.loads(line)\n            if 'tool_calls' in data:\n                for t in data['tool_calls']:\n                    if t['name'] in ['replace_file_content', 'multi_replace_file_content']:\n                        if target in t.get('args', {}).get('TargetFile', ''):\n                            calls.append(t)\n                    if t['name'] == 'run_command' and target in t.get('args', {}).get('CommandLine', ''):\n                        calls.append(t)\n        except:\n            pass\n\nprint(f'Found {len(calls)} tool calls targeting {target}')\nif calls:\n    with open('recent_changes.json', 'w', encoding='utf-8') as out:\n        json.dump(calls, out, indent=2, ensure_ascii=False)\n    print('Dumped to recent_changes.json')\n\"",
+      "Cwd": "D:\\Webapp CDE-HTKT\\webapp",
+      "WaitMsBeforeAsync": 3000,
+      "toolAction": "Extracting previous edits from transcript",
+      "toolSummary": "Trích xuất các thay đổi trước đó từ transcript"
+    }
+  }
+]

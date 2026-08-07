@@ -72,7 +72,13 @@ export async function GET(request) {
         
         let totalPdfCount = 0;
         try {
-          const countRes = await client.query("SELECT COUNT(DISTINCT file_id) as count FROM drive_file_metadata");
+          const countRes = await client.query(
+            `SELECT COUNT(DISTINCT m.file_id) as count
+             FROM drive_file_metadata m
+             JOIN drive_folders_flat f ON m.folder_id = f.folder_id
+             WHERE f.project_id = $1`,
+            [targetProjectId]
+          );
           totalPdfCount = parseInt(countRes.rows[0].count, 10);
         } catch (e) {
           console.error("Lỗi khi đếm số file PDF:", e);
@@ -101,7 +107,13 @@ export async function GET(request) {
       });
       try {
         const client = await pool.connect();
-        const countRes = await client.query("SELECT COUNT(DISTINCT file_id) as count FROM drive_file_metadata");
+        const countRes = await client.query(
+          `SELECT COUNT(DISTINCT m.file_id) as count
+           FROM drive_file_metadata m
+           JOIN drive_folders_flat f ON m.folder_id = f.folder_id
+           WHERE f.project_id = $1`,
+          [targetProjectId]
+        );
         totalPdfCount = parseInt(countRes.rows[0].count, 10);
         client.release();
       } catch (e) {

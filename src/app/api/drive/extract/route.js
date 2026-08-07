@@ -336,7 +336,69 @@ export async function PUT(request) {
 
     client = await pool.connect();
     await ensureTable(client);
-    await saveToCache(client, fileId, fileName, metadata, webViewLink, true);
+
+    // Map các trường từ frontend sang đúng key của database
+    const dbMetadata = {
+      loai_vb: metadata.category || metadata.loai_vb,
+      so_vb: metadata.documentNumber || metadata.so_vb,
+      ngay_phat_hanh: metadata.issuedDate || metadata.ngay_phat_hanh,
+      noi_phat_hanh: metadata.issuer || metadata.noi_phat_hanh,
+      trich_yeu: metadata.notes || metadata.trich_yeu,
+      noi_gui: metadata.receiver || metadata.noi_gui,
+      is_outgoing: metadata.is_outgoing,
+      draftFiles: metadata.draftFiles
+    };
+
+    // Lưu vào bảng drive_file_metadata (dùng catch lỡ thiếu cột is_outgoing không làm hỏng app)
+    try {
+      await saveToCache(client, fileId, fileName, dbMetadata, webViewLink, true);
+    } catch (err) {
+      console.warn("Lỗi lưu drive_file_metadata (có thể do thiếu cột):", err.message);
+    }
+
+    // Helper function để parse date sang YYYY-MM-DD cho Postgres DATE column
+    const parseDateToYYYYMMDD = (dateStr) => {
+      if (!dateStr) return null;
+      // Trùng DD/MM/YYYY hoặc DD-MM-YYYY
+      const parts = dateStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+      if (parts) {
+        const day = parts[1].padStart(2, '0');
+        const month = parts[2].padStart(2, '0');
+        return `${parts[3]}-${month}-${day}`;
+      }
+      // Trùng YYYY-MM-DD
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+      
+      return null; // Trả về null nếu không đúng format để tránh crash DB
+    };
+
+    // Quan trọng: Cập nhật luôn vào bảng documents để giao diện hiển thị đúng khi load lại
+    try {
+      await client.query(`
+        UPDATE documents 
+        SET 
+          document_type = $1,
+          document_number = $2,
+          document_date = $3,
+          issuing_agency = $4,
+          receiving_agency = $5,
+          summary = $6,
+          is_outgoing = $7,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id::text = $8 OR drive_file_id = $8
+      `, [
+        dbMetadata.loai_vb,
+        dbMetadata.so_vb,
+        parseDateToYYYYMMDD(dbMetadata.ngay_phat_hanh),
+        dbMetadata.noi_phat_hanh,
+        dbMetadata.noi_gui,
+        dbMetadata.trich_yeu,
+        dbMetadata.is_outgoing,
+        fileId
+      ]);
+    } catch (err) {
+      console.error("Lỗi cập nhật bảng documents:", err.message);
+    }
 
     return NextResponse.json({ success: true, message: 'Đã lưu chỉnh sửa' });
   } catch (error) {

@@ -525,28 +525,37 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
         
         const rows = allAllowedFiles.map(f => {
           const fileName = f.name || f.file_name || '';
-          let parsedNgay = f.ngay_phat_hanh;
-          let parsedSoVb = f.so_vb;
-          let parsedTrichYeu = f.trich_yeu;
+          // ƯU TIÊN dữ liệu từ DB (đã được người dùng cập nhật thủ công)
+          // Chỉ parse từ tên file khi DB không có dữ liệu
+          const dbNgay     = f.ngay_phat_hanh || null;
+          const dbSoVb     = f.so_vb || null;
+          const dbTrichYeu = f.trich_yeu || null;
+
+          let parsedNgay     = null;
+          let parsedSoVb     = null;
+          let parsedTrichYeu = null;
 
           const nameWithoutExt = fileName.replace(/\.pdf$/i, '');
           const parts = nameWithoutExt.split('_');
 
-          // Kiểm tra xem filename có đúng cấu trúc yyyy-mm-dd_x_y không
-          if (parts.length >= 3 && /^(\d{4})-(\d{2})-(\d{2})$/.test(parts[0])) {
-            const dateMatch = parts[0].match(/^(\d{4})-(\d{2})-(\d{2})$/);
-            parsedNgay = `${dateMatch[3]}/${dateMatch[2]}/${dateMatch[1]}`;
-            parsedTrichYeu = parts[parts.length - 1];
-            parsedSoVb = parts.slice(1, parts.length - 1).join('/');
+          // Chỉ parse từ tên file nếu DB CHƯA có dữ liệu
+          if (!dbNgay || !dbSoVb || !dbTrichYeu) {
+            if (parts.length >= 3 && /^(\d{4})-(\d{2})-(\d{2})$/.test(parts[0])) {
+              const dateMatch = parts[0].match(/^(\d{4})-(\d{2})-(\d{2})$/);
+              if (!dbNgay)     parsedNgay     = `${dateMatch[3]}/${dateMatch[2]}/${dateMatch[1]}`;
+              if (!dbSoVb)     parsedSoVb     = parts.slice(1, parts.length - 1).join('/');
+              if (!dbTrichYeu) parsedTrichYeu = parts[parts.length - 1];
+            }
           }
 
           return { 
             ...f, 
-            ngay_phat_hanh: parsedNgay || f.ngay_phat_hanh,
-            so_vb: parsedSoVb || f.so_vb,
-            trich_yeu: parsedTrichYeu || f.trich_yeu,
+            ngay_phat_hanh: dbNgay || parsedNgay || '',
+            so_vb:          dbSoVb || parsedSoVb || '',
+            trich_yeu:      dbTrichYeu || parsedTrichYeu || '',
             _loading: false 
           };
+
         });
 
         // Sắp xếp ngày phát hành (nhỏ đến lớn) -> custom_order_index

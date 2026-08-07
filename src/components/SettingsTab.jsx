@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings, Plus, Edit2, Trash2, Check, X, RefreshCw, Users, Server, Building2, Wand2, AlertCircle, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react';
+import { Settings, Plus, Edit2, Trash2, Check, X, RefreshCw, Users, Server, Building2, Wand2, AlertCircle, ArrowRight, CheckCircle2, Loader2, Database, FileText, ShieldCheck, Clock, Sparkles, Zap, BrainCircuit } from 'lucide-react';
 
 export default function SettingsTab() {
   const [activeSubTab, setActiveSubTab] = useState('agencies');
@@ -26,9 +26,33 @@ export default function SettingsTab() {
   const [normalizeResult, setNormalizeResult] = useState(null);
   const [normalizeTab, setNormalizeTab] = useState('issuer');
 
+  // ── Trạng thái Migrate tài liệu ──────────────────────────────────────
+  const [migrateStatus, setMigrateStatus] = useState(null); // { total, migrated, pending }
+  const [migrateLoading, setMigrateLoading] = useState(false);
+  const [migrateRunning, setMigrateRunning] = useState(false);
+  const [migrateResult, setMigrateResult] = useState(null); // kết quả sau khi chạy
+  const [previewItems, setPreviewItems] = useState(null); // danh sách preview
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  // ── Trạng thái AI Analysis ────────────────────────────────────────────
+  const [aiStatus, setAiStatus] = useState(null);        // { total, analyzed, pending, failed }
+  const [aiRunning, setAiRunning] = useState(false);     // đang chạy phân tích
+  const [aiLogs, setAiLogs] = useState([]);              // log real-time từng file
+  const [aiCurrentFile, setAiCurrentFile] = useState(null); // file đang xử lý
+  const [aiProgress, setAiProgress] = useState({ current: 0, total: 0 }); // tiến độ batch
+  const [aiBatchLimit, setAiBatchLimit] = useState(10);  // số file mỗi lần chạy
+
   useEffect(() => {
     fetchAgencies();
   }, []);
+
+  // Tự động load trạng thái migrate khi vào tab
+  useEffect(() => {
+    if (activeSubTab === 'migrate') {
+      fetchMigrateStatus();
+      fetchAiStatus();  // Cũng load AI status
+    }
+  }, [activeSubTab]);
 
   const fetchAgencies = async () => {
     try {
@@ -42,6 +66,187 @@ export default function SettingsTab() {
       console.error('Lỗi khi tải danh sách nơi phát hành:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ── Hàm migrate ──────────────────────────────────────────────────────
+  const fetchMigrateStatus = async () => {
+    setMigrateLoading(true);
+    try {
+      const res = await fetch('/api/documents/migrate');
+      const data = await res.json();
+      if (data.success) setMigrateStatus(data);
+    } catch (e) { console.error(e); }
+    finally { setMigrateLoading(false); }
+  };
+
+  const runPreview = async () => {
+    setPreviewLoading(true);
+    setPreviewItems(null);
+    try {
+      const res = await fetch('/api/documents/migrate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'preview' })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPreviewItems(data.items);
+        setMigrateStatus({ total: data.total, migrated: data.migrated, pending: data.pending });
+      }
+    } catch (e) { console.error(e); }
+    finally { setPreviewLoading(false); }
+  };
+
+  const runMigrateAll = async () => {
+    if (!confirm(`Bắt đầu migrate ${migrateStatus?.pending || '?'} văn bản vào Supabase?\n\nVăn bản đã sửa tay sẽ được bảo vệ, không bị ghi đè.`)) return;
+    setMigrateRunning(true);
+    setMigrateResult(null);
+    try {
+      const res = await fetch('/api/documents/migrate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'migrate_all' })
+      });
+      const data = await res.json();
+      setMigrateResult(data);
+      if (data.success) {
+        setMigrateStatus({ total: data.total, migrated: data.migrated, pending: data.pending });
+        setPreviewItems(null); // reset preview
+      }
+    } catch (e) {
+      setMigrateResult({ success: false, error: e.message });
+    } finally {
+      setMigrateRunning(false);
+    }
+  };
+
+  const runMigrateOne = async (fileId, fileName) => {
+    try {
+      const res = await fetch('/api/documents/migrate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'migrate_one', fileId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMigrateStatus({ total: data.total, migrated: data.migrated, pending: data.pending });
+        // Cập nhật trạng thái item trong preview
+        setPreviewItems(prev => prev?.map(item =>
+          item.file_id === fileId ? { ...item, already_migrated: true } : item
+        ));
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  // ── Hàm AI Analysis ──────────────────────────────────────────────────
+  const fetchAiStatus = async () => {
+    try {
+      const res = await fetch('/api/documents/analyze');
+      const data = await res.json();
+      if (data.success) setAiStatus(data);
+    } catch (e) { console.error('AI status error:', e); }
+  };
+
+  const startAIAnalysis = async (retryErrors = false) => {
+    if (aiRunning) return;
+    setAiRunning(true);
+    setAiLogs([]);
+    setAiCurrentFile(null);
+    setAiProgress({ current: 0, total: 0 });
+
+    const addLog = (entry) => setAiLogs(prev => [entry, ...prev].slice(0, 100)); // giữ 100 log gần nhất
+
+    try {
+      const response = await fetch('/api/documents/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'analyze', limit: aiBatchLimit, retryErrors })
+      });
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop(); // Giữ lại phần chưa hoàn chỉnh
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith('data: ')) continue;
+          try {
+            const event = JSON.parse(trimmed.slice(6));
+
+            switch (event.type) {
+              case 'start':
+                setAiProgress({ current: 0, total: event.total });
+                addLog({ type: 'info', text: event.message, time: new Date() });
+                break;
+              case 'progress':
+                setAiProgress({ current: event.current, total: event.total, percent: event.percent });
+                break;
+              case 'processing':
+                setAiCurrentFile({ name: event.fileName, folder: event.folder });
+                break;
+              case 'analyzing':
+                addLog({ type: 'info', text: `🤖 ${event.message}`, time: new Date() });
+                break;
+              case 'success':
+                setAiCurrentFile(null);
+                addLog({
+                  type: 'success',
+                  text: `✅ ${event.fileName}`,
+                  detail: event.result ? `${event.result.loai_vb || '?'} | ${event.result.noi_phat_hanh || '?'} | ${event.result.ngay_phat_hanh || '?'}` : '',
+                  time: new Date()
+                });
+                // Cập nhật AI status counter
+                setAiStatus(prev => prev ? { ...prev, analyzed: parseInt(prev.analyzed)+1, pending: Math.max(0,parseInt(prev.pending)-1) } : prev);
+                break;
+              case 'error':
+                setAiCurrentFile(null);
+                addLog({ type: 'error', text: `❌ ${event.fileName}: ${event.error}`, time: new Date() });
+                break;
+              case 'rate_limit':
+                addLog({ type: 'warning', text: event.message, time: new Date() });
+                break;
+              case 'retry':
+                addLog({ type: 'warning', text: event.message, time: new Date() });
+                break;
+              case 'waiting':
+                addLog({ type: 'info', text: event.message, time: new Date() });
+                break;
+              case 'migrating':
+                addLog({ type: 'info', text: event.message, time: new Date() });
+                break;
+              case 'migrated':
+                addLog({ type: 'success', text: `🔄 Đã cập nhật ${event.count} văn bản vào documents`, time: new Date() });
+                fetchMigrateStatus();
+                break;
+              case 'complete':
+                setAiCurrentFile(null);
+                setAiProgress(prev => ({ ...prev, current: prev.total }));
+                addLog({ type: 'complete', text: event.message, remaining: event.remaining, time: new Date() });
+                fetchAiStatus();
+                break;
+              case 'fatal_error':
+                addLog({ type: 'error', text: `💥 Lỗi nghiêm trọng: ${event.error}`, time: new Date() });
+                break;
+            }
+          } catch (_) { /* bỏ qua dòng parse lỗi */ }
+        }
+      }
+    } catch (err) {
+      addLog({ type: 'error', text: `Lỗi kết nối: ${err.message}`, time: new Date() });
+    } finally {
+      setAiRunning(false);
+      setAiCurrentFile(null);
     }
   };
 
@@ -206,6 +411,12 @@ export default function SettingsTab() {
           className={`pb-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${activeSubTab === 'system' ? 'border-emerald-400 text-emerald-400' : 'border-transparent text-slate-400 hover:text-slate-200'}`}
         >
           <Server className="w-4 h-4" /> Hệ thống
+        </button>
+        <button 
+          onClick={() => setActiveSubTab('migrate')}
+          className={`pb-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${activeSubTab === 'migrate' ? 'border-cyan-400 text-cyan-400' : 'border-transparent text-slate-400 hover:text-slate-200'}`}
+        >
+          <Database className="w-4 h-4" /> Đồng bộ Tài liệu
         </button>
       </div>
 
@@ -571,6 +782,356 @@ export default function SettingsTab() {
           </div>
         </div>
       )}
+
+      {/* ── Tab: Đồng bộ Tài liệu ─────────────────────────────────────── */}
+      {activeSubTab === 'migrate' && (
+        <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-5 pr-1">
+
+          {/* Header & Actions */}
+          <div className="flex items-center justify-between shrink-0">
+            <div>
+              <h3 className="text-sm font-bold text-cyan-400 flex items-center gap-2">
+                <Database className="w-4 h-4" /> Đồng bộ drive_file_metadata → documents
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">Migrate metadata văn bản từ Google Drive vào bảng documents (Supabase)</p>
+            </div>
+            <button onClick={fetchMigrateStatus} className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg transition-colors" title="Làm mới">
+              <RefreshCw className={`w-4 h-4 ${migrateLoading ? 'animate-spin text-cyan-400' : ''}`} />
+            </button>
+          </div>
+
+          {/* Thanh tiến độ tổng quan */}
+          {migrateLoading && !migrateStatus && (
+            <div className="flex items-center gap-2 text-slate-400 text-sm">
+              <Loader2 className="w-4 h-4 animate-spin" /> Đang kiểm tra trạng thái...
+            </div>
+          )}
+
+          {migrateStatus && (
+            <div className="bg-slate-900/60 border border-slate-700/50 rounded-xl p-4 shrink-0">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-semibold text-slate-300">Tiến độ migrate</span>
+                <span className="text-xs text-slate-400">
+                  {migrateStatus.migrated}/{migrateStatus.total} văn bản
+                </span>
+              </div>
+              {/* Progress bar */}
+              <div className="w-full h-2.5 bg-slate-700 rounded-full overflow-hidden mb-3">
+                <div
+                  className="h-full bg-gradient-to-r from-cyan-500 to-emerald-400 rounded-full transition-all duration-500"
+                  style={{ width: `${migrateStatus.total > 0 ? Math.round(migrateStatus.migrated / migrateStatus.total * 100) : 0}%` }}
+                />
+              </div>
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-slate-800/60 rounded-lg p-2.5 text-center">
+                  <div className="text-xl font-bold text-slate-200">{migrateStatus.total}</div>
+                  <div className="text-xs text-slate-500 mt-0.5">Tổng số</div>
+                </div>
+                <div className="bg-emerald-900/30 border border-emerald-700/30 rounded-lg p-2.5 text-center">
+                  <div className="text-xl font-bold text-emerald-400">{migrateStatus.migrated}</div>
+                  <div className="text-xs text-slate-500 mt-0.5">Đã migrate</div>
+                </div>
+                <div className="bg-amber-900/20 border border-amber-700/30 rounded-lg p-2.5 text-center">
+                  <div className="text-xl font-bold text-amber-400">{migrateStatus.pending}</div>
+                  <div className="text-xs text-slate-500 mt-0.5">Còn lại</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Thông báo bảo vệ */}
+          <div className="flex items-start gap-2.5 bg-cyan-900/20 border border-cyan-700/30 rounded-xl p-3 shrink-0">
+            <ShieldCheck className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+            <div className="text-xs text-slate-300 leading-relaxed">
+              <span className="font-semibold text-cyan-300">Bảo vệ dữ liệu tay:</span>{' '}
+              Văn bản bạn đã sửa thủ công (<code className="text-amber-300 bg-slate-800 px-1 rounded">manually_edited = true</code>) sẽ <strong>không bị ghi đè</strong>. Chỉ các trường AI điền mới được cập nhật.
+            </div>
+          </div>
+
+          {/* Nút hành động */}
+          <div className="flex gap-3 shrink-0 flex-wrap">
+            <button
+              onClick={runPreview}
+              disabled={previewLoading || migrateRunning}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-slate-200 rounded-xl text-sm font-semibold transition-colors"
+            >
+              {previewLoading
+                ? <Loader2 className="w-4 h-4 animate-spin" />
+                : <FileText className="w-4 h-4" />}
+              Xem trước danh sách
+            </button>
+
+            <button
+              onClick={runMigrateAll}
+              disabled={migrateRunning || migrateLoading || (migrateStatus?.pending === 0)}
+              className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 disabled:opacity-50 text-white rounded-xl text-sm font-bold transition-all shadow-lg"
+            >
+              {migrateRunning
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Đang migrate...</>
+                : <><Database className="w-4 h-4" /> Migrate tất cả ({migrateStatus?.pending ?? '?'} văn bản)</>}
+            </button>
+          </div>
+
+          {/* Kết quả sau khi chạy */}
+          {migrateResult && (
+            <div className={`rounded-xl p-4 border shrink-0 ${migrateResult.success ? 'bg-emerald-900/20 border-emerald-700/40' : 'bg-red-900/20 border-red-700/40'}`}>
+              <div className={`flex items-center gap-2 font-semibold text-sm mb-1 ${migrateResult.success ? 'text-emerald-400' : 'text-red-400'}`}>
+                {migrateResult.success ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                {migrateResult.message || migrateResult.error}
+              </div>
+              {migrateResult.errorCount > 0 && (
+                <div className="text-xs text-slate-400 mt-2">
+                  <span className="text-red-400 font-medium">{migrateResult.errorCount} lỗi:</span>
+                  <ul className="mt-1 space-y-0.5 list-disc list-inside">
+                    {migrateResult.errors?.map((e, i) => (
+                      <li key={i} className="truncate" title={e.file}>{e.file}: {e.error}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Bảng preview từng văn bản */}
+          {previewItems && (
+            <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+              <div className="flex items-center justify-between mb-2 shrink-0">
+                <span className="text-xs font-semibold text-slate-400">
+                  Danh sách {previewItems.length} văn bản
+                </span>
+                <div className="flex gap-3 text-xs text-slate-500">
+                  <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-emerald-400" /> Đã migrate</span>
+                  <span className="flex items-center gap-1"><Clock className="w-3 h-3 text-amber-400" /> Chờ migrate</span>
+                </div>
+              </div>
+              <div className="overflow-y-auto rounded-xl border border-slate-700/50 flex-1 min-h-0">
+                <table className="w-full text-xs">
+                  <thead className="sticky top-0 bg-slate-900 border-b border-slate-700/50 z-10">
+                    <tr>
+                      <th className="text-left px-3 py-2.5 text-slate-400 font-semibold">Tên văn bản</th>
+                      <th className="text-left px-3 py-2.5 text-slate-400 font-semibold w-28">Thư mục</th>
+                      <th className="text-left px-3 py-2.5 text-slate-400 font-semibold w-20">Ngày</th>
+                      <th className="text-center px-3 py-2.5 text-slate-400 font-semibold w-20">Trạng thái</th>
+                      <th className="text-center px-3 py-2.5 text-slate-400 font-semibold w-16">Hành động</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {previewItems.map((item, idx) => (
+                      <tr key={item.file_id}
+                        className={`border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors ${item.already_migrated ? 'opacity-60' : ''}`}
+                      >
+                        <td className="px-3 py-2 text-slate-300">
+                          <div className="flex items-start gap-1.5">
+                            {item.manually_edited && (
+                              <ShieldCheck className="w-3 h-3 text-amber-400 shrink-0 mt-0.5" title="Đã sửa tay — được bảo vệ" />
+                            )}
+                            <span className="truncate max-w-[280px] block" title={item.file_name}>
+                              {item.file_name}
+                            </span>
+                          </div>
+                          {item.trich_yeu && item.trich_yeu !== item.file_name && (
+                            <div className="text-slate-500 text-[11px] mt-0.5 truncate max-w-[280px]" title={item.trich_yeu}>
+                              {item.trich_yeu}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-3 py-2 text-slate-400 truncate max-w-[112px]" title={item.folder_name}>
+                          {item.folder_name}
+                        </td>
+                        <td className="px-3 py-2 text-slate-400">
+                          {item.ngay_phat_hanh || <span className="text-slate-600">—</span>}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          {item.already_migrated
+                            ? <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-900/40 text-emerald-400 rounded-full text-[10px] font-medium">
+                                <CheckCircle2 className="w-2.5 h-2.5" /> Done
+                              </span>
+                            : <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-900/30 text-amber-400 rounded-full text-[10px] font-medium">
+                                <Clock className="w-2.5 h-2.5" /> Chờ
+                              </span>
+                          }
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          {!item.already_migrated && (
+                            <button
+                              onClick={() => runMigrateOne(item.file_id, item.file_name)}
+                              className="px-2 py-1 bg-cyan-700/30 hover:bg-cyan-600/40 text-cyan-400 rounded-lg text-[10px] font-medium transition-colors"
+                              title="Migrate văn bản này"
+                            >
+                              Migrate
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+        </div>
+      )}
+
+      {/* ── Tab: Đồng bộ Tài liệu — phần AI Analysis ─────────────────── */}
+      {activeSubTab === 'migrate' && (
+        <div className="shrink-0 mt-4 border-t border-slate-700/50 pt-4 flex flex-col gap-4">
+
+          {/* Header AI section */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center">
+                <BrainCircuit className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-violet-400">AI Phân tích nội dung PDF</h3>
+                <p className="text-xs text-slate-500">Gemini đọc từng file và trích xuất thông tin chính xác</p>
+              </div>
+            </div>
+            <button onClick={fetchAiStatus} className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg transition-colors">
+              <RefreshCw className={`w-3.5 h-3.5 ${!aiStatus && aiRunning ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+
+          {/* Trạng thái AI */}
+          {aiStatus && (
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { label: 'Tổng số', value: aiStatus.total, color: 'text-slate-200', bg: 'bg-slate-800/60' },
+                { label: 'Đã phân tích', value: aiStatus.analyzed, color: 'text-emerald-400', bg: 'bg-emerald-900/20 border border-emerald-700/30' },
+                { label: 'Chờ phân tích', value: aiStatus.pending, color: 'text-violet-400', bg: 'bg-violet-900/20 border border-violet-700/30' },
+                { label: 'Lỗi', value: aiStatus.failed, color: 'text-red-400', bg: 'bg-red-900/20 border border-red-700/30' },
+              ].map(s => (
+                <div key={s.label} className={`${s.bg} rounded-lg p-2 text-center`}>
+                  <div className={`text-lg font-bold ${s.color}`}>{s.value}</div>
+                  <div className="text-[10px] text-slate-500 mt-0.5">{s.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Progress bar batch hiện tại */}
+          {aiRunning && aiProgress.total > 0 && (
+            <div className="bg-slate-900/60 border border-violet-700/30 rounded-xl p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-violet-300 font-semibold flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 animate-pulse" /> Đang phân tích...
+                </span>
+                <span className="text-xs text-slate-400">{aiProgress.current}/{aiProgress.total}</span>
+              </div>
+              <div className="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-violet-500 to-indigo-400 rounded-full transition-all duration-700"
+                  style={{ width: `${aiProgress.total > 0 ? Math.round(aiProgress.current/aiProgress.total*100) : 0}%` }}
+                />
+              </div>
+              {aiCurrentFile && (
+                <div className="mt-2 text-xs text-slate-400 truncate flex items-center gap-1.5">
+                  <Loader2 className="w-3 h-3 animate-spin shrink-0 text-violet-400" />
+                  <span className="text-violet-300">[{aiCurrentFile.folder}]</span>
+                  <span className="truncate">{aiCurrentFile.name}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Cài đặt + Nút chạy */}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Batch size selector */}
+            <div className="flex items-center gap-2 text-xs text-slate-400">
+              <span>Mỗi lần:</span>
+              {[5, 10, 20, 50].map(n => (
+                <button
+                  key={n}
+                  onClick={() => setAiBatchLimit(n)}
+                  disabled={aiRunning}
+                  className={`px-2.5 py-1 rounded-lg font-semibold transition-colors ${
+                    aiBatchLimit === n
+                      ? 'bg-violet-600 text-white'
+                      : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
+                  } disabled:opacity-40`}
+                >
+                  {n}
+                </button>
+              ))}
+              <span className="text-slate-500">file</span>
+            </div>
+
+            {/* Nút Chạy */}
+            <button
+              onClick={() => startAIAnalysis(false)}
+              disabled={aiRunning || (aiStatus?.pending === '0' || aiStatus?.pending === 0)}
+              className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:opacity-50 text-white rounded-xl text-sm font-bold transition-all shadow-lg"
+            >
+              {aiRunning
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Đang chạy...</>
+                : <><Zap className="w-4 h-4" /> Phân tích {aiBatchLimit} file tiếp theo</>
+              }
+            </button>
+
+            {/* Nút Thử lại lỗi */}
+            {aiStatus?.failed > 0 && (
+              <button
+                onClick={() => startAIAnalysis(true)}
+                disabled={aiRunning}
+                className="flex items-center gap-2 px-3 py-2 bg-red-700/20 hover:bg-red-700/30 border border-red-700/40 text-red-400 rounded-xl text-xs font-semibold transition-colors"
+              >
+                <RefreshCw className="w-3.5 h-3.5" /> Thử lại {aiStatus.failed} lỗi
+              </button>
+            )}
+          </div>
+
+          {/* Ghi chú rate limit */}
+          <div className="flex items-start gap-2 bg-slate-900/40 border border-slate-700/30 rounded-xl p-3 text-xs text-slate-500">
+            <Clock className="w-3.5 h-3.5 shrink-0 mt-0.5 text-slate-600" />
+            <span>
+              Tự động chờ <strong className="text-slate-400">5s</strong> giữa mỗi file để tránh vượt hạn mức Gemini (15 req/phút).
+              Khi gặp lỗi 429 → tự động chờ <strong className="text-slate-400">65–195s</strong> rồi tiếp tục.
+              Mỗi file được thử lại tối đa <strong className="text-slate-400">3 lần</strong>.
+              Dữ liệu tay được bảo vệ <ShieldCheck className="inline w-3 h-3 text-amber-400" />.
+            </span>
+          </div>
+
+          {/* Log real-time */}
+          {aiLogs.length > 0 && (
+            <div className="bg-slate-950 border border-slate-700/40 rounded-xl overflow-hidden">
+              <div className="flex items-center justify-between px-3 py-2 border-b border-slate-700/40 bg-slate-900/60">
+                <span className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
+                  <BrainCircuit className="w-3.5 h-3.5" /> Log phân tích AI
+                </span>
+                <button onClick={() => setAiLogs([])} className="text-[10px] text-slate-500 hover:text-slate-300 transition-colors">Xóa log</button>
+              </div>
+              <div className="max-h-60 overflow-y-auto p-2 space-y-1 font-mono">
+                {aiLogs.map((log, i) => (
+                  <div key={i} className={`text-[11px] px-2 py-1 rounded flex flex-col gap-0.5 ${
+                    log.type === 'success' ? 'text-emerald-400' :
+                    log.type === 'error' ? 'text-red-400' :
+                    log.type === 'warning' ? 'text-amber-400' :
+                    log.type === 'complete' ? 'text-cyan-400 font-bold' :
+                    'text-slate-400'
+                  }`}>
+                    <div className="flex items-start gap-2">
+                      <span className="text-slate-600 shrink-0">[{log.time?.toLocaleTimeString('vi-VN')}]</span>
+                      <span className="flex-1 break-all">{log.text}</span>
+                    </div>
+                    {log.detail && (
+                      <div className="pl-14 text-[10px] text-slate-500">{log.detail}</div>
+                    )}
+                    {log.remaining !== undefined && log.remaining > 0 && (
+                      <div className="pl-14 text-[10px] text-violet-400">
+                        → Còn {log.remaining} file chờ phân tích. Nhấn "Phân tích tiếp" để tiếp tục.
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+        </div>
+      )}
+
     </div>
   );
 }
