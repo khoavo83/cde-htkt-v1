@@ -11,6 +11,20 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import DocumentAnalyzeModal from './DocumentAnalyzeModal';
 
 // =========================================================
+// Helpers
+// =========================================================
+const getBreadcrumb = (nodes, targetId, path = []) => {
+  for (const node of nodes) {
+    if (node.id === targetId) return [...path, node];
+    if (node.children) {
+      const found = getBreadcrumb(node.children, targetId, [...path, node]);
+      if (found) return found;
+    }
+  }
+  return null;
+};
+
+// =========================================================
 // TreeNode — chỉ render Folder
 // =========================================================
 const TreeNode = ({ node, level = 0, defaultOpen = false, selectedFolderId, onSelect }) => {
@@ -351,6 +365,7 @@ const ChildRow = ({ file, onDetach }) => {
 // Main Component
 // =========================================================
 export default function FolderTree({ projectId, allDocuments = [] }) {
+  const [documentTypes, setDocumentTypes] = useState([]);
   const [data, setData]         = useState([]);
   const [agencies, setAgencies] = useState([]);
   const [totalPdfCount, setTotalPdfCount] = useState(0);
@@ -391,8 +406,13 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
 
       try {
         const agenciesRes = await fetch('/api/settings/agencies').then(r => r.json());
-        if (agenciesRes.success) setAgencies(agenciesRes.data);
+        if (agenciesRes.success) setAgencies(agenciesRes.data.sort((a, b) => a.name.localeCompare(b.name, 'vi')));
       } catch(e) { console.error('Lỗi tải nơi phát hành', e); }
+
+      try {
+        const docTypesRes = await fetch('/api/settings/document-types').then(r => r.json());
+        if (docTypesRes.success) setDocumentTypes(docTypesRes.data.sort((a, b) => a.name.localeCompare(b.name, 'vi')));
+      } catch(e) { console.error('Lỗi tải loại văn bản', e); }
 
     } catch { setError('Lỗi kết nối server'); }
     finally  { setLoading(false); }
@@ -402,6 +422,11 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
   const [attachTargetId, setAttachTargetId] = useState('');
   const [attachSearchTerm, setAttachSearchTerm] = useState('');
   const [isAttaching, setIsAttaching] = useState(false);
+
+  const [attachingPhieuTrinhFor, setAttachingPhieuTrinhFor] = useState(null);
+  const [phieuTrinhSearchTerm, setPhieuTrinhSearchTerm] = useState('');
+  const [phieuTrinhTargetId, setPhieuTrinhTargetId] = useState('');
+  const [isAttachingPhieuTrinh, setIsAttachingPhieuTrinh] = useState(false);
 
   useEffect(() => { loadData(); setSelectedFolder(null); setFolderFiles([]); }, [projectId]);
 
@@ -723,13 +748,9 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
             className="px-2 py-2 bg-white/50 dark:bg-black/20 border-y border-r border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 text-xs text-slate-600 dark:text-slate-300 appearance-none cursor-pointer shrink-0"
           >
             <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Tất cả">Tất cả loại VB</option>
-            <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Quyết định">Quyết định</option>
-            <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Công văn">Công văn</option>
-            <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Tờ trình">Tờ trình</option>
-            <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Báo cáo">Báo cáo</option>
-            <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Thông báo">Thông báo</option>
-            <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Biên bản">Biên bản</option>
-            <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Hợp đồng">Hợp đồng</option>
+            {documentTypes.map(dt => (
+              <option key={dt.id} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value={dt.name}>{dt.name}</option>
+            ))}
           </select>
           <button onClick={handleGlobalSearch} disabled={isSearching}
             className="flex items-center gap-1.5 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-r-lg transition-colors disabled:opacity-50 text-xs font-medium whitespace-nowrap shrink-0">
@@ -798,8 +819,21 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <FolderOpen size={16} className="text-emerald-500"/>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200 truncate text-sm">
-                      {selectedFolder ? selectedFolder.name : "Kết quả tìm kiếm toàn cục"}
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 truncate text-sm flex items-center gap-1">
+                      {selectedFolder ? (
+                        (() => {
+                          const bc = getBreadcrumb(data, selectedFolder.id);
+                          if (!bc) return selectedFolder.name;
+                          return bc.map((n, i) => (
+                            <span key={n.id} className="flex items-center gap-1">
+                              {i > 0 && <ChevronRight size={14} className="text-slate-400 shrink-0" />}
+                              <span className={i === bc.length - 1 ? "text-emerald-500 font-bold" : "text-slate-500 font-medium"}>
+                                {n.name}
+                              </span>
+                            </span>
+                          ));
+                        })()
+                      ) : "Kết quả tìm kiếm toàn cục"}
                     </span>
                     {filteredFiles.length > 0 && (
                       <span className="text-xs bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full shrink-0">
@@ -924,7 +958,28 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
             updateRow(updatedDoc.id, updatedDoc);
             setAnalyzingDoc(null);
           }} 
+          onDetachPhieuTrinh={async (phieuTrinhFileId) => {
+            if (!confirm('Bạn có chắc chắn muốn gỡ Phiếu trình này?')) return;
+            try {
+              const res = await fetch('/api/drive/attach', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'detach-phieu-trinh', child_id: phieuTrinhFileId })
+              });
+              const data = await res.json();
+              if (data.success) {
+                setAnalyzingDoc(prev => ({...prev, phieu_trinh: null}));
+                loadData();
+              } else {
+                alert(data.error);
+              }
+            } catch (e) {
+              alert('Lỗi gỡ phiếu trình');
+            }
+          }}
+          onAttachPhieuTrinhClick={(doc) => setAttachingPhieuTrinhFor(doc)}
           agencies={agencies}
+          documentTypes={documentTypes}
         />
       )}
 
@@ -1051,6 +1106,127 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
                    Đồng ý gán
                  </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Phieu Trinh Attach Modal */}
+      {attachingPhieuTrinhFor && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-slate-700/60 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-4 border-b border-slate-800 flex justify-between items-center">
+              <h3 className="font-bold text-slate-100 flex items-center gap-2">
+                <Link2 className="w-5 h-5 text-amber-500" /> Chọn file Phiếu trình
+              </h3>
+              <button 
+                onClick={() => setAttachingPhieuTrinhFor(null)} 
+                className="text-slate-400 hover:text-red-400"
+                disabled={isAttachingPhieuTrinh}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-sm text-slate-300">
+                Chọn một file PDF bên dưới để gắn làm Phiếu trình cho văn bản đi: <br/>
+                <strong className="text-amber-400">{attachingPhieuTrinhFor.name || attachingPhieuTrinhFor.file_name}</strong>
+              </p>
+
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                <input 
+                  type="text" 
+                  placeholder="Tìm kiếm file PDF..." 
+                  value={phieuTrinhSearchTerm}
+                  onChange={(e) => setPhieuTrinhSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-700/50 rounded-lg text-sm text-slate-200 focus:outline-none focus:border-cyan-500"
+                  disabled={isAttachingPhieuTrinh}
+                />
+              </div>
+
+              <div className="border border-slate-700/50 rounded-lg max-h-60 overflow-y-auto bg-slate-950/50">
+                {currentFilesToDisplay
+                  .filter(f => {
+                    if (f.mimeType !== 'application/pdf' || f.id === attachingPhieuTrinhFor.id) return false;
+                    if (phieuTrinhSearchTerm) {
+                      const term = phieuTrinhSearchTerm.toLowerCase();
+                      return (f.name || f.file_name || '').toLowerCase().includes(term);
+                    }
+                    return true;
+                  })
+                  .map(f => (
+                    <div 
+                      key={f.id}
+                      onClick={() => setPhieuTrinhTargetId(f.id)}
+                      className={`flex items-start gap-3 p-3 border-b border-slate-700/50 last:border-0 cursor-pointer transition-colors
+                        ${phieuTrinhTargetId === f.id 
+                          ? 'bg-amber-500/10 border-l-2 border-l-amber-500' 
+                          : 'hover:bg-slate-800/50 border-l-2 border-l-transparent'}`}
+                    >
+                      <File className={`w-5 h-5 flex-shrink-0 mt-0.5 ${phieuTrinhTargetId === f.id ? 'text-amber-500' : 'text-slate-400'}`} />
+                      <div className="flex-1 min-w-0">
+                        <div className={`text-sm truncate ${phieuTrinhTargetId === f.id ? 'text-amber-400 font-medium' : 'text-slate-300'}`}>
+                          {f.name || f.file_name}
+                        </div>
+                      </div>
+                      <div className={`w-4 h-4 rounded-full border flex-shrink-0 flex items-center justify-center ${phieuTrinhTargetId === f.id ? 'border-amber-500' : 'border-slate-500'}`}>
+                         {phieuTrinhTargetId === f.id && <div className="w-2 h-2 rounded-full bg-amber-500" />}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+
+            </div>
+            <div className="p-4 border-t border-slate-800 bg-slate-900/50 flex justify-end gap-3">
+              <button 
+                onClick={() => setAttachingPhieuTrinhFor(null)} 
+                className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors"
+                disabled={isAttachingPhieuTrinh}
+              >
+                Hủy
+              </button>
+              <button 
+                disabled={!phieuTrinhTargetId || isAttachingPhieuTrinh}
+                onClick={async () => {
+                  setIsAttachingPhieuTrinh(true);
+                  try {
+                    const targetFile = currentFilesToDisplay.find(f => f.id === phieuTrinhTargetId);
+                    const res = await fetch('/api/drive/attach', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ 
+                        action: 'attach-phieu-trinh', 
+                        child_id: phieuTrinhTargetId, 
+                        parent_id: attachingPhieuTrinhFor.id,
+                        child_name: targetFile?.name || targetFile?.file_name
+                      })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                      loadData();
+                      setAnalyzingDoc(prev => ({
+                        ...prev, 
+                        phieu_trinh: {
+                          id: phieuTrinhTargetId,
+                          name: data.newName || targetFile?.name || targetFile?.file_name
+                        }
+                      }));
+                      setAttachingPhieuTrinhFor(null);
+                    } else {
+                      alert(data.error || 'Có lỗi xảy ra khi gắn');
+                    }
+                  } catch (e) {
+                    alert('Lỗi kết nối khi gắn file');
+                  } finally {
+                    setIsAttachingPhieuTrinh(false);
+                  }
+                }}
+                className="px-4 py-2 text-sm font-medium text-white bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-amber-500/20"
+              >
+                {isAttachingPhieuTrinh ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
+                Gắn Phiếu trình
+              </button>
             </div>
           </div>
         </div>

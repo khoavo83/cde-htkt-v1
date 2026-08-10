@@ -4,20 +4,27 @@ import { useState, useEffect } from 'react';
 import { Settings, Plus, Edit2, Trash2, Check, X, RefreshCw, Users, Server, Building2, Wand2, AlertCircle, ArrowRight, CheckCircle2, Loader2, Database, FileText, ShieldCheck, Clock, Sparkles, Zap, BrainCircuit } from 'lucide-react';
 
 export default function SettingsTab() {
-  const [activeSubTab, setActiveSubTab] = useState('agencies');
+  const [activeSubTab, setActiveSubTab] = useState('document_types');
   const [agencies, setAgencies] = useState([]);
+  const [documentTypes, setDocumentTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   
-  // Trạng thái cho Edit/Add
+  // Trạng thái cho Edit/Add (Agencies)
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({ name: '', abbreviation: '', notes: '' });
   
-  // Trạng thái cho Thêm mới
+  // Trạng thái cho Edit/Add (Document Types)
+  const [docEditingId, setDocEditingId] = useState(null);
+  const [docEditForm, setDocEditForm] = useState({ name: '', display_name: '', notes: '' });
+  
+  // Trạng thái cho Thêm mới (Agencies)
   const [isAdding, setIsAdding] = useState(false);
   const [addForm, setAddForm] = useState({ name: '', abbreviation: '', notes: '' });
 
-  // Trạng thái cho Chuẩn hóa DB
+  // Trạng thái cho Thêm mới (Document Types)
+  const [docIsAdding, setDocIsAdding] = useState(false);
+  const [docAddForm, setDocAddForm] = useState({ name: '', display_name: '', notes: '' });
   const [showNormalize, setShowNormalize] = useState(false);
   const [normalizeData, setNormalizeData] = useState(null);
   const [normalizeLoading, setNormalizeLoading] = useState(false);
@@ -44,6 +51,7 @@ export default function SettingsTab() {
 
   useEffect(() => {
     fetchAgencies();
+    fetchDocumentTypes();
   }, []);
 
   // Tự động load trạng thái migrate khi vào tab
@@ -60,10 +68,27 @@ export default function SettingsTab() {
       const res = await fetch('/api/settings/agencies');
       const data = await res.json();
       if (data.success) {
-        setAgencies(data.data);
+        const sorted = data.data.sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+        setAgencies(sorted);
       }
     } catch (error) {
       console.error('Lỗi khi tải danh sách nơi phát hành:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchDocumentTypes = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/settings/document-types');
+      const data = await res.json();
+      if (data.success) {
+        const sorted = data.data.sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+        setDocumentTypes(sorted);
+      }
+    } catch (error) {
+      console.error('Lỗi khi tải danh sách loại văn bản:', error);
     } finally {
       setLoading(false);
     }
@@ -262,7 +287,7 @@ export default function SettingsTab() {
       });
       const data = await res.json();
       if (data.success) {
-        setAgencies([...agencies, data.data].sort((a, b) => a.name.localeCompare(b.name)));
+        setAgencies([...agencies, data.data].sort((a, b) => a.name.localeCompare(b.name, 'vi')));
         setIsAdding(false);
         setAddForm({ name: '', abbreviation: '', notes: '' });
       } else {
@@ -287,7 +312,7 @@ export default function SettingsTab() {
       });
       const data = await res.json();
       if (data.success) {
-        setAgencies(agencies.map(a => a.id === data.data.id ? data.data : a).sort((a, b) => a.name.localeCompare(b.name)));
+        setAgencies(agencies.map(a => a.id === data.data.id ? data.data : a).sort((a, b) => a.name.localeCompare(b.name, 'vi')));
         setEditingId(null);
       } else {
         alert(data.error);
@@ -313,6 +338,75 @@ export default function SettingsTab() {
       }
     } catch (error) {
       alert('Lỗi khi xóa');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ── Xử lý Document Types ──────────────────────────────────────────────────────
+  const handleDocAdd = async () => {
+    if (!docAddForm.name.trim()) return alert('Tên loại văn bản không được để trống!');
+    
+    try {
+      setSaving(true);
+      const res = await fetch('/api/settings/document-types', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(docAddForm)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setDocumentTypes([...documentTypes, data.data].sort((a, b) => a.name.localeCompare(b.name, 'vi')));
+        setDocIsAdding(false);
+        setDocAddForm({ name: '', display_name: '', notes: '' });
+      } else {
+        alert(data.error);
+      }
+    } catch (error) {
+      alert('Lỗi khi thêm mới loại văn bản');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDocUpdate = async () => {
+    if (!docEditForm.name.trim()) return alert('Tên loại văn bản không được để trống!');
+    
+    try {
+      setSaving(true);
+      const res = await fetch('/api/settings/document-types', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(docEditForm)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setDocumentTypes(documentTypes.map(a => a.id === data.data.id ? data.data : a).sort((a, b) => a.name.localeCompare(b.name, 'vi')));
+        setDocEditingId(null);
+      } else {
+        alert(data.error);
+      }
+    } catch (error) {
+      alert('Lỗi khi cập nhật loại văn bản');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDocDelete = async (id) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa loại văn bản này?')) return;
+    
+    try {
+      setSaving(true);
+      const res = await fetch(`/api/settings/document-types?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        setDocumentTypes(documentTypes.filter(a => a.id !== id));
+      } else {
+        alert(data.error);
+      }
+    } catch (error) {
+      alert('Lỗi khi xóa loại văn bản');
     } finally {
       setSaving(false);
     }
@@ -395,6 +489,12 @@ export default function SettingsTab() {
       {/* Tabs Menu */}
       <div className="flex gap-4 border-b border-slate-800 shrink-0 mb-6">
         <button 
+          onClick={() => setActiveSubTab('document_types')}
+          className={`pb-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${activeSubTab === 'document_types' ? 'border-emerald-400 text-emerald-400' : 'border-transparent text-slate-400 hover:text-slate-200'}`}
+        >
+          <FileText className="w-4 h-4" /> Loại văn bản
+        </button>
+        <button 
           onClick={() => setActiveSubTab('agencies')}
           className={`pb-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${activeSubTab === 'agencies' ? 'border-emerald-400 text-emerald-400' : 'border-transparent text-slate-400 hover:text-slate-200'}`}
         >
@@ -421,6 +521,186 @@ export default function SettingsTab() {
       </div>
 
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+        {activeSubTab === 'document_types' && (
+          <>
+            <div className="flex justify-between items-center mb-4 shrink-0">
+              <h3 className="text-sm font-bold text-emerald-500">Danh mục Loại văn bản</h3>
+              <div className="flex gap-2">
+                <button onClick={fetchDocumentTypes} className="p-1.5 bg-slate-800 text-slate-300 hover:bg-slate-700 rounded-lg transition-colors" title="Làm mới">
+                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-emerald-400' : ''}`} />
+                </button>
+                <button 
+                  onClick={() => {
+                    setDocIsAdding(true);
+                    setDocAddForm({ name: '', display_name: '', notes: '' });
+                  }}
+                  disabled={docIsAdding}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30 border border-emerald-500/30 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Thêm mới
+                </button>
+              </div>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto rounded-xl border border-slate-800 bg-slate-900/50 relative">
+              <div className="p-0 overflow-x-auto min-h-full">
+                <table className="w-full text-left text-sm text-slate-300 border-collapse relative">
+                  <thead className="text-slate-400 text-xs uppercase sticky top-0 z-20 shadow-md border-b border-slate-700" style={{ backgroundColor: '#0f172a' }}>
+                    <tr>
+                      <th className="px-4 py-3 w-16 text-center font-semibold">STT</th>
+                      <th className="px-4 py-3 font-semibold">Loại văn bản (Đầy đủ)</th>
+                      <th className="px-4 py-3 w-48 font-semibold">Loại VB (hiển thị)</th>
+                      <th className="px-4 py-3 w-64 font-semibold">Ghi chú</th>
+                      <th className="px-4 py-3 w-28 text-center font-semibold">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60">
+                    {docIsAdding && (
+                      <tr className="bg-emerald-900/20">
+                        <td className="px-4 py-3 text-center">-</td>
+                        <td className="px-4 py-3">
+                          <input 
+                            autoFocus
+                            type="text" 
+                            value={docAddForm.name} 
+                            onChange={e => setDocAddForm({...docAddForm, name: e.target.value})}
+                            placeholder="VD: Quyết định"
+                            className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm focus:outline-none focus:border-emerald-500"
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <input 
+                            type="text" 
+                            value={docAddForm.display_name} 
+                            onChange={e => setDocAddForm({...docAddForm, display_name: e.target.value})}
+                            placeholder="VD: QĐ"
+                            className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm focus:outline-none focus:border-emerald-500"
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <input 
+                            type="text" 
+                            value={docAddForm.notes} 
+                            onChange={e => setDocAddForm({...docAddForm, notes: e.target.value})}
+                            placeholder="Ghi chú..."
+                            className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm focus:outline-none focus:border-emerald-500"
+                          />
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <button onClick={handleDocAdd} disabled={saving} className="text-emerald-500 hover:text-emerald-400" title="Lưu">
+                              <Check className="w-5 h-5" />
+                            </button>
+                            <button onClick={() => setDocIsAdding(false)} disabled={saving} className="text-slate-500 hover:text-slate-300" title="Hủy">
+                              <X className="w-5 h-5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+
+                    {loading && !documentTypes.length ? (
+                      <tr>
+                        <td colSpan="5" className="px-4 py-8 text-center text-slate-500">
+                          <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
+                          Đang tải dữ liệu...
+                        </td>
+                      </tr>
+                    ) : documentTypes.length === 0 && !docIsAdding ? (
+                      <tr>
+                        <td colSpan="5" className="px-4 py-8 text-center text-slate-500">
+                          Chưa có dữ liệu nào. Hãy thêm loại văn bản mới.
+                        </td>
+                      </tr>
+                    ) : (
+                      documentTypes.map((dt, idx) => (
+                        <tr key={dt.id} className="hover:bg-slate-800/30 transition-colors">
+                          <td className="px-4 py-3 text-center text-slate-500">{idx + 1}</td>
+                          
+                          {docEditingId === dt.id ? (
+                            <>
+                              <td className="px-4 py-3">
+                                <input 
+                                  autoFocus
+                                  type="text" 
+                                  value={docEditForm.name} 
+                                  onChange={e => setDocEditForm({...docEditForm, name: e.target.value})}
+                                  className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm focus:outline-none focus:border-emerald-500"
+                                />
+                              </td>
+                              <td className="px-4 py-3">
+                                <input 
+                                  type="text" 
+                                  value={docEditForm.display_name} 
+                                  onChange={e => setDocEditForm({...docEditForm, display_name: e.target.value})}
+                                  className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm focus:outline-none focus:border-emerald-500"
+                                />
+                              </td>
+                              <td className="px-4 py-3">
+                                <input 
+                                  type="text" 
+                                  value={docEditForm.notes} 
+                                  onChange={e => setDocEditForm({...docEditForm, notes: e.target.value})}
+                                  className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm focus:outline-none focus:border-emerald-500"
+                                />
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  <button onClick={handleDocUpdate} disabled={saving} className="text-emerald-500 hover:text-emerald-400" title="Lưu">
+                                    <Check className="w-5 h-5" />
+                                  </button>
+                                  <button onClick={() => setDocEditingId(null)} disabled={saving} className="text-slate-500 hover:text-slate-300" title="Hủy">
+                                    <X className="w-5 h-5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </>
+                          ) : (
+                            <>
+                              <td className="px-4 py-3 font-medium">{dt.name}</td>
+                              <td className="px-4 py-3">
+                                {dt.display_name ? (
+                                  <span className="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded text-xs border border-emerald-500/20 inline-block font-semibold">
+                                    {dt.display_name}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-600 italic text-xs">Chưa có</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-slate-400 text-xs">{dt.notes}</td>
+                              <td className="px-4 py-3 text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  <button 
+                                    onClick={() => {
+                                      setDocEditingId(dt.id);
+                                      setDocEditForm({ ...dt });
+                                    }} 
+                                    className="text-amber-500/70 hover:text-amber-400 transition-colors p-1" 
+                                    title="Sửa"
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </button>
+                                  <button 
+                                    onClick={() => handleDocDelete(dt.id)} 
+                                    className="text-red-500/70 hover:text-red-400 transition-colors p-1" 
+                                    title="Xóa"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </>
+                          )}
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
+
         {activeSubTab === 'agencies' && (
           <>
             <div className="flex justify-between items-center mb-4 shrink-0">

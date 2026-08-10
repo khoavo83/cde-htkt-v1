@@ -8,13 +8,6 @@ import {
   Calendar, User, Tag, Hash, FolderOpen, Send, Copy, Type, XCircle, ScanEye, Link2, Plus, ExternalLink, Download, FileCheck, Unlink2
 } from 'lucide-react';
 
-const CATEGORIES = [
-  "Công văn",
-  "Giấy mời",
-  "Quyết định",
-  "Phiếu trình",
-  "Hợp đồng"
-];
 
 const STATUS_OPTIONS = [
   { value: "effective", label: "Có hiệu lực" },
@@ -48,6 +41,7 @@ export default function DocumentAnalyzeModal({
   allDocuments = [],
   allFolderFiles = [],
   agencies = [],
+  documentTypes = [],
 }) {
   const [analyzing, setAnalyzing] = useState(false);
   const [extracting, setExtracting] = useState(false);
@@ -503,7 +497,7 @@ export default function DocumentAnalyzeModal({
                       title="Gắn file Phiếu trình"
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      Gắn Phiếu trình
+                      Phiếu trình
                     </button>
                   )}
                 </div>
@@ -527,8 +521,8 @@ export default function DocumentAnalyzeModal({
                     className="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl text-sm pl-9 pr-3.5 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all text-slate-200 shadow-inner"
                   />
                   <datalist id="category-options">
-                    {CATEGORIES.map(cat => (
-                      <option key={cat} value={cat} />
+                    {documentTypes.map(dt => (
+                      <option key={dt.id} value={dt.name} />
                     ))}
                   </datalist>
                 </div>
