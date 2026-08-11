@@ -1,50 +1,43 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { supabase } from '@/lib/supabase';
 
-const configPath = path.join(process.cwd(), 'config.json');
-
+// Lấy danh sách dự án
 export async function GET() {
   try {
-    const configContent = fs.readFileSync(configPath, 'utf8');
-    const config = JSON.parse(configContent);
-    return NextResponse.json({ projects: config.projects || [] });
+    const { data, error } = await supabase
+      .from('projects')
+      .select('id, name, basic_info, updated_at')
+      .order('updated_at', { ascending: false });
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true, projects: data || [] });
   } catch (error) {
-    console.error('Error reading config:', error);
-    return NextResponse.json({ error: 'Không thể đọc danh sách dự án' }, { status: 500 });
+    console.error('Lỗi khi tải danh sách dự án:', error);
+    return NextResponse.json({ success: false, error: 'Không thể tải danh sách dự án' }, { status: 500 });
   }
 }
 
-export async function POST(request) {
+// Xóa dự án (Chỉ cho phép xóa từ API riêng nếu cần)
+export async function DELETE(request) {
   try {
-    const body = await request.json();
-    const { id, name } = body;
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
     
-    if (!id || !name) {
-      return NextResponse.json({ error: 'Thiếu ID (Folder ID) hoặc Tên dự án' }, { status: 400 });
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'Thiếu ID dự án' }, { status: 400 });
     }
 
-    const configContent = fs.readFileSync(configPath, 'utf8');
-    let config = JSON.parse(configContent);
-    
-    if (!config.projects) {
-      config.projects = [];
-    }
+    const { error } = await supabase
+      .from('projects')
+      .delete()
+      .eq('id', id);
 
-    // Kiểm tra xem đã tồn tại chưa
-    const exists = config.projects.find(p => p.id === id);
-    if (exists) {
-      return NextResponse.json({ error: 'Dự án (Folder ID) này đã tồn tại' }, { status: 400 });
-    }
+    if (error) throw error;
 
-    config.projects.push({ id, name });
-
-    // Lưu lại config.json
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
-
-    return NextResponse.json({ success: true, project: { id, name } });
+    return NextResponse.json({ success: true, message: 'Đã xóa dự án' });
   } catch (error) {
-    console.error('Error saving project:', error);
-    return NextResponse.json({ error: 'Không thể lưu dự án mới' }, { status: 500 });
+    console.error('Lỗi khi xóa dự án:', error);
+    return NextResponse.json({ success: false, error: 'Không thể xóa dự án' }, { status: 500 });
   }
 }

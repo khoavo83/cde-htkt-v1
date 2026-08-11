@@ -89,6 +89,7 @@ async function fetchFilesInFolder(drive, folderId, folderName) {
     'application/pdf',
     'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.google-apps.shortcut',
   ];
   let filesList = [];
   let pageToken = null;
@@ -96,7 +97,7 @@ async function fetchFilesInFolder(drive, folderId, folderName) {
     const res = await drive.files.list({
       q: `'${folderId}' in parents and mimeType != 'application/vnd.google-apps.folder' and trashed = false`,
       pageSize: 1000,
-      fields: 'nextPageToken, files(id, name, mimeType, webViewLink, modifiedTime)',
+      fields: 'nextPageToken, files(id, name, mimeType, webViewLink, modifiedTime, shortcutDetails)',
       pageToken,
     });
     if (res.data.files) {
@@ -182,6 +183,14 @@ export async function POST(request) {
           `, [folder.id, folder.name, folder.parent_id, targetProjectId, folder.modified_time ? new Date(folder.modified_time) : null]);
         }
         
+        // Xoá các thư mục không còn tồn tại trên Drive
+        if (flatFolders.length > 0) {
+          const folderIds = flatFolders.map(f => f.id);
+          await client.query(`DELETE FROM drive_folders_flat WHERE project_id = $1 AND folder_id != ALL($2)`, [targetProjectId, folderIds]);
+        } else {
+          await client.query(`DELETE FROM drive_folders_flat WHERE project_id = $1`, [targetProjectId]);
+        }
+
         console.log(`[sync] Đã lưu ${flatFolders.length} thư mục vào Supabase`);
       } catch (dbError) {
         console.error('[sync] Lỗi lưu thư mục vào Supabase:', dbError);
@@ -225,8 +234,10 @@ export async function POST(request) {
           ALTER TABLE drive_file_metadata ADD COLUMN IF NOT EXISTS folder_name TEXT;
           ALTER TABLE drive_file_metadata ADD COLUMN IF NOT EXISTS parent_id VARCHAR(255) DEFAULT NULL;
           ALTER TABLE drive_file_metadata ADD COLUMN IF NOT EXISTS is_outgoing BOOLEAN DEFAULT FALSE;
-          ALTER TABLE drive_file_metadata ADD COLUMN IF NOT EXISTS custom_order_index INTEGER DEFAULT 0;
+          ALTER TABLE drive_file_metadata ADD COLUMN IF NOT EXISTS target_drive_id VARCHAR(255) DEFAULT NULL;
         `).catch(() => {});
+
+        let allFileIds = [];
 
         // Quét từng thư mục theo batch
         const BATCH_SIZE = 5;
@@ -242,12 +253,19 @@ export async function POST(request) {
               continue;
             }
             for (const file of result.value) {
+              allFileIds.push(file.id);
               const { parsedNgay, parsedSoVb, parsedTrichYeu, parsedNoiPhatHanh, parsedNoiGui } = parseFileName(file.name, file.folderName);
               const modifiedTime = file.modifiedTime ? new Date(file.modifiedTime) : new Date();
+              
+              let targetDriveId = null;
+              if (file.mimeType === 'application/vnd.google-apps.shortcut' && file.shortcutDetails) {
+                targetDriveId = file.shortcutDetails.targetId;
+              }
+
               await fileClient.query(`
                 INSERT INTO drive_file_metadata
-                  (file_id, file_name, web_view_link, modified_time, ngay_phat_hanh, so_vb, trich_yeu, noi_phat_hanh, noi_gui, folder_id, folder_name, is_outgoing, parent_id)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, false, null)
+                  (file_id, file_name, web_view_link, modified_time, ngay_phat_hanh, so_vb, trich_yeu, noi_phat_hanh, noi_gui, folder_id, folder_name, is_outgoing, parent_id, target_drive_id)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, false, null, $12)
                 ON CONFLICT (file_id) DO UPDATE SET
                   file_name      = EXCLUDED.file_name,
                   web_view_link  = EXCLUDED.web_view_link,
@@ -258,10 +276,23 @@ export async function POST(request) {
                   noi_phat_hanh  = CASE WHEN drive_file_metadata.manually_edited THEN drive_file_metadata.noi_phat_hanh ELSE EXCLUDED.noi_phat_hanh END,
                   noi_gui        = CASE WHEN drive_file_metadata.manually_edited THEN drive_file_metadata.noi_gui ELSE EXCLUDED.noi_gui END,
                   folder_id      = EXCLUDED.folder_id,
-                  folder_name    = EXCLUDED.folder_name
-              `, [file.id, file.name, file.webViewLink, modifiedTime, parsedNgay, parsedSoVb, parsedTrichYeu, parsedNoiPhatHanh, parsedNoiGui, file.folderId, file.folderName]);
+                  folder_name    = EXCLUDED.folder_name,
+                  target_drive_id = EXCLUDED.target_drive_id
+              `, [file.id, file.name, file.webViewLink, modifiedTime, parsedNgay, parsedSoVb, parsedTrichYeu, parsedNoiPhatHanh, parsedNoiGui, file.folderId, file.folderName, targetDriveId]);
               totalIndexed++;
             }
+          }
+        }
+
+        // Xoá các file không còn trên Drive
+        const projectFoldersRes = await fileClient.query(`SELECT folder_id FROM drive_folders_flat WHERE project_id = $1`, [targetProjectId]);
+        const projectFolderIds = projectFoldersRes.rows.map(r => r.folder_id);
+        
+        if (projectFolderIds.length > 0) {
+          if (allFileIds.length > 0) {
+             await fileClient.query(`DELETE FROM drive_file_metadata WHERE folder_id = ANY($1) AND file_id != ALL($2)`, [projectFolderIds, allFileIds]);
+          } else {
+             await fileClient.query(`DELETE FROM drive_file_metadata WHERE folder_id = ANY($1)`, [projectFolderIds]);
           }
         }
 

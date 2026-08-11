@@ -226,7 +226,7 @@ export async function fetchFolderFiles(folderId) {
     const res = await drive.files.list({
       q: `'${folderId}' in parents and mimeType != 'application/vnd.google-apps.folder' and trashed = false`,
       pageSize: 1000,
-      fields: 'nextPageToken, files(id, name, mimeType, webViewLink, iconLink, modifiedTime, size)',
+      fields: 'nextPageToken, files(id, name, mimeType, webViewLink, iconLink, modifiedTime, size, shortcutDetails)',
       pageToken: pageToken,
     });
     
@@ -240,6 +240,7 @@ export async function fetchFolderFiles(folderId) {
           iconLink: file.iconLink,
           modifiedTime: file.modifiedTime,
           size: file.size,
+          shortcutDetails: file.shortcutDetails,
           isFolder: false,
         });
       }

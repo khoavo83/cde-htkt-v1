@@ -50,7 +50,7 @@ export async function GET(request) {
     }
 
     const driveFiles = await fetchFolderFiles(folderId);
-    const allowedFiles = driveFiles.filter(f => f.mimeType === 'application/pdf' || f.mimeType.includes('word'));
+    const allowedFiles = driveFiles.filter(f => f.mimeType === 'application/pdf' || f.mimeType.includes('word') || f.mimeType === 'application/vnd.google-apps.shortcut');
 
     if (allowedFiles.length === 0 || !pool) {
       return NextResponse.json({ success: true, data: driveFiles });
@@ -61,9 +61,18 @@ export async function GET(request) {
 
     const fileIds = allowedFiles.map(f => f.id);
     
-    // Bulk fetch existing metadata
+    // Bulk fetch existing metadata with LEFT JOIN for shortcuts
     const { rows: existingMetadata } = await client.query(
-      `SELECT * FROM drive_file_metadata WHERE file_id = ANY($1)`,
+      `SELECT d1.*, 
+              d2.loai_vb as target_loai_vb,
+              d2.so_vb as target_so_vb,
+              d2.ngay_phat_hanh as target_ngay_phat_hanh,
+              d2.noi_phat_hanh as target_noi_phat_hanh,
+              d2.trich_yeu as target_trich_yeu,
+              d2.noi_gui as target_noi_gui
+       FROM drive_file_metadata d1 
+       LEFT JOIN drive_file_metadata d2 ON d1.target_drive_id = d2.file_id 
+       WHERE d1.file_id = ANY($1)`,
       [fileIds]
     );
 
@@ -74,7 +83,8 @@ export async function GET(request) {
     
     // So sánh và tính toán trạng thái
     for (const file of driveFiles) {
-      if (file.mimeType !== 'application/pdf' && !file.mimeType.includes('word')) {
+      const isAllowed = file.mimeType === 'application/pdf' || file.mimeType.includes('word') || file.mimeType === 'application/vnd.google-apps.shortcut';
+      if (!isAllowed) {
         file.needs_ai = false;
         updatedFiles.push(file);
         continue;
@@ -91,8 +101,13 @@ export async function GET(request) {
       let parsedNgay = null;
       let parsedSoVb = null;
       let parsedTrichYeu = null;
+      let targetDriveId = null;
 
-      if (file.mimeType === 'application/pdf') {
+      if (file.mimeType === 'application/vnd.google-apps.shortcut' && file.shortcutDetails) {
+        targetDriveId = file.shortcutDetails.targetId;
+      }
+
+      if (file.mimeType === 'application/pdf' || file.mimeType === 'application/vnd.google-apps.shortcut') {
         const nameWithoutExt = fileNameStr.replace(/\.pdf$/i, '');
         const parts = nameWithoutExt.split('_');
         
@@ -111,19 +126,21 @@ export async function GET(request) {
       if (!existing) {
         // File mới: chỉ insert với dữ liệu parse từ tên file (dữ liệu thô ban đầu)
         await client.query(`
-          INSERT INTO drive_file_metadata (file_id, file_name, web_view_link, modified_time, ngay_phat_hanh, so_vb, trich_yeu, folder_id, folder_name, is_outgoing, parent_id)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-        `, [file.id, file.name, file.webViewLink, driveModifiedTime, parsedNgay, parsedSoVb, parsedTrichYeu, folderId, folderName, false, null]);
+          INSERT INTO drive_file_metadata (file_id, file_name, web_view_link, modified_time, ngay_phat_hanh, so_vb, trich_yeu, folder_id, folder_name, is_outgoing, parent_id, target_drive_id)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        `, [file.id, file.name, file.webViewLink, driveModifiedTime, parsedNgay, parsedSoVb, parsedTrichYeu, folderId, folderName, false, null, targetDriveId]);
       } else {
         // File đã có trong Supabase: KHÔNG BAO GIỜ ghi đè so_vb, trich_yeu, ngay_phat_hanh, noi_phat_hanh
         // Chỉ cập nhật thông tin kỹ thuật: tên file, link Drive, thư mục, thời gian sửa
         const isNameChanged = (file.name !== existing.file_name);
-        if (isNameChanged || existing.folder_id !== folderId || existing.web_view_link !== file.webViewLink) {
+        const isTargetChanged = targetDriveId && existing.target_drive_id !== targetDriveId;
+
+        if (isNameChanged || existing.folder_id !== folderId || existing.web_view_link !== file.webViewLink || isTargetChanged) {
           await client.query(`
             UPDATE drive_file_metadata 
-            SET modified_time = $1, file_name = $2, web_view_link = $3, folder_id = $4, folder_name = $5
-            WHERE file_id = $6
-          `, [driveModifiedTime, file.name, file.webViewLink, folderId, folderName, file.id]);
+            SET modified_time = $1, file_name = $2, web_view_link = $3, folder_id = $4, folder_name = $5, target_drive_id = $6
+            WHERE file_id = $7
+          `, [driveModifiedTime, file.name, file.webViewLink, folderId, folderName, targetDriveId, file.id]);
 
           // Tự động đổi tên các file đính kèm (Word) nếu PDF đổi tên
           if (isNameChanged && file.mimeType === 'application/pdf') {
@@ -150,21 +167,20 @@ export async function GET(request) {
       }
 
       // Nguồn sự thật duy nhất = Supabase (existing)
-      // Nếu Supabase chưa có dữ liệu (record mới vừa insert), dùng parsed từ tên file làm fallback hiển thị
+      // Nếu là shortcut, ưu tiên lấy metadata từ target_ (d2)
       const mergedFile = {
         ...file,
         needs_ai: needsAi,
-        loai_vb: existing?.loai_vb || '',
-        so_vb: existing?.so_vb || parsedSoVb || '',
-        ngay_phat_hanh: existing?.ngay_phat_hanh || parsedNgay || '',
-        noi_phat_hanh: existing?.noi_phat_hanh || '',
-        trich_yeu: existing?.trich_yeu || parsedTrichYeu || '',
-        noi_gui: existing?.noi_gui || '',
+        loai_vb: existing?.target_loai_vb || existing?.loai_vb || '',
+        so_vb: existing?.target_so_vb || existing?.so_vb || parsedSoVb || '',
+        ngay_phat_hanh: existing?.target_ngay_phat_hanh || existing?.ngay_phat_hanh || parsedNgay || '',
+        noi_phat_hanh: existing?.target_noi_phat_hanh || existing?.noi_phat_hanh || '',
+        trich_yeu: existing?.target_trich_yeu || existing?.trich_yeu || parsedTrichYeu || '',
+        noi_gui: existing?.target_noi_gui || existing?.noi_gui || '',
         manually_edited: existing?.manually_edited || false,
         custom_order_index: existing?.custom_order_index || 0,
         is_outgoing: existing?.is_outgoing || false,
         parent_id: existing?.parent_id || null,
-        loai_vb: existing?.loai_vb || '',
         draftFiles: existing?.draft_files || [],
       };
 

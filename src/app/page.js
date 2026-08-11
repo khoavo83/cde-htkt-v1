@@ -393,17 +393,15 @@ export default function Home() {
             <select 
               value={currentProjectId} 
               onChange={(e) => setCurrentProjectId(e.target.value)}
-              className="bg-transparent border-none text-emerald-400 font-bold focus:outline-none cursor-pointer"
+              className="bg-transparent border-none text-emerald-400 font-bold focus:outline-none cursor-pointer max-w-[300px] truncate"
+              title={projects.find(p => p.id === currentProjectId)?.name || ''}
             >
-              {projects.map(p => <option key={p.id} value={p.id} className="bg-slate-900">{p.name}</option>)}
+              {projects.map(p => (
+                <option key={p.id} value={p.id} className="bg-slate-900">
+                  {p.basic_info?.shortName || p.name}
+                </option>
+              ))}
             </select>
-            <button 
-              onClick={() => setIsProjectModalOpen(true)}
-              className="p-1 rounded bg-slate-800/50 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
-              title="Cài đặt dự án"
-            >
-              <Settings className="w-3 h-3" />
-            </button>
           </div>
           <div className="text-center">
             <span className="text-slate-400 block">Tiến độ</span>
@@ -709,7 +707,7 @@ export default function Home() {
                   className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${projectSubTab === 'folders' ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 border border-transparent'}`}
                 >
                   <div className="flex items-center gap-1.5">
-                    <FolderOpen className="w-3.5 h-3.5" /> Thư mục Drive
+                    <FolderOpen className="w-3.5 h-3.5" /> Dữ liệu
                   </div>
                 </button>
               </div>
@@ -799,7 +797,7 @@ export default function Home() {
           </div>
         )}
 
-        {activeMainTab === 'settings' && (<SettingsTab />)}
+        {activeMainTab === 'settings' && (<SettingsTab currentProjectId={currentProjectId} />)}
 
         </main>
       
@@ -877,4 +875,6 @@ export default function Home() {
     </div>
   );
 }
+
+
 

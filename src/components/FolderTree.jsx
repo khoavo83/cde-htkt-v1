@@ -657,7 +657,12 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
     }
   };
 
-  const displayData = data.filter(n => n.isFolder);
+  let displayData = data.filter(n => n.isFolder);
+  // Ẩn thư mục Root (Tên dự án), hiển thị các thư mục con của nó làm cấp cao nhất
+  if (displayData.length === 1 && displayData[0].children && displayData[0].children.length > 0) {
+    displayData = displayData[0].children.filter(n => n.isFolder);
+  }
+
   const anyLoading  = folderFiles.some(f => f._loading);
   const pdfCount    = folderFiles.length;
 

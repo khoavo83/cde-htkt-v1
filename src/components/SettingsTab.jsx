@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings, Plus, Edit2, Trash2, Check, X, RefreshCw, Users, Server, Building2, Wand2, AlertCircle, ArrowRight, CheckCircle2, Loader2, Database, FileText, ShieldCheck, Clock, Sparkles, Zap, BrainCircuit } from 'lucide-react';
+import { Settings, Plus, Edit2, Trash2, Check, X, RefreshCw, Users, Server, Building2, Wand2, AlertCircle, ArrowRight, CheckCircle2, Loader2, Database, FileText, ShieldCheck, Clock, Sparkles, Zap, BrainCircuit, Briefcase, UserCircle } from 'lucide-react';
+import ProjectListTab from './ProjectListTab';
+import StaffListTab from './StaffListTab';
 
-export default function SettingsTab() {
+export default function SettingsTab({ currentProjectId }) {
   const [activeSubTab, setActiveSubTab] = useState('document_types');
   const [agencies, setAgencies] = useState([]);
   const [documentTypes, setDocumentTypes] = useState([]);
@@ -501,6 +503,18 @@ export default function SettingsTab() {
           <Building2 className="w-4 h-4" /> Nơi phát hành
         </button>
         <button 
+          onClick={() => setActiveSubTab('projects')}
+          className={`pb-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${activeSubTab === 'projects' ? 'border-emerald-400 text-emerald-400' : 'border-transparent text-slate-400 hover:text-slate-200'}`}
+        >
+          <Briefcase className="w-4 h-4" /> Dự án
+        </button>
+        <button 
+          onClick={() => setActiveSubTab('staffs')}
+          className={`pb-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${activeSubTab === 'staffs' ? 'border-emerald-400 text-emerald-400' : 'border-transparent text-slate-400 hover:text-slate-200'}`}
+        >
+          <UserCircle className="w-4 h-4" /> Nhân sự
+        </button>
+        <button 
           onClick={() => setActiveSubTab('users')}
           className={`pb-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${activeSubTab === 'users' ? 'border-emerald-400 text-emerald-400' : 'border-transparent text-slate-400 hover:text-slate-200'}`}
         >
@@ -521,6 +535,18 @@ export default function SettingsTab() {
       </div>
 
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+        {activeSubTab === 'projects' && (
+          <div className="flex-1 h-full min-h-0 overflow-hidden flex flex-col">
+            <ProjectListTab />
+          </div>
+        )}
+        
+        {activeSubTab === 'staffs' && (
+          <div className="flex-1 h-full min-h-0 overflow-hidden flex flex-col">
+            <StaffListTab />
+          </div>
+        )}
+        
         {activeSubTab === 'document_types' && (
           <>
             <div className="flex justify-between items-center mb-4 shrink-0">
