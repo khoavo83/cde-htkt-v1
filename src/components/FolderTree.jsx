@@ -630,7 +630,6 @@ export default function FolderTree({ projectId, allDocuments = [], onDocumentUpd
     displayData = displayData[0].children.filter(n => n.isFolder);
   }
 
-  const anyLoading  = folderFiles.some(f => f._loading);
   const pdfCount    = folderFiles.length;
 
   const handleGlobalSearch = async () => {
@@ -882,13 +881,6 @@ export default function FolderTree({ projectId, allDocuments = [], onDocumentUpd
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    {anyLoading && (
-                      <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
-                        <RefreshCw size={11} className="animate-spin"/>
-                        <span>AI đang phân tích...</span>
-                      </div>
-                    )}
-                    
                     {/* Nút thao tác nhanh thư mục hiện tại (Icon only) */}
                     <div className="flex items-center gap-1">
                       <button
