@@ -1,19 +1,39 @@
 'use client';
 
-import { useEffect } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 
-// Thay thế next-themes bằng cách đơn giản set class "dark" trực tiếp
-// để tránh lỗi Console "script tag" trên Next.js 16
+const ThemeContext = createContext({
+  theme: 'dark',
+  setTheme: () => null,
+});
+
+export const useTheme = () => useContext(ThemeContext);
+
 export default function ThemeProvider({ children, defaultTheme = 'dark' }) {
+  const [theme, setThemeState] = useState(defaultTheme);
+
   useEffect(() => {
-    // Đảm bảo class "dark" luôn có trên thẻ <html>
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      setThemeState(savedTheme);
+    }
+  }, []);
+
+  useEffect(() => {
     const root = document.documentElement;
-    if (defaultTheme === 'dark') {
+    if (theme === 'dark') {
       root.classList.add('dark');
+      root.classList.remove('light');
     } else {
+      root.classList.add('light');
       root.classList.remove('dark');
     }
-  }, [defaultTheme]);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
 
-  return <>{children}</>;
+  return (
+    <ThemeContext.Provider value={{ theme, setTheme: setThemeState }}>
+      {children}
+    </ThemeContext.Provider>
+  );
 }

@@ -88,7 +88,8 @@ export default function ProjectListTab() {
                 <th className="px-4 py-3 w-16 text-center font-semibold">STT</th>
                 <th className="px-4 py-3 font-semibold">Tên dự án</th>
                 <th className="px-4 py-3 w-40 font-semibold">Tên viết tắt</th>
-                <th className="px-4 py-3 font-semibold">Người phụ trách / Đơn vị</th>
+                <th className="px-4 py-3 font-semibold">Tổ chuyên môn</th>
+                <th className="px-4 py-3 font-semibold">Người phụ trách</th>
                 <th className="px-4 py-3 font-semibold">Folder ID</th>
                 <th className="px-4 py-3 w-28 text-center font-semibold">Thao tác</th>
               </tr>
@@ -96,14 +97,14 @@ export default function ProjectListTab() {
             <tbody className="divide-y divide-slate-800/60">
               {loading && projects.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-4 py-8 text-center text-slate-500">
+                  <td colSpan="7" className="px-4 py-8 text-center text-slate-500">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
                     Đang tải dữ liệu...
                   </td>
                 </tr>
               ) : projects.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-4 py-8 text-center text-slate-500">
+                  <td colSpan="7" className="px-4 py-8 text-center text-slate-500">
                     Chưa có dự án nào. Hãy bấm "Thêm Dự án Mới" để tạo dự án đầu tiên.
                   </td>
                 </tr>
@@ -115,6 +116,7 @@ export default function ProjectListTab() {
                       <td className="px-4 py-3 text-center text-slate-500">{idx + 1}</td>
                       <td className="px-4 py-3 font-medium text-emerald-400">{p.name}</td>
                       <td className="px-4 py-3 text-slate-400">{basicInfo.shortName || '-'}</td>
+                      <td className="px-4 py-3 text-slate-400">{basicInfo.team || '-'}</td>
                       <td className="px-4 py-3 text-slate-400">{basicInfo.managementUnit || '-'}</td>
                       <td className="px-4 py-3 text-slate-500 font-mono text-xs">{p.id}</td>
                       <td className="px-4 py-3 text-center">

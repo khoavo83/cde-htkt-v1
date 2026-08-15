@@ -128,6 +128,13 @@ export default function DocumentDetailModal({
                 </p>
               </div>
 
+              <div>
+                <span className="text-[10px] text-slate-500 block">Người xử lý (Tên viết tắt)</span>
+                <span className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-2 rounded-lg block mt-1">
+                  {doc.assignedStaff || "Chưa gán"}
+                </span>
+              </div>
+
               <div className="flex items-center justify-between text-[11px] text-slate-400 bg-slate-950/40 p-3 rounded-xl border border-slate-850">
                 <span>Dung lượng: <strong className="text-slate-200">{doc.size || "1.5 MB"}</strong></span>
                 <span>Cập nhật lần cuối: <strong className="text-slate-200">{new Date(doc.updatedAt).toLocaleString('vi-VN')}</strong></span>

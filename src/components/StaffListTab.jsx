@@ -184,9 +184,9 @@ export default function StaffListTab() {
   return (
     <div className="h-full flex flex-col relative">
       <div className="flex flex-col gap-4 mb-4 shrink-0">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-3 w-1/3 min-w-[250px]">
-            <div className="relative w-full">
+        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
+          <div className="flex items-center gap-4 w-full xl:w-auto flex-1 min-w-[250px]">
+            <div className="relative flex-1 max-w-md">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input 
                 type="text" 
@@ -196,9 +196,16 @@ export default function StaffListTab() {
                 className="w-full bg-slate-900 border border-slate-700 text-sm text-slate-200 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:border-emerald-500 transition-colors"
               />
             </div>
+            
+            {/* Tabs Điều hướng Nhóm (Desktop) */}
+            <div className="hidden xl:flex bg-slate-900 p-1 rounded-lg border border-slate-700/50 shrink-0">
+              <button onClick={() => setActiveTab('ALL')} className={`px-4 py-1.5 rounded-md font-medium text-sm transition-colors ${activeTab === 'ALL' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`}>Theo Chức vụ</button>
+              <button onClick={() => setActiveTab('TO')} className={`px-4 py-1.5 rounded-md font-medium text-sm transition-colors ${activeTab === 'TO' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`}>Theo Tổ chuyên môn</button>
+              <button onClick={() => setActiveTab('NHOM')} className={`px-4 py-1.5 rounded-md font-medium text-sm transition-colors ${activeTab === 'NHOM' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`}>Theo Nhóm chuyên môn</button>
+            </div>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full xl:w-auto shrink-0 xl:justify-end">
             <button 
               onClick={fetchStaffs} 
               className="p-2 bg-slate-800 text-slate-300 hover:bg-slate-700 rounded-lg transition-colors border border-slate-700" 
@@ -215,11 +222,11 @@ export default function StaffListTab() {
           </div>
         </div>
         
-        {/* Tabs Điều hướng Nhóm */}
-        <div className="flex gap-4 border-b border-slate-700/50 px-1">
-          <button onClick={() => setActiveTab('ALL')} className={`pb-2 px-2 font-medium text-sm transition-colors border-b-2 ${activeTab === 'ALL' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-slate-400 hover:text-slate-300'}`}>Theo Chức vụ</button>
-          <button onClick={() => setActiveTab('TO')} className={`pb-2 px-2 font-medium text-sm transition-colors border-b-2 ${activeTab === 'TO' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-slate-400 hover:text-slate-300'}`}>Theo Tổ chuyên môn</button>
-          <button onClick={() => setActiveTab('NHOM')} className={`pb-2 px-2 font-medium text-sm transition-colors border-b-2 ${activeTab === 'NHOM' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-slate-400 hover:text-slate-300'}`}>Theo Nhóm chuyên môn</button>
+        {/* Tabs Điều hướng Nhóm (Mobile) */}
+        <div className="flex xl:hidden gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          <button onClick={() => setActiveTab('ALL')} className={`whitespace-nowrap px-4 py-2 rounded-lg font-medium text-sm transition-colors border ${activeTab === 'ALL' ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>Theo Chức vụ</button>
+          <button onClick={() => setActiveTab('TO')} className={`whitespace-nowrap px-4 py-2 rounded-lg font-medium text-sm transition-colors border ${activeTab === 'TO' ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>Theo Tổ chuyên môn</button>
+          <button onClick={() => setActiveTab('NHOM')} className={`whitespace-nowrap px-4 py-2 rounded-lg font-medium text-sm transition-colors border ${activeTab === 'NHOM' ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>Theo Nhóm chuyên môn</button>
         </div>
       </div>
 
@@ -283,7 +290,15 @@ export default function StaffListTab() {
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-3">
                                   {staff.avatar_url ? (
-                                    <img src={staff.avatar_url} alt={staff.full_name} className="w-10 h-10 rounded-full object-cover border border-slate-600" />
+                                    <img 
+                                      src={staff.avatar_url} 
+                                      alt={staff.full_name} 
+                                      className="w-10 h-10 rounded-full object-cover border border-slate-600"
+                                      onError={(e) => {
+                                        e.target.onerror = null;
+                                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(staff.full_name)}&background=1e293b&color=10b981&bold=true`;
+                                      }}
+                                    />
                                   ) : (
                                     <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 shrink-0">
                                       <UserCircle className="w-5 h-5 text-slate-400" />
@@ -395,7 +410,15 @@ export default function StaffListTab() {
                             <div className="flex justify-between items-start mb-3">
                               <div className="flex gap-3 items-center">
                                 {staff.avatar_url ? (
-                                  <img src={staff.avatar_url} alt={staff.full_name} className="w-12 h-12 rounded-full object-cover border-2 border-slate-700" />
+                                  <img 
+                                    src={staff.avatar_url} 
+                                    alt={staff.full_name} 
+                                    className="w-12 h-12 rounded-full object-cover border-2 border-slate-700"
+                                    onError={(e) => {
+                                      e.target.onerror = null;
+                                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(staff.full_name)}&background=1e293b&color=10b981&bold=true`;
+                                    }}
+                                  />
                                 ) : (
                                   <div className="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center border-2 border-slate-600">
                                     <UserCircle className="w-6 h-6 text-slate-400" />

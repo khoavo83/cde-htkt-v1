@@ -48,16 +48,11 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const projectId = searchParams.get('projectId');
     
-    let targetProjectId = projectId;
+    const targetProjectId = projectId;
     
-    // Fallback if no project ID is provided
+    // Return empty state if no project ID is provided
     if (!targetProjectId) {
-      const configPath = path.join(process.cwd(), 'config.json');
-      if (fs.existsSync(configPath)) {
-        const configContent = fs.readFileSync(configPath, 'utf8');
-        const config = JSON.parse(configContent);
-        targetProjectId = config.google_drive?.main_folder_id;
-      }
+      return NextResponse.json({ data: [], message: 'Vui lòng chọn một dự án.', totalPdfCount: 0 });
     }
 
     // Read from Supabase if configured

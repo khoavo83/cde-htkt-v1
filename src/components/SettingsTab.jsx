@@ -514,12 +514,7 @@ export default function SettingsTab({ currentProjectId }) {
         >
           <UserCircle className="w-4 h-4" /> Nhân sự
         </button>
-        <button 
-          onClick={() => setActiveSubTab('users')}
-          className={`pb-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${activeSubTab === 'users' ? 'border-emerald-400 text-emerald-400' : 'border-transparent text-slate-400 hover:text-slate-200'}`}
-        >
-          <Users className="w-4 h-4" /> Người dùng
-        </button>
+
         <button 
           onClick={() => setActiveSubTab('system')}
           className={`pb-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${activeSubTab === 'system' ? 'border-emerald-400 text-emerald-400' : 'border-transparent text-slate-400 hover:text-slate-200'}`}
@@ -914,12 +909,6 @@ export default function SettingsTab({ currentProjectId }) {
           </>
         )}
 
-        {activeSubTab === 'users' && (
-          <div className="flex-1 flex items-center justify-center text-slate-500 flex-col gap-4">
-            <Users className="w-16 h-16 text-slate-700" />
-            <p>Tính năng Quản lý Người dùng đang được phát triển.</p>
-          </div>
-        )}
 
         {activeSubTab === 'system' && (
           <div className="flex-1 flex items-center justify-center text-slate-500 flex-col gap-4">

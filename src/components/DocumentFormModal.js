@@ -51,15 +51,31 @@ export default function DocumentFormModal({
     driveUrl: '',
     size: '1.5 MB',
     notes: '',
-    plots: [] // Thừa đất được bảo lưu
+    plots: [], // Thừa đất được bảo lưu
+    assignedStaff: ''
   });
+
+  const [staffList, setStaffList] = useState([]);
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   // Load dữ liệu khi mở modal (ở chế độ sửa)
   useEffect(() => {
+    const fetchStaffs = async () => {
+      try {
+        const res = await fetch('/api/staffs');
+        const data = await res.json();
+        if (data.success) {
+          setStaffList(data.data);
+        }
+      } catch (err) {
+        console.error('Error fetching staffs:', err);
+      }
+    };
+
     if (isOpen) {
+      fetchStaffs();
       if (docToEdit) {
         setFormData({
           id: docToEdit.id,
@@ -73,7 +89,8 @@ export default function DocumentFormModal({
           driveUrl: docToEdit.driveUrl || '',
           size: docToEdit.size || '1.5 MB',
           notes: docToEdit.notes || '',
-          plots: docToEdit.plots || []
+          plots: docToEdit.plots || [],
+          assignedStaff: docToEdit.assignedStaff || ''
         });
       } else {
         // Reset form cho chế độ tạo mới
@@ -88,7 +105,8 @@ export default function DocumentFormModal({
           driveUrl: 'https://drive.google.com',
           size: '1.5 MB',
           notes: '',
-          plots: []
+          plots: [],
+          assignedStaff: ''
         });
       }
       setError('');
@@ -222,7 +240,7 @@ export default function DocumentFormModal({
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Danh mục */}
             <div>
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
@@ -270,6 +288,26 @@ export default function DocumentFormModal({
               >
                 {STATUS_OPTIONS.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Nhân sự xử lý */}
+            <div>
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                Nhân sự
+              </label>
+              <select
+                name="assignedStaff"
+                value={formData.assignedStaff || ''}
+                onChange={handleInputChange}
+                className="w-full bg-slate-950/80 border border-slate-800 rounded-xl text-xs px-3.5 py-2 focus:outline-none focus:border-emerald-500 transition-all text-slate-200 cursor-pointer"
+              >
+                <option value="">-- Chọn nhân sự --</option>
+                {staffList.map(staff => (
+                  <option key={staff.id} value={staff.short_name || staff.full_name}>
+                    {staff.short_name ? `${staff.short_name} - ${staff.full_name}` : staff.full_name}
+                  </option>
                 ))}
               </select>
             </div>

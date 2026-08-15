@@ -35,7 +35,7 @@ export default function AgencyCombobox({
   const getDisplayValue = () => {
     if (!value) return '';
     const found = agencies.find(a => a.name === value);
-    if (found && found.abbreviation) return `${found.abbreviation} (${found.name})`;
+    if (found && found.abbreviation) return found.abbreviation;
     return value;
   };
 

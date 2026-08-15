@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import AgencyCombobox from './AgencyCombobox';
+import StaffCombobox from './StaffCombobox';
 import { 
   X, Save, Bot, CheckCircle2, AlertTriangle, 
   FileText, Sparkles, Loader2, Shield,
-  Calendar, User, Tag, Hash, FolderOpen, Send, Copy, Type, XCircle, ScanEye, Link2, Plus, ExternalLink, Download, FileCheck, Unlink2
+  Calendar, User, Tag, Hash, FolderOpen, Send, Copy, Type, XCircle, ScanEye, Link2, Plus, ExternalLink, Download, FileCheck, Unlink2, Trash2
 } from 'lucide-react';
 
 
@@ -38,11 +40,16 @@ export default function DocumentAnalyzeModal({
   onSave,
   onDetachPhieuTrinh,
   onAttachPhieuTrinhClick,
+  onDelete,
+  onAttachClick,
   allDocuments = [],
   allFolderFiles = [],
   agencies = [],
   documentTypes = [],
 }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const [analyzing, setAnalyzing] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [aiReading, setAiReading] = useState(false);
@@ -64,7 +71,10 @@ export default function DocumentAnalyzeModal({
     receiver: '', // Nơi gửi
     is_outgoing: false, // Công văn đi
     draftFiles: [], // File dự thảo/đính kèm
+    assignedStaff: '',
   });
+
+  const [staffList, setStaffList] = useState([]);
   
   const [selectedDraftFile, setSelectedDraftFile] = useState('');
   
@@ -72,8 +82,70 @@ export default function DocumentAnalyzeModal({
   const [showConfirm, setShowConfirm] = useState(false);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
 
+  const phapLyString = useMemo(() => {
+    let str = formData.category ? `${formData.category}` : '';
+    if (formData.documentNumber) {
+      str += ` số ${formData.documentNumber}`;
+    }
+    if (formData.issuedDate) {
+      let dd, mm, yyyy;
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(formData.issuedDate)) {
+        [dd, mm, yyyy] = formData.issuedDate.split('/');
+      } else if (/^\d{4}-\d{2}-\d{2}/.test(formData.issuedDate)) {
+        [yyyy, mm, dd] = formData.issuedDate.split('T')[0].split('-');
+      } else {
+        const d = new Date(formData.issuedDate);
+        if (!isNaN(d.getTime())) {
+          dd = String(d.getDate()).padStart(2, '0');
+          mm = String(d.getMonth() + 1).padStart(2, '0');
+          yyyy = d.getFullYear();
+        }
+      }
+      if (dd && mm && yyyy) {
+        str += ` ngày ${dd} tháng ${mm} năm ${yyyy}`;
+      } else {
+        str += ` ngày ${formData.issuedDate}`;
+      }
+    }
+    
+    if (formData.issuer) {
+      str += ` của ${formData.issuer}`;
+    }
+    
+    if (formData.receiver) {
+      str += ` ký giữa ${formData.receiver}`;
+    }
+    
+    if (formData.notes) {
+      let trichYeu = formData.notes.trim();
+      trichYeu = trichYeu.replace(/^v\/v:?\s*/i, 'về việc ');
+      trichYeu = trichYeu.replace(/\s+v\/v\s+/gi, ' về việc ');
+      
+      if (!/^về việc/i.test(trichYeu)) {
+        str += ` về việc ${trichYeu}`;
+      } else {
+        str += ` ${trichYeu}`;
+      }
+    }
+    
+    return str.trim();
+  }, [formData.category, formData.documentNumber, formData.issuedDate, formData.issuer, formData.receiver, formData.notes]);
+
   useEffect(() => {
+    const fetchStaffs = async () => {
+      try {
+        const res = await fetch('/api/staffs');
+        const data = await res.json();
+        if (data.success) {
+          setStaffList(data.data);
+        }
+      } catch (err) {
+        console.error('Error fetching staffs:', err);
+      }
+    };
+
     if (isOpen && doc) {
+      fetchStaffs();
       setAnalysisResult(null);
       setAnalysisMode(null);
       setExtractedText('');
@@ -92,6 +164,7 @@ export default function DocumentAnalyzeModal({
         status: doc.status || 'effective',
         receiver: doc.receivingAgency || doc.noi_gui || doc.receiver || '',
         is_outgoing: doc.is_outgoing || false,
+        assignedStaff: doc.assignedStaff || doc.nguoi_xu_ly || '',
         // Kết hợp cả 2 nguồn: legacy array + file đính kèm mới qua parent_id
         draftFiles: Array.from(new Set([
           ...(doc.draftFiles || doc.draft_files || []),
@@ -271,6 +344,7 @@ export default function DocumentAnalyzeModal({
         trich_yeu: formData.notes,
         loai_vb: formData.category,
         noi_gui: formData.receiver,
+        assignedStaff: formData.assignedStaff,
         draftFiles: formData.draftFiles,
       };
 
@@ -288,6 +362,7 @@ export default function DocumentAnalyzeModal({
           trich_yeu: updatedDoc.trich_yeu,
           noi_gui: updatedDoc.noi_gui,
           is_outgoing: updatedDoc.is_outgoing,
+          assignedStaff: updatedDoc.assignedStaff,
           draftFiles: updatedDoc.draftFiles
         })
       });
@@ -322,16 +397,23 @@ export default function DocumentAnalyzeModal({
 
   // Chuẩn bị URL embed cho iframe
   let embedUrl = '';
-  if (doc.path) {
+  if (doc.driveWebLink || doc.webViewLink || doc.web_view_link) {
+    const link = doc.driveWebLink || doc.webViewLink || doc.web_view_link;
+    // Dùng URL preview của Google Drive
+    const fileIdMatch = link.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (fileIdMatch) {
+      embedUrl = `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`;
+    } else {
+      embedUrl = link.replace(/\/view.*$/, '/preview');
+    }
+  } else if (doc.path) {
     // Dùng API trực tiếp với Chrome PDF viewer, yêu cầu hiển thị từng trang (view=Fit)
     embedUrl = `/api/documents/view?path=${encodeURIComponent(doc.path)}#toolbar=1&navpanes=1&scrollbar=1&view=Fit`;
-  } else if (doc.webViewLink || doc.web_view_link) {
-    const link = doc.webViewLink || doc.web_view_link;
-    // Dùng URL preview của Google Drive, nếu không dùng được thì có thể dùng fallback Google Docs Viewer nhưng Google Docs Viewer cần file public
-    embedUrl = link.replace(/\/view.*$/, '/preview');
   }
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-2 sm:p-4 md:p-6 lg:p-8">
       {/* Backdrop */}
       <div 
@@ -340,7 +422,7 @@ export default function DocumentAnalyzeModal({
       />
 
       {/* Modal Container */}
-      <div className="relative w-full h-full max-w-7xl bg-slate-900 border border-slate-700/60 rounded-2xl shadow-2xl overflow-hidden flex flex-col min-h-0 animate-in fade-in zoom-in duration-200">
+      <div className="relative w-[98vw] h-[98vh] max-w-[1920px] bg-slate-900 border border-slate-700/60 rounded-2xl shadow-2xl overflow-hidden flex flex-col min-h-0 animate-in fade-in zoom-in duration-200">
         
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b border-slate-800/80 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 shadow-sm shrink-0">
@@ -349,11 +431,23 @@ export default function DocumentAnalyzeModal({
               <Sparkles className="w-6 h-6 text-cyan-400" />
             </div>
             <div className="min-w-0">
-              <div className="flex items-center">
-                <h2 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                  Phân tích & Nhập liệu Văn bản
+              <div className="flex items-start">
+                <h2 className="text-sm font-bold text-emerald-400 flex items-start gap-2 group whitespace-normal leading-snug">
+                  <Shield className="w-4 h-4 mt-0.5 shrink-0" />
+                  <span className="text-slate-200 select-text">{phapLyString || 'Phân tích & Nhập liệu Văn bản'}</span>
+                  {phapLyString && (
+                    <button 
+                      onClick={() => navigator.clipboard.writeText(phapLyString)}
+                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-slate-700 rounded text-slate-400 hover:text-emerald-400 transition-all shrink-0 -mt-1"
+                      title="Sao chép nội dung pháp lý"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </h2>
-                {getModeBadge()}
+                <div className="mt-0.5 shrink-0">
+                  {getModeBadge()}
+                </div>
               </div>
               <div className="text-[11px] text-slate-400 max-w-lg mt-1 flex flex-col gap-0.5">
                 <span className="truncate" title={doc.name || doc.file_name}>
@@ -367,21 +461,71 @@ export default function DocumentAnalyzeModal({
               </div>
             </div>
           </div>
-          <button 
-            onClick={handleClose}
-            className="p-2 bg-red-500/10 hover:bg-red-500/30 border border-red-500/30 rounded-lg text-red-400 hover:text-red-300 transition-colors shrink-0"
-            disabled={showConfirm || showCloseConfirm}
-            title="Đóng"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {doc.mimeType && doc.mimeType.includes('word') && onAttachClick && (
+              <button
+                onClick={() => onAttachClick(doc)}
+                className="flex items-center gap-2 p-2 bg-cyan-500/10 hover:bg-cyan-500/30 border border-cyan-500/30 rounded-lg text-cyan-400 hover:text-cyan-300 transition-colors shrink-0"
+                disabled={showConfirm || showCloseConfirm}
+                title="Gắn file này vào PDF"
+              >
+                <Link2 className="w-4 h-4" />
+                <span className="text-xs font-semibold hidden sm:inline">Gắn vào PDF</span>
+              </button>
+            )}
+            {doc.mimeType === 'application/pdf' && doc.so_vb && doc.so_vb.toLowerCase().includes('ptr-htkt') && onAttachPhieuTrinhClick && (
+              <button
+                onClick={() => onAttachPhieuTrinhClick(doc)}
+                className="flex items-center gap-2 p-2 bg-amber-500/10 hover:bg-amber-500/30 border border-amber-500/30 rounded-lg text-amber-400 hover:text-amber-300 transition-colors shrink-0"
+                disabled={showConfirm || showCloseConfirm}
+                title="Gắn Phiếu trình này vào Văn bản chính"
+              >
+                <Link2 className="w-4 h-4" />
+                <span className="text-xs font-semibold hidden sm:inline">Gắn Phiếu trình</span>
+              </button>
+            )}
+            {(doc.webViewLink || doc.web_view_link) && (
+              <a
+                href={doc.webViewLink || doc.web_view_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 p-2 bg-emerald-500/10 hover:bg-emerald-500/30 border border-emerald-500/30 rounded-lg text-emerald-400 hover:text-emerald-300 transition-colors shrink-0"
+                title="Xem trên Drive"
+              >
+                <ExternalLink className="w-4 h-4" />
+                <span className="text-xs font-semibold hidden sm:inline">Mở Drive</span>
+              </a>
+            )}
+            {onDelete && (
+              <button
+                onClick={() => {
+                  onDelete();
+                }}
+                className="flex items-center gap-2 p-2 bg-red-500/10 hover:bg-red-500/30 border border-red-500/30 rounded-lg text-red-400 hover:text-red-300 transition-colors shrink-0"
+                disabled={showConfirm || showCloseConfirm}
+                title="Xóa khỏi hệ thống"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span className="text-xs font-semibold hidden sm:inline">Xóa</span>
+              </button>
+            )}
+            <div className="w-px h-6 bg-slate-700 mx-1"></div>
+            <button 
+              onClick={handleClose}
+              className="p-2 bg-slate-700/50 hover:bg-slate-700 border border-slate-600/50 rounded-lg text-slate-300 hover:text-slate-100 transition-colors shrink-0"
+              disabled={showConfirm || showCloseConfirm}
+              title="Đóng"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Content Area (Split Grid) */}
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0 bg-slate-950/50">
           
           {/* Left Column: PDF Viewer */}
-          <div className="flex-1 lg:w-[55%] border-b lg:border-b-0 lg:border-r border-slate-800 flex flex-col h-[40vh] lg:h-full bg-[#323639] min-h-0">
+          <div className="flex-1 lg:w-[60%] border-b lg:border-b-0 lg:border-r border-slate-800 flex flex-col h-[40vh] lg:h-full bg-[#323639] min-h-0">
             {embedUrl ? (
               <iframe 
                 src={embedUrl} 
@@ -395,8 +539,8 @@ export default function DocumentAnalyzeModal({
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center text-slate-500">
                 <FileText className="w-12 h-12 mb-3 opacity-20" />
-                <p className="text-sm">Không thể xem trước tệp này.</p>
-                <a href={doc.webViewLink || doc.web_view_link} target="_blank" rel="noopener noreferrer" className="mt-4 text-cyan-500 hover:underline text-xs">
+                <p className="text-sm">Không thể xem trực tiếp tệp này.</p>
+                <a href={doc.driveWebLink || doc.webViewLink || doc.web_view_link} target="_blank" rel="noopener noreferrer" className="mt-4 text-cyan-500 hover:underline text-xs">
                   Mở trên tab mới
                 </a>
               </div>
@@ -404,7 +548,7 @@ export default function DocumentAnalyzeModal({
           </div>
 
           {/* Right Column: Data Form */}
-          <div className="flex-1 lg:w-[45%] flex flex-col h-full max-h-full bg-slate-900 relative min-h-0">
+          <div className="flex-1 lg:w-[40%] flex flex-col h-full max-h-full bg-slate-900 relative min-h-0">
             <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-5 custom-scrollbar min-h-0">
               
 
@@ -466,10 +610,10 @@ export default function DocumentAnalyzeModal({
 
                   {/* Phiếu trình — hiện khi là Văn bản đi VÀ đã có Phiếu trình */}
                   {formData.is_outgoing && doc?.phieu_trinh && (
-                    <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-xl px-3 py-2">
+                    <div className="flex items-center gap-2 flex-wrap bg-amber-500/10 border border-amber-500/30 rounded-xl px-3 py-2">
                       <FileCheck className="w-4 h-4 text-amber-500 flex-shrink-0" />
                       <a
-                        href={doc.phieu_trinh.webViewLink || '#'}
+                        href={doc.phieu_trinh.webViewLink ? doc.phieu_trinh.webViewLink.replace(/\/view.*$/, '/preview') : '#'}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-amber-400 text-sm font-medium hover:underline truncate max-w-[220px]"
@@ -477,6 +621,24 @@ export default function DocumentAnalyzeModal({
                       >
                         {doc.phieu_trinh.name?.replace(/\.pdf$/i, '') || 'Phiếu trình'}
                       </a>
+                      
+                      {/* Hiển thị các file dự thảo của Phiếu trình (nếu có) */}
+                      {(() => {
+                        const ptDrafts = allFolderFiles.filter(f => String(f.parent_id) === String(doc.phieu_trinh.id));
+                        return ptDrafts.map(ptDraft => (
+                          <div key={ptDraft.id} className="flex items-center ml-1 pl-2 border-l border-amber-500/30">
+                            <a
+                              href={ptDraft.webContentLink || ptDraft.web_content_link || ptDraft.webViewLink || ptDraft.web_view_link || '#'}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-400 hover:text-blue-300 flex items-center justify-center"
+                              title={`Tải/Xem: ${ptDraft.name || ptDraft.file_name}`}
+                            >
+                              <FileText className="w-4 h-4 flex-shrink-0" />
+                            </a>
+                          </div>
+                        ));
+                      })()}
                       {onDetachPhieuTrinh && (
                         <button
                           onClick={() => onDetachPhieuTrinh(doc.phieu_trinh.id)}
@@ -511,20 +673,21 @@ export default function DocumentAnalyzeModal({
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Tag className="w-4 h-4 text-slate-500" />
                   </div>
-                  <input
-                    type="text"
+                  <select
                     name="category"
-                    list="category-options"
-                    value={formData.category}
+                    value={formData.category || ''}
                     onChange={handleInputChange}
-                    placeholder="Loại VB..."
-                    className="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl text-sm pl-9 pr-3.5 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all text-slate-200 shadow-inner"
-                  />
-                  <datalist id="category-options">
+                    className="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl text-sm pl-9 pr-8 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all text-slate-200 shadow-inner appearance-none cursor-pointer"
+                  >
+                    <option value="" disabled>-- Chọn Loại VB --</option>
                     {documentTypes.map(dt => (
-                      <option key={dt.id} value={dt.name} />
+                      <option key={dt.id} value={dt.name}>{dt.name}</option>
                     ))}
-                  </datalist>
+                  </select>
+                  {/* Custom dropdown arrow */}
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                  </div>
                 </div>
 
                 {/* Số VB */}
@@ -584,6 +747,15 @@ export default function DocumentAnalyzeModal({
                     confidence={<ConfidenceBadge value={analysisResult?.confidence?.receiver} />}
                   />
                 </div>
+
+                {/* Người xử lý */}
+                <div className="col-span-12 sm:col-span-6 relative z-40">
+                  <StaffCombobox
+                    value={formData.assignedStaff}
+                    staffs={staffList}
+                    onChange={(val) => setFormData(prev => ({ ...prev, assignedStaff: val }))}
+                  />
+                </div>
                 
                 {/* Trích yếu nội dung */}
                 <div className="col-span-12 relative">
@@ -607,7 +779,7 @@ export default function DocumentAnalyzeModal({
                 <div className="col-span-12 relative mt-2 border-t border-slate-800/80 pt-4">
                   <h3 className="text-xs font-bold text-slate-200 flex items-center gap-1.5 mb-3">
                     <Link2 className="w-4 h-4 text-cyan-400" />
-                    File dự thảo / Đính kèm ({formData.draftFiles?.length || 0})
+                    Dự thảo ({formData.draftFiles?.length || 0})
                   </h3>
                   
                   <div className="flex gap-2 mb-3">
@@ -616,8 +788,8 @@ export default function DocumentAnalyzeModal({
                       onChange={(e) => setSelectedDraftFile(e.target.value)}
                       className="flex-1 bg-slate-950/80 border border-slate-700/60 rounded-xl text-xs px-3 py-2 focus:outline-none focus:border-cyan-500 cursor-pointer text-slate-200"
                     >
-                      <option value="">-- Chọn file đính kèm --</option>
-                      {allFolderFiles.filter(d => d.id !== doc.id && !formData.draftFiles?.includes(d.id)).map(d => (
+                      <option value="">-- Chọn file dự thảo --</option>
+                      {allFolderFiles.filter(d => String(d.id) !== String(doc?.id) && !(formData.draftFiles || []).some(id => String(id) === String(d.id))).map(d => (
                         <option key={d.id} value={d.id}>
                           {d.name || d.file_name}
                         </option>
@@ -626,10 +798,18 @@ export default function DocumentAnalyzeModal({
                     <button
                       onClick={() => {
                         if (!selectedDraftFile) return;
-                        setFormData(prev => ({
-                          ...prev,
-                          draftFiles: [...(prev.draftFiles || []), selectedDraftFile]
-                        }));
+                        // Try to keep numeric IDs as numbers if possible, since Supabase often uses Int
+                        const fileIdToAdd = isNaN(Number(selectedDraftFile)) ? selectedDraftFile : Number(selectedDraftFile);
+                        
+                        setFormData(prev => {
+                          const currentDrafts = prev.draftFiles || [];
+                          // Avoid duplicates
+                          if (currentDrafts.some(id => String(id) === String(fileIdToAdd))) return prev;
+                          return {
+                            ...prev,
+                            draftFiles: [...currentDrafts, fileIdToAdd]
+                          };
+                        });
                         setSelectedDraftFile('');
                       }}
                       type="button"
@@ -643,7 +823,7 @@ export default function DocumentAnalyzeModal({
                   
                   <div className="space-y-2 max-h-[150px] overflow-y-auto pr-1 custom-scrollbar">
                     {(formData.draftFiles || []).map((fileId) => {
-                      const linkedDoc = allFolderFiles.find(d => d.id === fileId);
+                      const linkedDoc = allFolderFiles.find(d => String(d.id) === String(fileId));
                       return (
                         <div key={fileId} className="flex items-center justify-between p-2.5 bg-slate-950/40 border border-slate-800/80 rounded-xl group hover:border-slate-700/80 transition-colors">
                           <div className="min-w-0 flex-1 flex items-center gap-2">
@@ -698,7 +878,7 @@ export default function DocumentAnalyzeModal({
                     })}
                     {(!formData.draftFiles || formData.draftFiles.length === 0) && (
                       <div className="text-center py-4 text-slate-500 border border-dashed border-slate-700/60 rounded-xl text-xs">
-                        Chưa có file đính kèm nào.
+                        Chưa có file dự thảo nào.
                       </div>
                     )}
                   </div>
@@ -821,6 +1001,7 @@ export default function DocumentAnalyzeModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

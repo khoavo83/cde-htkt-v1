@@ -4,9 +4,6 @@ import fs from 'fs';
 import path from 'path';
 import { Pool } from 'pg';
 
-// Using config.json in the project root
-const configPath = path.join(process.cwd(), 'config.json');
-
 // Hàm parse tên file để bóc tách ngày, số VB, trích yếu, nơi phát hành (dùng chung với full-sync)
 function parseFileName(fileName, folderName = "") {
   let parsedNgay = null;
@@ -117,26 +114,11 @@ export async function POST(request) {
     const { searchParams } = new URL(request.url);
     const projectId = searchParams.get('projectId');
 
-    const configContent = fs.readFileSync(configPath, 'utf8');
-    const config = JSON.parse(configContent);
-    
-    let targetFolderId = null;
-    let targetProjectId = projectId;
-    
-    if (projectId && config.projects) {
-      const project = config.projects.find(p => p.id === projectId);
-      if (project) {
-        targetFolderId = project.id;
-      }
-    }
-    
-    if (!targetFolderId) {
-      targetFolderId = config.google_drive.main_folder_id;
-      targetProjectId = targetFolderId;
-    }
+    const targetFolderId = projectId;
+    const targetProjectId = projectId;
 
     if (!targetFolderId) {
-      return NextResponse.json({ error: 'Missing folderId' }, { status: 400 });
+      return NextResponse.json({ error: 'Thiếu ID dự án' }, { status: 400 });
     }
 
     const cachePath = path.join(process.cwd(), 'data', `drive_cache_${targetProjectId}.json`);

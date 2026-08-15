@@ -1,0 +1,122 @@
+[
+  {
+    "id": "1b-TVtTx4cdx_fsGcxQ9ihB76QphRiJQH",
+    "name": "Bồi thường ST-LT",
+    "parent_id": null,
+    "modified_time": "2026-08-11T03:29:55.554Z"
+  },
+  {
+    "id": "1ughsUXt7ZkG89KVbBLu0cRJysH-uAtm5",
+    "name": "1. Chủ trương",
+    "parent_id": "1b-TVtTx4cdx_fsGcxQ9ihB76QphRiJQH",
+    "modified_time": "2026-08-12T08:00:50.342Z"
+  },
+  {
+    "id": "1LoMuyMyHbUVd1Sxyyp6QapQPuV_K2COX",
+    "name": "18. Thông tin khác",
+    "parent_id": "1b-TVtTx4cdx_fsGcxQ9ihB76QphRiJQH",
+    "modified_time": "2026-08-12T07:26:38.710Z"
+  },
+  {
+    "id": "1YVMwI8kkgCcH91j3FMgEmptxVRVav3vD",
+    "name": "17. Thông báo",
+    "parent_id": "1b-TVtTx4cdx_fsGcxQ9ihB76QphRiJQH",
+    "modified_time": "2026-08-12T07:26:34.142Z"
+  },
+  {
+    "id": "1mOb8-_iCiy4E9t4DTsgFWWpuNHZuW4CU",
+    "name": "16. Báo cáo",
+    "parent_id": "1b-TVtTx4cdx_fsGcxQ9ihB76QphRiJQH",
+    "modified_time": "2026-08-12T07:26:29.930Z"
+  },
+  {
+    "id": "17NLVl9ODMxUz7zVFTwR49qIP08R9v0pZ",
+    "name": "9. Quản lý HĐ",
+    "parent_id": "1b-TVtTx4cdx_fsGcxQ9ihB76QphRiJQH",
+    "modified_time": "2026-08-12T07:26:12.732Z"
+  },
+  {
+    "id": "1BGUf_kN21BUcS9QPT62wV5CYwf1NRj53",
+    "name": "19. Báo cáo GSĐGĐT",
+    "parent_id": "1b-TVtTx4cdx_fsGcxQ9ihB76QphRiJQH",
+    "modified_time": "2026-08-12T07:25:09.809Z"
+  },
+  {
+    "id": "1Ho9_DLP16mcYoL2NiMB9rYYwlBowLpfr",
+    "name": "15. Di dời HTKT",
+    "parent_id": "1b-TVtTx4cdx_fsGcxQ9ihB76QphRiJQH",
+    "modified_time": "2026-08-12T07:24:37.052Z"
+  },
+  {
+    "id": "1jzIUkvT5kuIzboC7GrVt1q96fgoRXhOz",
+    "name": "14. Bồi thường",
+    "parent_id": "1b-TVtTx4cdx_fsGcxQ9ihB76QphRiJQH",
+    "modified_time": "2026-08-12T07:24:29.216Z"
+  },
+  {
+    "id": "1E5ab8NnJU2CI7Bf7KOAHMVuURzSru4b1",
+    "name": "13. Quản lý HĐ",
+    "parent_id": "1b-TVtTx4cdx_fsGcxQ9ihB76QphRiJQH",
+    "modified_time": "2026-08-12T07:24:22.646Z"
+  },
+  {
+    "id": "1MB6lW8-5qYDd3EY0KrM5IF0hUcAZam1S",
+    "name": "12. Kế hoạch LCNT",
+    "parent_id": "1b-TVtTx4cdx_fsGcxQ9ihB76QphRiJQH",
+    "modified_time": "2026-08-12T07:24:14.278Z"
+  },
+  {
+    "id": "1ADxDPadO1hHkP4STLN1itixrsecASEVA",
+    "name": "11. Bản đồ - cắm mốc",
+    "parent_id": "1b-TVtTx4cdx_fsGcxQ9ihB76QphRiJQH",
+    "modified_time": "2026-08-12T07:23:51.729Z"
+  },
+  {
+    "id": "1f_mkGC0dgyre_XUAI9FYrbqT53p_ezHB",
+    "name": "10. Báo cáo NCKT",
+    "parent_id": "1b-TVtTx4cdx_fsGcxQ9ihB76QphRiJQH",
+    "modified_time": "2026-08-12T07:23:27.502Z"
+  },
+  {
+    "id": "1GwZGLnSXdUci7TTlDynAuPj7q29wge1D",
+    "name": "7. Giải ngân vốn",
+    "parent_id": "1b-TVtTx4cdx_fsGcxQ9ihB76QphRiJQH",
+    "modified_time": "2026-08-12T02:41:13.934Z"
+  },
+  {
+    "id": "1aJ_rFFj_LwmHgABDMqM1gPl03tu2bPV6",
+    "name": "4. Giao nhiệm vụ",
+    "parent_id": "1b-TVtTx4cdx_fsGcxQ9ihB76QphRiJQH",
+    "modified_time": "2026-08-12T02:39:52.618Z"
+  },
+  {
+    "id": "198vxOH18PuGUWEs7qMlBWwZdMKRusZd-",
+    "name": "3. Tách bồi thường",
+    "parent_id": "1b-TVtTx4cdx_fsGcxQ9ihB76QphRiJQH",
+    "modified_time": "2026-08-12T02:39:42.512Z"
+  },
+  {
+    "id": "1ovpPudJkk5pc0G9h0b8c-X5FIdc2BZyW",
+    "name": "8. Kế hoạch LCNT",
+    "parent_id": "1b-TVtTx4cdx_fsGcxQ9ihB76QphRiJQH",
+    "modified_time": "2026-08-12T02:36:06.047Z"
+  },
+  {
+    "id": "1lr6OO78jZMi3vpKcU23vslx_reSFGMxv",
+    "name": "6. Kế hoạch vốn",
+    "parent_id": "1b-TVtTx4cdx_fsGcxQ9ihB76QphRiJQH",
+    "modified_time": "2026-08-12T02:08:45.632Z"
+  },
+  {
+    "id": "1aMTrfEsmg1P8Q4Db6u6W2p28g4ZuKBak",
+    "name": "5. Kế hoạch - Tiến độ",
+    "parent_id": "1b-TVtTx4cdx_fsGcxQ9ihB76QphRiJQH",
+    "modified_time": "2026-08-12T02:08:35.451Z"
+  },
+  {
+    "id": "1HbLZsrh3rml5lW1RRWbro9qOEQqQ5MIw",
+    "name": "2. Phương án tuyến",
+    "parent_id": "1b-TVtTx4cdx_fsGcxQ9ihB76QphRiJQH",
+    "modified_time": "2026-08-12T02:08:03.396Z"
+  }
+]

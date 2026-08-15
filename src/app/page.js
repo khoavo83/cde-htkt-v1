@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useTheme } from 'next-themes';
+import { useTheme } from '@/components/ThemeProvider';
 import FolderTree from '@/components/FolderTree';
 import DocumentAnalyzeModal from '@/components/DocumentAnalyzeModal';
 import SettingsTab from '@/components/SettingsTab';
+import KPITab from '@/components/KPITab';
 import { 
   FileText, 
   Layers, 
@@ -39,7 +40,8 @@ import {
   Settings,
   Sun,
   Moon,
-  Edit2
+  Edit2,
+  Target
 } from 'lucide-react';
 
 export default function Home() {
@@ -59,6 +61,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [docSearch, setDocSearch] = useState('');
   const [docCategory, setDocCategory] = useState('all');
+  const [docProjectFilter, setDocProjectFilter] = useState('all');
   const [driveSource, setDriveSource] = useState('loading');
   const [realtimeStatus, setRealtimeStatus] = useState('connecting');
   const [activeDmsTab, setActiveDmsTab] = useState('all'); // 'all', 'linked'
@@ -73,6 +76,10 @@ export default function Home() {
   const [newProjectId, setNewProjectId] = useState('');
   const [newProjectName, setNewProjectName] = useState('');
   
+  // Trạng thái cài đặt chung
+  const [agencies, setAgencies] = useState([]);
+  const [documentTypes, setDocumentTypes] = useState([]);
+
   // Trạng thái cập nhật dữ liệu
   const [updatingTaskId, setUpdatingTaskId] = useState(null);
   const [syncing, setSyncing] = useState(false);
@@ -81,6 +88,7 @@ export default function Home() {
   // Phân trang
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [sortDateOrder, setSortDateOrder] = useState('desc'); // 'desc' hoặc 'asc'
 
   // Load dữ liệu ban đầu
   const fetchData = async () => {
@@ -92,9 +100,28 @@ export default function Home() {
         fetch(`/api/projects?t=${Date.now()}`)
       ]);
 
-      const tasksData = await tasksRes.json();
-      const docsData = await docsRes.json();
-      const projData = await projRes.json();
+      const [tasksData, docsData, projData] = await Promise.all([
+        tasksRes.json(),
+        docsRes.json(),
+        projRes.json()
+      ]);
+
+      // Fetch cài đặt độc lập để không ảnh hưởng dữ liệu chính
+      try {
+        const agRes = await fetch('/api/settings/agencies');
+        if (agRes.ok) {
+          const agData = await agRes.json();
+          if (agData.success) setAgencies(agData.data.sort((a, b) => a.name.localeCompare(b.name, 'vi')));
+        }
+      } catch (e) { console.error('Lỗi tải cơ quan ban hành:', e); }
+
+      try {
+        const dtRes = await fetch('/api/settings/document-types');
+        if (dtRes.ok) {
+          const dtData = await dtRes.json();
+          if (dtData.success) setDocumentTypes(dtData.data.sort((a, b) => a.name.localeCompare(b.name, 'vi')));
+        }
+      } catch (e) { console.error('Lỗi tải loại văn bản:', e); }
 
       setTasks(tasksData);
       
@@ -245,21 +272,28 @@ export default function Home() {
     }
   };
 
-  // Mở tệp tin trực tiếp trên máy tính người dùng bằng ứng dụng mặc định
-  const handleOpenDocument = async (filePath) => {
-    try {
-      const res = await fetch('/api/documents/open', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filePath })
-      });
-      const result = await res.json();
-      if (!result.success) {
-        alert(result.error);
+  // Mở tệp tin (hỗ trợ cả đường dẫn cục bộ và link Google Drive)
+  const handleOpenDocument = async (doc) => {
+    if (doc.path) {
+      try {
+        const res = await fetch('/api/documents/open', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filePath: doc.path })
+        });
+        const result = await res.json();
+        if (!result.success) {
+          alert(result.error);
+        }
+      } catch (err) {
+        console.error("Lỗi khi mở file:", err);
+        alert("Không thể kết nối đến API mở file.");
       }
-    } catch (err) {
-      console.error("Lỗi khi mở file:", err);
-      alert("Không thể kết nối đến API mở file.");
+    } else if (doc.driveWebLink || doc.webViewLink || doc.web_view_link) {
+      const link = doc.driveWebLink || doc.webViewLink || doc.web_view_link;
+      window.open(link, '_blank');
+    } else {
+      alert("Không có đường dẫn cục bộ hoặc liên kết Google Drive để mở file này.");
     }
   };
 
@@ -279,34 +313,63 @@ export default function Home() {
   // Bộ lọc văn bản và liên kết
   const selectedTask = tasks.find(t => t.id === selectedTaskId);
   
+  const allDraftFileIds = useMemo(() => {
+    const ids = new Set();
+    documents.forEach(doc => {
+      const drafts = doc.draftFiles || doc.draft_files || [];
+      drafts.forEach(id => ids.add(String(id)));
+    });
+    return ids;
+  }, [documents]);
+
   const filteredDocuments = useMemo(() => {
     const filtered = documents.filter(doc => {
-      const matchSearch = doc.name.toLowerCase().includes(docSearch.toLowerCase()) || 
-                          (doc.summary && doc.summary.toLowerCase().includes(docSearch.toLowerCase()));
+      // Ẩn các file đã được gán làm dự thảo cho file khác
+      if (allDraftFileIds.has(String(doc.id))) return false;
+      const docName = doc.name || '';
+      const docSummary = doc.summary || '';
+      const matchSearch = docName.toLowerCase().includes(docSearch.toLowerCase()) || 
+                          docSummary.toLowerCase().includes(docSearch.toLowerCase());
       const matchCategory = docCategory === 'all' || doc.category === docCategory;
+      const matchProject = docProjectFilter === 'all' || doc.project_name === docProjectFilter;
       
       if (dmsSubTab === 'linked') {
         const isLinked = selectedTask && selectedTask.documents && selectedTask.documents.includes(doc.name);
-        return matchSearch && matchCategory && isLinked;
+        return matchSearch && matchCategory && matchProject && isLinked;
       }
       
-      return matchSearch && matchCategory;
+      return matchSearch && matchCategory && matchProject;
     });
 
-    // Sắp xếp theo ngày phát hành gần nhất
+    // Sắp xếp theo ngày phát hành
     filtered.sort((a, b) => {
-      const dateA = a.documentDate ? new Date(a.documentDate.split('/').reverse().join('-')) : new Date(0);
-      const dateB = b.documentDate ? new Date(b.documentDate.split('/').reverse().join('-')) : new Date(0);
-      return dateB - dateA;
+      const getValidDate = (dateStr) => {
+        if (!dateStr) return new Date(0);
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return new Date(dateStr.split('/').reverse().join('-'));
+        if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) return new Date(dateStr.split('T')[0]);
+        const d = new Date(dateStr);
+        return isNaN(d.getTime()) ? new Date(0) : d;
+      };
+
+      const dateA = getValidDate(a.issuedDate || a.documentDate);
+      const dateB = getValidDate(b.issuedDate || b.documentDate);
+      
+      return sortDateOrder === 'desc' ? dateB - dateA : dateA - dateB;
     });
 
     return filtered;
-  }, [documents, docSearch, docCategory, dmsSubTab, selectedTaskId, tasks]);
+  }, [documents, docSearch, docCategory, docProjectFilter, dmsSubTab, selectedTaskId, tasks, allDraftFileIds]);
+
+  // Lấy danh sách các dự án duy nhất từ documents
+  const uniqueProjects = useMemo(() => {
+    const projects = new Set(documents.map(d => d.project_name).filter(Boolean));
+    return Array.from(projects).sort();
+  }, [documents]);
 
   // Reset trang khi thay đổi bộ lọc hoặc số mục/trang
   useEffect(() => {
     setCurrentPage(1);
-  }, [docSearch, docCategory, dmsSubTab, itemsPerPage]);
+  }, [docSearch, docCategory, docProjectFilter, dmsSubTab, itemsPerPage]);
 
   // Xử lý thêm dự án mới
   const handleAddProject = async (e) => {
@@ -455,8 +518,9 @@ export default function Home() {
         <div className="flex gap-1 overflow-x-auto">
           {[
             { id: 'documents', label: 'Quản lý Văn bản', icon: FolderOpen, count: filteredDocuments.length },
-            { id: 'projects', label: 'Quản lý Dự án', icon: Briefcase, count: tasks.length },
+            { id: 'projects', label: 'Quản lý Dự án', icon: Briefcase, count: projects.length },
             { id: 'gis', label: 'Bản đồ GIS', icon: MapPin, count: null },
+            { id: 'kpi', label: 'Quản lý KPI', icon: Target, count: null },
             { id: 'settings', label: 'Cài đặt', icon: Settings, count: null },
           ].map(tab => (
             <button
@@ -485,9 +549,37 @@ export default function Home() {
       {/* === TAB CONTENT === */}
       <main className="flex-1 min-h-0 overflow-hidden">
 
-        {/* ──── TAB: QUẢN LÝ VĂN BẢN ──── */}
+        {/* ■ TAB: QUẢN LÝ VĂN BẢN ■ */}
         {activeMainTab === 'documents' && (
           <div className="h-full flex flex-col overflow-hidden p-3 sm:p-4">
+            
+            {/* Project Tabs (Thay thế cho nhóm dự án) */}
+            <div className="flex gap-2 overflow-x-auto pb-2 mb-3 border-b border-slate-800/50 scrollbar-thin scrollbar-thumb-slate-700">
+              <button
+                onClick={() => setDocProjectFilter('all')}
+                className={`shrink-0 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+                  docProjectFilter === 'all'
+                    ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30'
+                    : 'bg-slate-900/50 text-slate-400 border border-slate-800 hover:bg-slate-800'
+                }`}
+              >
+                Tất cả dự án
+              </button>
+              {uniqueProjects.map(proj => (
+                <button
+                  key={proj}
+                  onClick={() => setDocProjectFilter(proj)}
+                  className={`shrink-0 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+                    docProjectFilter === proj
+                      ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30'
+                      : 'bg-slate-900/50 text-slate-400 border border-slate-800 hover:bg-slate-800'
+                  }`}
+                >
+                  {proj}
+                </button>
+              ))}
+            </div>
+
             {/* Thanh tìm kiếm & bộ lọc */}
             <div className="flex flex-wrap gap-2 shrink-0 mb-3">
               <div className="flex-1 min-w-[200px] relative">
@@ -590,23 +682,31 @@ export default function Home() {
                     <th className="py-2.5 px-3 font-semibold text-slate-400">#</th>
                     <th className="py-2.5 px-3 font-semibold text-slate-400">LOẠI VB</th>
                     <th className="py-2.5 px-3 font-semibold text-slate-400">SỐ VB</th>
-                    <th className="py-2.5 px-3 font-semibold text-slate-400">NGÀY PH</th>
-                    <th className="py-2.5 px-3 font-semibold text-slate-400">NƠI PHÁT HÀNH</th>
-                    <th className="py-2.5 px-3 font-semibold text-slate-400 w-1/3">TRÍCH YẾU NỘI DUNG</th>
+                    <th className="py-2.5 px-3 font-semibold text-slate-400 cursor-pointer group" onClick={() => setSortDateOrder(prev => prev === 'desc' ? 'asc' : 'desc')}>
+                      <div className="flex items-center gap-1">
+                        NGÀY PH
+                        <span className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded-md group-hover:text-emerald-400 transition-colors">
+                          {sortDateOrder === 'desc' ? '▼' : '▲'}
+                        </span>
+                      </div>
+                    </th>
+                    <th className="py-2.5 px-3 font-semibold text-slate-400">NƠI PH</th>
+                    <th className="py-2.5 px-3 font-semibold text-slate-400 w-1/3">TRÍCH YẾU ND</th>
+                    <th className="py-2.5 px-3 font-semibold text-slate-400">NGƯỜI XL</th>
                     <th className="py-2.5 px-3 font-semibold text-slate-400 text-right">THAO TÁC</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan="7" className="py-20 text-center text-slate-400">
+                      <td colSpan="8" className="py-20 text-center text-slate-400">
                         <RefreshCw className="w-8 h-8 animate-spin text-emerald-400 mb-2 mx-auto" />
                         <span>Đang tải danh sách văn bản...</span>
                       </td>
                     </tr>
                   ) : paginatedDocs.length === 0 ? (
                     <tr>
-                      <td colSpan="7" className="py-20 text-center text-slate-500">
+                      <td colSpan="8" className="py-20 text-center text-slate-500">
                         <AlertTriangle className="w-8 h-8 text-slate-600 mb-2 mx-auto" />
                         <span>Không tìm thấy tài liệu phù hợp</span>
                       </td>
@@ -617,13 +717,15 @@ export default function Home() {
                       const fileInfo = getFileIcon(doc.name);
                       const IconComp = fileInfo.icon;
                       const actualIndex = (currentPage - 1) * itemsPerPage + idx + 1;
+                      const ext = (doc.name || '').split('.').pop().toLowerCase();
+                      const isDocOrExcel = ['doc', 'docx', 'xls', 'xlsx'].includes(ext);
                       
                       return (
                         <tr key={doc.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors group">
                           <td className="py-2 px-3 align-top">
                             <div className="flex items-center gap-2">
                               <span className="text-slate-500 font-mono w-5">{actualIndex}</span>
-                              <div onClick={() => handleOpenDocument(doc.path)}
+                              <div onClick={() => handleOpenDocument(doc)}
                                 className={`p-1.5 border ${fileInfo.bg} rounded-md border-transparent group-hover:border-emerald-500/30 transition-colors cursor-pointer flex items-center justify-center`}
                                 title={`Mở tệp (${fileInfo.label})`}>
                                 <IconComp className={`w-4 h-4 ${fileInfo.color}`} />
@@ -633,26 +735,56 @@ export default function Home() {
                           <td className="py-2 px-3 align-top text-slate-300">
                             <div className="flex items-center gap-1">
                               <FileText className="w-3.5 h-3.5 text-slate-400" />
-                              <span className="truncate max-w-[100px] block" title={doc.category}>{doc.category}</span>
+                              <span className="truncate max-w-[100px] block" title={doc.documentType || doc.category || 'Khác'}>
+                                {doc.documentType || doc.category || 'Khác'}
+                              </span>
                             </div>
                           </td>
                           <td className="py-2 px-3 align-top">
-                            <span className="font-semibold text-emerald-400 hover:underline cursor-pointer" onClick={() => handleOpenDocument(doc.path)} title={doc.documentNumber || doc.name}>
+                            <span className="font-semibold text-emerald-400 hover:underline cursor-pointer" onClick={() => handleOpenDocument(doc)} title={doc.documentNumber || doc.name}>
                               {doc.documentNumber || doc.name.substring(0, 15) + '...'}
                             </span>
                           </td>
                           <td className="py-2 px-3 align-top text-slate-400 whitespace-nowrap">
-                            {doc.issuedDate || doc.documentDate || '---'}
+                            {(() => {
+                              const rawDate = doc.issuedDate || doc.documentDate;
+                              if (!rawDate) return '---';
+                              if (/^\d{2}\/\d{2}\/\d{4}$/.test(rawDate)) return rawDate;
+                              if (/^\d{4}-\d{2}-\d{2}/.test(rawDate)) {
+                                const parts = rawDate.split('T')[0].split('-');
+                                return `${parts[2]}/${parts[1]}/${parts[0]}`;
+                              }
+                              const d = new Date(rawDate);
+                              if (!isNaN(d.getTime())) {
+                                const dd = String(d.getDate()).padStart(2, '0');
+                                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                                return `${dd}/${mm}/${d.getFullYear()}`;
+                              }
+                              return rawDate;
+                            })()}
                           </td>
                           <td className="py-2 px-3 align-top text-slate-300">
                             <span className="line-clamp-2" title={doc.issuer || doc.issuingAgency}>
-                              {doc.issuer || doc.issuingAgency || 'Đang cập nhật'}
+                              {(() => {
+                                const name = doc.issuer || doc.issuingAgency || 'Đang cập nhật';
+                                const agency = agencies.find(a => a.name === name);
+                                return agency?.abbreviation ? agency.abbreviation : name;
+                              })()}
                             </span>
                           </td>
                           <td className="py-2 px-3 align-top">
-                            <p className="text-slate-300 line-clamp-2" title={doc.summary || doc.name}>
-                              {doc.summary || doc.name}
+                            <p className="text-slate-300 line-clamp-2" title={isDocOrExcel ? doc.name : (doc.summary || doc.name)}>
+                              {isDocOrExcel ? doc.name : (doc.summary || doc.name)}
                             </p>
+                          </td>
+                          <td className="py-2 px-3 align-top text-slate-300 whitespace-nowrap">
+                            {doc.assignedStaff ? (
+                              <span className="text-emerald-400 font-medium px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded text-[11px] uppercase tracking-wider">
+                                {doc.assignedStaff}
+                              </span>
+                            ) : (
+                              <span className="text-slate-500">---</span>
+                            )}
                           </td>
                           <td className="py-2 px-3 align-top text-right">
                             <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -661,7 +793,7 @@ export default function Home() {
                                 title="Chỉnh sửa thông tin">
                                 <Edit2 className="w-3.5 h-3.5" />
                               </button>
-                              <button onClick={() => handleOpenDocument(doc.path)}
+                              <button onClick={() => handleOpenDocument(doc)}
                                 className="p-1.5 hover:bg-emerald-500/20 text-slate-400 hover:text-emerald-400 rounded transition-colors"
                                 title="Mở bằng app">
                                 <ExternalLink className="w-3.5 h-3.5" />
@@ -671,7 +803,7 @@ export default function Home() {
                                   <CheckCircle2 className="w-3.5 h-3.5" />
                                 </span>
                               ) : (
-                                <button onClick={() => handleLinkDocumentToTask(doc.path, doc.name)}
+                                <button onClick={() => handleLinkDocumentToTask(doc.path || doc.name, doc.name)}
                                   className="p-1.5 hover:bg-emerald-500/20 text-slate-400 hover:text-emerald-400 rounded transition-colors"
                                   title={`Liên kết: ${selectedTask?.title}`}>
                                   <LinkIcon className="w-3.5 h-3.5" />
@@ -797,6 +929,13 @@ export default function Home() {
           </div>
         )}
 
+        {activeMainTab === 'kpi' && (
+          <KPITab 
+            documents={documents} 
+            onOpenDocument={handleOpenDocument}
+          />
+        )}
+
         {activeMainTab === 'settings' && (<SettingsTab currentProjectId={currentProjectId} />)}
 
         </main>
@@ -864,6 +1003,8 @@ export default function Home() {
           document={analyzingDoc} 
           isOpen={!!analyzingDoc} 
           allDocuments={documents}
+          agencies={agencies}
+          documentTypes={documentTypes}
           onClose={() => setAnalyzingDoc(null)} 
           onSave={(updatedDoc) => {
             // Update local state if necessary or re-fetch data
@@ -874,7 +1015,8 @@ export default function Home() {
       )}
     </div>
   );
+
+
+
 }
-
-
 

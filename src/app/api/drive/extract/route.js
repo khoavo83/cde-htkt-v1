@@ -37,6 +37,10 @@ async function ensureTable(client) {
     ALTER TABLE drive_file_metadata
     ADD COLUMN IF NOT EXISTS draft_files JSONB DEFAULT '[]'::jsonb;
   `).catch(() => {});
+  await client.query(`
+    ALTER TABLE drive_file_metadata
+    ADD COLUMN IF NOT EXISTS nguoi_xu_ly TEXT;
+  `).catch(() => {});
 }
 
 async function getCached(client, fileId) {
@@ -52,8 +56,8 @@ async function saveToCache(client, fileId, fileName, metadata, webViewLink, manu
   const isOutgoing = metadata.is_outgoing || false;
   await client.query(`
     INSERT INTO drive_file_metadata
-      (file_id, file_name, loai_vb, so_vb, ngay_phat_hanh, noi_phat_hanh, trich_yeu, noi_gui, web_view_link, manually_edited, draft_files, is_outgoing, extracted_at)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,CURRENT_TIMESTAMP)
+      (file_id, file_name, loai_vb, so_vb, ngay_phat_hanh, noi_phat_hanh, trich_yeu, noi_gui, web_view_link, manually_edited, draft_files, is_outgoing, nguoi_xu_ly, extracted_at)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,CURRENT_TIMESTAMP)
     ON CONFLICT (file_id) DO UPDATE SET
       file_name      = EXCLUDED.file_name,
       loai_vb        = EXCLUDED.loai_vb,
@@ -66,11 +70,12 @@ async function saveToCache(client, fileId, fileName, metadata, webViewLink, manu
       manually_edited = EXCLUDED.manually_edited,
       draft_files    = EXCLUDED.draft_files,
       is_outgoing    = EXCLUDED.is_outgoing,
+      nguoi_xu_ly    = EXCLUDED.nguoi_xu_ly,
       extracted_at   = CURRENT_TIMESTAMP;
   `, [fileId, fileName,
       metadata.loai_vb, metadata.so_vb, metadata.ngay_phat_hanh,
       metadata.noi_phat_hanh, metadata.trich_yeu, metadata.noi_gui,
-      webViewLink, manuallyEdited, draftFilesJson, isOutgoing]);
+      webViewLink, manuallyEdited, draftFilesJson, isOutgoing, metadata.nguoi_xu_ly]);
 }
 
 // Download nội dung PDF dưới dạng Base64
@@ -346,7 +351,8 @@ export async function PUT(request) {
       trich_yeu: metadata.notes || metadata.trich_yeu,
       noi_gui: metadata.receiver || metadata.noi_gui,
       is_outgoing: metadata.is_outgoing,
-      draftFiles: metadata.draftFiles
+      draftFiles: metadata.draftFiles,
+      nguoi_xu_ly: metadata.assignedStaff || metadata.nguoi_xu_ly
     };
 
     // Lưu vào bảng drive_file_metadata (dùng catch lỡ thiếu cột is_outgoing không làm hỏng app)

@@ -3,14 +3,17 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Save, ChevronDown, ChevronRight, Loader2, Plus, Trash2, X } from 'lucide-react';
+import StaffCombobox from './StaffCombobox';
 
 export default function ProjectInfoModal({ isOpen, onClose, projectId, onSaveSuccess }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [openSections, setOpenSections] = useState({ basic: true, scale: false, investment: false });
+  const [staffs, setStaffs] = useState([]);
+  const [departments, setDepartments] = useState([]);
 
   const [basicInfo, setBasicInfo] = useState({
-    name: '', shortName: '', code: '', managementUnit: '',
+    name: '', shortName: '', code: '', managementUnit: '', team: '',
     startDate: '', endDate: '', location: '', group: '', grade: '',
     sector: '', method: '', economicProgramCode: '', typeCode: '', clauseCode: '',
     goal: '', legalDocs: ''
@@ -49,7 +52,7 @@ export default function ProjectInfoModal({ isOpen, onClose, projectId, onSaveSuc
         // Thêm mới -> reset data
         setFolderId('');
         setBasicInfo({
-          name: '', shortName: '', code: '', managementUnit: '',
+          name: '', shortName: '', code: '', managementUnit: '', team: '',
           startDate: '', endDate: '', location: '', group: '', grade: '',
           sector: '', method: '', economicProgramCode: '', typeCode: '', clauseCode: '',
           goal: '', legalDocs: ''
@@ -69,6 +72,25 @@ export default function ProjectInfoModal({ isOpen, onClose, projectId, onSaveSuc
       }
     }
   }, [isOpen, projectId]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchStaffsAndDepartments();
+    }
+  }, [isOpen]);
+
+  async function fetchStaffsAndDepartments() {
+    try {
+      const [staffsRes, deptsRes] = await Promise.all([
+        fetch('/api/staffs').then(r => r.json()),
+        fetch('/api/departments').then(r => r.json())
+      ]);
+      if (staffsRes.success) setStaffs(staffsRes.data || []);
+      if (deptsRes.success) setDepartments(deptsRes.data || []);
+    } catch (e) {
+      console.error('Lỗi tải danh sách nhân sự/tổ:', e);
+    }
+  }
 
   async function fetchProject() {
     try {
@@ -250,8 +272,26 @@ export default function ProjectInfoModal({ isOpen, onClose, projectId, onSaveSuc
                       <input type="text" value={basicInfo.code} onChange={e => handleBasicChange('code', e.target.value)} className="w-full px-3 py-1.5 border border-slate-700/50 rounded-lg bg-slate-900 focus:ring-1 focus:ring-emerald-500 outline-none" />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-400 mb-1">Đơn vị quản lý / Người phụ trách</label>
-                      <input type="text" value={basicInfo.managementUnit} onChange={e => handleBasicChange('managementUnit', e.target.value)} className="w-full px-3 py-1.5 border border-slate-700/50 rounded-lg bg-slate-900 focus:ring-1 focus:ring-emerald-500 outline-none" />
+                      <label className="block text-xs font-medium text-slate-400 mb-1">Người phụ trách</label>
+                      <StaffCombobox 
+                        staffs={staffs} 
+                        value={basicInfo.managementUnit} 
+                        onChange={val => handleBasicChange('managementUnit', val)} 
+                        placeholder="-- Chọn người phụ trách --"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-400 mb-1">Tổ chuyên môn</label>
+                      <select 
+                        value={basicInfo.team || ''} 
+                        onChange={e => handleBasicChange('team', e.target.value)} 
+                        className="w-full px-3 py-2 border border-slate-700/50 rounded-lg bg-slate-900 focus:ring-1 focus:ring-emerald-500 outline-none text-sm"
+                      >
+                        <option value="">-- Chọn tổ chuyên môn --</option>
+                        {departments.map(d => (
+                          <option key={d.id} value={d.name}>{d.name}</option>
+                        ))}
+                      </select>
                     </div>
                     <div className="flex gap-2">
                       <div className="flex-1">

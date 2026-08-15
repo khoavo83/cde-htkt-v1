@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Folder, FolderOpen, File, HardDrive, RefreshCw, Network,
   ChevronRight, ChevronLeft, ChevronDown, Search, ExternalLink,
-  Pencil, Check, X, RotateCcw, CheckCircle2, Sparkles, ScanSearch, GripVertical, FileText, ArrowUpRight, ArrowDownRight, Link2, Download, ScanEye, CornerDownRight, Unlink2
+  Pencil, Check, X, RotateCcw, CheckCircle2, Sparkles, ScanSearch, GripVertical, FileText, ArrowUpRight, ArrowDownRight, Link2, Download, ScanEye, CornerDownRight, Unlink2, Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -153,7 +153,7 @@ const parseDateString = (dateStr) => {
 // =========================================================
 // Hàng dữ liệu có edit + re-extract
 // =========================================================
-const DocRow = ({ file, idx, onUpdate, onAnalyze, onAttachClick, provided, snapshot, agencies }) => {
+const DocRow = ({ file, idx, onUpdate, onAnalyze, onAttachClick, onAttachPhieuTrinhClick, onDelete, provided, snapshot, agencies, childCount = 0 }) => {
   const isDraggingClass = snapshot?.isDragging ? 'bg-emerald-50 dark:bg-emerald-900/30 shadow-lg' : '';
 
   const getAbbreviation = (fullName) => {
@@ -179,14 +179,14 @@ const DocRow = ({ file, idx, onUpdate, onAnalyze, onAttachClick, provided, snaps
             <span>{idx + 1}</span>
           </div>
         </td>
-        {[...Array(5)].map((_,i) => <td key={i} className="px-3 py-2.5"><SkeletonCell/></td>)}
+        {[...Array(6)].map((_,i) => <td key={i} className="px-3 py-2.5"><SkeletonCell/></td>)}
         <td className="px-3 py-2.5"/>
       </tr>
     );
   }
 
   const cellClass = "px-3 py-2.5 text-sm text-slate-600 dark:text-slate-400 cursor-pointer max-w-[150px] truncate hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors";
-  const notesClass = "px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 cursor-pointer max-w-xs hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors";
+  const notesClass = "px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 cursor-pointer max-w-2xl hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors";
 
   return (
     <tr 
@@ -222,13 +222,38 @@ const DocRow = ({ file, idx, onUpdate, onAnalyze, onAttachClick, provided, snaps
       </td>
 
       <td className={cellClass} onClick={onAnalyze}>
-        <div className="flex items-center gap-1">
-          {file.mimeType && file.mimeType.includes('word') ? (
-            <FileText size={14} className="text-blue-500" title="File Word dự thảo"/>
-          ) : (
-            <File size={14} className="text-red-500" title="File PDF chính"/>
+        <div className="flex items-center justify-between gap-1">
+          <div className="flex items-center gap-1">
+            {file.mimeType && file.mimeType.includes('word') ? (
+              <FileText size={14} className="text-blue-500" title="File Word dự thảo"/>
+            ) : (
+              <File size={14} className="text-red-500" title="File PDF chính"/>
+            )}
+            {file.loai_vb || '—'}
+            {childCount > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-400 text-[10px] font-bold" title="Có file đính kèm/dự thảo">
+                +{childCount}
+              </span>
+            )}
+          </div>
+          {file.mimeType !== 'application/pdf' && onAttachClick && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onAttachClick(file); }}
+              className="p-1 bg-cyan-500/10 hover:bg-cyan-500 hover:text-white text-cyan-500 rounded transition-colors shrink-0 ml-2"
+              title="Gắn file dự thảo này vào một Văn bản chính"
+            >
+              <Link2 size={12} />
+            </button>
           )}
-          {file.loai_vb || '—'}
+          {file.mimeType === 'application/pdf' && file.so_vb && file.so_vb.toLowerCase().includes('ptr-htkt') && onAttachPhieuTrinhClick && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onAttachPhieuTrinhClick(file); }}
+              className="p-1 bg-amber-500/10 hover:bg-amber-500 hover:text-white text-amber-500 rounded transition-colors shrink-0 ml-2"
+              title="Gắn Phiếu trình này vào một Văn bản chính"
+            >
+              <Link2 size={12} />
+            </button>
+          )}
         </div>
       </td>
       <td className={cellClass + " font-mono min-w-[120px] whitespace-normal break-words"} onClick={onAnalyze}>
@@ -237,129 +262,25 @@ const DocRow = ({ file, idx, onUpdate, onAnalyze, onAttachClick, provided, snaps
       <td className={cellClass} onClick={onAnalyze}>{file.ngay_phat_hanh || '—'}</td>
       <td className={cellClass} onClick={onAnalyze} title={file.noi_phat_hanh}>{getAbbreviation(file.noi_phat_hanh) || '—'}</td>
       <td className={notesClass} onClick={onAnalyze}>
-        <div className="line-clamp-2" title={file.trich_yeu || file.name || file.file_name}>{file.trich_yeu || file.name || file.file_name}</div>
+        <div className="whitespace-normal break-words leading-relaxed" title={file.trich_yeu || file.name || file.file_name}>
+          {file.trich_yeu || file.name || file.file_name}
+        </div>
       </td>
 
-      {/* Actions */}
-      <td className="px-3 py-2.5">
-        <div className="flex items-center gap-1.5 justify-center">
-          {file.mimeType && file.mimeType.includes('word') ? (
-            <button
-              onClick={() => onAttachClick && onAttachClick(file)}
-              className="w-7 h-7 flex items-center justify-center rounded-md bg-cyan-500/10 text-cyan-600 hover:bg-cyan-500 hover:text-white transition-all shadow-sm shadow-cyan-500/20"
-              title="Gắn vào file PDF"
-            >
-              <Link2 size={13} className="drop-shadow-md" />
-            </button>
-          ) : (
-            <button
-              onClick={onAnalyze}
-              className="w-7 h-7 flex items-center justify-center rounded-md bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white transition-all shadow-sm shadow-amber-500/20"
-              title="Sửa / Phân tích chi tiết"
-            >
-              <Pencil size={13} className="drop-shadow-md" />
-            </button>
-          )}
-          
-          <button
-            onClick={() => alert('Tính năng quét OCR đang được phát triển làm phương án dự phòng.')}
-            className="w-7 h-7 flex items-center justify-center rounded-md bg-indigo-500/10 text-indigo-600 hover:bg-indigo-500 hover:text-white transition-all shadow-sm shadow-indigo-500/20"
-            title="Quét bằng OCR (Dự phòng)"
-          >
-            <ScanSearch size={13} className="drop-shadow-md" />
-          </button>
-
-          {(file.webViewLink || file.web_view_link) && (
-            <button
-              onClick={onAnalyze}
-              className="w-7 h-7 flex items-center justify-center rounded-md bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all shadow-sm shadow-emerald-500/20"
-              title="Xem trước tài liệu"
-            >
-              <ScanEye size={13} className="drop-shadow-md"/>
-            </button>
-          )}
-        </div>
+      <td className="px-3 py-2.5 align-top text-slate-300 whitespace-nowrap">
+        {file.assignedStaff || file.nguoi_xu_ly ? (
+          <span className="text-emerald-600 dark:text-emerald-400 font-medium px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded text-[11px] uppercase tracking-wider">
+            {file.assignedStaff || file.nguoi_xu_ly}
+          </span>
+        ) : (
+          <span className="text-slate-400 dark:text-slate-500">---</span>
+        )}
       </td>
     </tr>
   );
 };
 
-// =========================================================
-// ChildRow: Hiển thị file đính kèm (Word dự thảo) thụt lề dưới file PDF cha
-// =========================================================
-const ChildRow = ({ file, onDetach }) => {
-  const isWord = file.mimeType && file.mimeType.includes('word');
-  return (
-    <tr className="border-b border-slate-100/60 dark:border-slate-800/50 bg-slate-50/60 dark:bg-slate-900/40 hover:bg-cyan-50/40 dark:hover:bg-cyan-900/10 transition-colors">
-      {/* # column */}
-      <td className="pl-8 pr-3 py-2 text-slate-300 dark:text-slate-600 text-xs w-12">
-        <CornerDownRight size={12} className="text-cyan-400/70" />
-      </td>
-
-      {/* Loại VB */}
-      <td className="px-3 py-2 text-xs text-slate-400 dark:text-slate-500" colSpan={1}>
-        <div className="flex items-center gap-1">
-          {isWord ? (
-            <FileText size={12} className="text-blue-400" title="File Word dự thảo" />
-          ) : (
-            <File size={12} className="text-slate-400" />
-          )}
-          <span className="italic text-slate-400 dark:text-slate-500">Dự thảo</span>
-        </div>
-      </td>
-
-      {/* Số VB - trống */}
-      <td className="px-3 py-2" />
-
-      {/* Ngày PH - trống */}
-      <td className="px-3 py-2" />
-
-      {/* Nơi PH - trống */}
-      <td className="px-3 py-2" />
-
-      {/* Tên file */}
-      <td className="px-3 py-2">
-        <div className="flex items-center gap-1.5">
-          <a
-            href={(file.webViewLink || file.web_view_link) || '#'}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-cyan-600 dark:text-cyan-400 hover:underline truncate max-w-[250px]"
-            title={file.name || file.file_name}
-          >
-            {file.name || file.file_name || '(không có tên)'}
-          </a>
-        </div>
-      </td>
-
-      {/* Actions */}
-      <td className="px-3 py-2">
-        <div className="flex items-center gap-1 justify-center">
-          {onDetach && (
-            <button
-              onClick={() => onDetach(file)}
-              className="w-6 h-6 flex items-center justify-center rounded-md bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all"
-              title="Gỡ đính kèm"
-            >
-              <Unlink2 size={11} />
-            </button>
-          )}
-          {(file.webViewLink || file.web_view_link) && (
-            <a
-              href={file.webViewLink || file.web_view_link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-6 h-6 flex items-center justify-center rounded-md bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all"
-              title="Mở file"
-            >
-              <ScanEye size={11} />
-            </a>
-          )}
-        </div>
-      </td>
-    </tr>
-  );
-};
+// Removed ChildRow component as draft files are now hidden from the main table
 
 // =========================================================
 // Main Component
@@ -390,6 +311,7 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
   const [isSearching, setIsSearching] = useState(false);
   const [globalSearchResults, setGlobalSearchResults] = useState([]);
   const [isGlobalSearchActive, setIsGlobalSearchActive] = useState(false);
+  const [sortDateOrder, setSortDateOrder] = useState('desc');
 
   const [selectedFolder, setSelectedFolder] = useState(null);
 
@@ -428,6 +350,23 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
   const [phieuTrinhTargetId, setPhieuTrinhTargetId] = useState('');
   const [isAttachingPhieuTrinh, setIsAttachingPhieuTrinh] = useState(false);
 
+  const handleDeleteFile = async (file) => {
+    if (!confirm(`Bạn có chắc chắn muốn xóa dữ liệu của file này khỏi hệ thống?\n(Lưu ý: File gốc trên Google Drive sẽ không bị ảnh hưởng)`)) return;
+    try {
+      const res = await fetch(`/api/drive/extract?fileId=${file.id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (data.success) {
+        setFolderFiles(prev => prev.filter(f => f.id !== file.id));
+      } else {
+        alert('Lỗi: ' + data.error);
+      }
+    } catch (e) {
+      alert('Lỗi kết nối');
+    }
+  };
+
   useEffect(() => { loadData(); setSelectedFolder(null); setFolderFiles([]); }, [projectId]);
 
   const handleSync = async () => {
@@ -448,6 +387,17 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
       
       // Lấy danh sách ID của thư mục hiện tại và tất cả thư mục con
       let folderIds = [];
+      
+      const getAllIds = (node) => {
+        let ids = [node.id];
+        if (node.children) {
+          for (const child of node.children) {
+            ids = ids.concat(getAllIds(child));
+          }
+        }
+        return ids;
+      };
+
       if (selectedFolder) {
         const findNode = (nodes, id) => {
           for (const node of nodes) {
@@ -460,35 +410,30 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
           return null;
         };
 
-        const getAllIds = (node) => {
-          let ids = [node.id];
-          if (node.children) {
-            for (const child of node.children) {
-              ids = ids.concat(getAllIds(child));
-            }
-          }
-          return ids;
-        };
-
         const selectedNode = findNode(data, selectedFolder.id);
         if (selectedNode) {
           folderIds = getAllIds(selectedNode);
         } else {
           folderIds = [selectedFolder.id]; // Fallback
         }
+      } else {
+        // Nếu không có thư mục nào được chọn -> Lấy toàn bộ dự án
+        data.forEach(rootNode => {
+          folderIds = folderIds.concat(getAllIds(rootNode));
+        });
       }
 
-      const queryParams = new URLSearchParams({
-        folderIds: folderIds.join(','),
-        folderName: selectedFolder ? selectedFolder.name : rootPath,
-        q: search,
-        category: docCategory !== 'Tất cả' ? docCategory : '',
-        ngayPhatHanh: searchNgayPhatHanh,
-        noiPhatHanh: searchNoiPhatHanh
-      });
-
-      const response = await fetch(`/api/documents/export?${queryParams.toString()}`, {
-        method: 'GET',
+      const response = await fetch(`/api/documents/export`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          folderIds: folderIds,
+          folderName: selectedFolder ? selectedFolder.name : rootPath,
+          q: search,
+          category: docCategory !== 'Tất cả' ? docCategory : '',
+          ngayPhatHanh: searchNgayPhatHanh,
+          noiPhatHanh: searchNoiPhatHanh
+        })
       });
 
       if (!response.ok) {
@@ -583,12 +528,20 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
 
         });
 
-        // Sắp xếp ngày phát hành (nhỏ đến lớn) -> custom_order_index
+        // Sắp xếp ưu tiên custom_order_index, nếu không có thì ngày phát hành (tăng dần)
         rows.sort((a, b) => {
+          const orderA = a.custom_order_index || 0;
+          const orderB = b.custom_order_index || 0;
+          const realA = orderA === 0 ? 999999 : orderA;
+          const realB = orderB === 0 ? 999999 : orderB;
+          
+          if (realA !== realB) return realA - realB;
+          
           const timeA = parseDateString(a.ngay_phat_hanh);
           const timeB = parseDateString(b.ngay_phat_hanh);
           if (timeA !== timeB) return timeA - timeB;
-          return (a.custom_order_index || 0) - (b.custom_order_index || 0);
+          
+          return 0;
         });
         setFolderFiles(rows);
 
@@ -616,15 +569,6 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
 
     if (!draggedItem || !targetItem) return;
 
-    // Ràng buộc không vượt quá ngày phát hành
-    const draggedTime = parseDateString(draggedItem.ngay_phat_hanh);
-    const targetTime = parseDateString(targetItem.ngay_phat_hanh);
-
-    if (draggedTime !== targetTime) {
-      // Bị kéo ra khỏi cụm ngày của nó, từ chối drop
-      return; 
-    }
-
     const newFiles = Array.from(folderFiles);
     // Tìm index thực sự trong folderFiles
     const realSourceIndex = newFiles.findIndex(f => f.id === draggedItem.id);
@@ -634,13 +578,13 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
     newFiles.splice(realSourceIndex, 1);
     newFiles.splice(realDestIndex, 0, draggedItem);
 
-    // Tính toán lại custom_order_index cho các item có cùng ngày
-    const sameDateItems = newFiles.filter(f => parseDateString(f.ngay_phat_hanh) === draggedTime && !f.parent_id);
+    // Tính toán lại custom_order_index cho toàn bộ item cấp cao nhất
+    const topLevelNewFiles = newFiles.filter(f => !f.parent_id);
     
     const updates = [];
-    sameDateItems.forEach((f, idx) => {
-      f.custom_order_index = idx;
-      updates.push({ fileId: f.id, orderIndex: idx });
+    topLevelNewFiles.forEach((f, idx) => {
+      f.custom_order_index = idx + 1; // +1 để khác 0 (0 là mặc định)
+      updates.push({ fileId: f.id, orderIndex: idx + 1 });
     });
 
     setFolderFiles(newFiles);
@@ -708,6 +652,19 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
     const matchCategory = docCategory === 'Tất cả' || docType === docCategory;
     
     return matchSearch && matchCategory;
+  }).sort((a, b) => {
+    const getValidDate = (dateStr) => {
+      if (!dateStr || dateStr === 'Chưa xác định') return 0;
+      const parts = dateStr.split('/');
+      if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]).getTime();
+      if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) return new Date(dateStr.split('T')[0]).getTime();
+      return 0;
+    };
+    
+    const timeA = getValidDate(a.ngay_phat_hanh);
+    const timeB = getValidDate(b.ngay_phat_hanh);
+    
+    return sortDateOrder === 'desc' ? timeB - timeA : timeA - timeB;
   });
 
   const totalPages = Math.ceil(filteredFiles.length / itemsPerPage) || 1;
@@ -768,7 +725,7 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
           <button onClick={handleExportExcel} disabled={exporting}
             className="flex items-center gap-2 px-3 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors disabled:opacity-50 text-sm font-medium whitespace-nowrap">
             <Download size={16} className={exporting ? 'animate-bounce' : ''}/>
-            <span className="hidden sm:inline">{exporting ? 'Đang xuất...' : 'Xuất Excel'}</span>
+            <span className="hidden sm:inline">{exporting ? 'Đang xuất...' : (selectedFolder ? 'Xuất Excel Thư mục' : 'Xuất Excel Dự án')}</span>
           </button>
 
           <button onClick={handleSync} disabled={syncing}
@@ -789,8 +746,8 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
       <div className="flex-1 flex overflow-hidden">
 
         {/* LEFT: Cây thư mục */}
-        <div className="w-1/3 min-w-[180px] border-r border-slate-200/50 dark:border-slate-800/50 overflow-y-auto p-2 shrink-0">
-          {loading ? (
+        <div className="w-1/5 min-w-[200px] max-w-[300px] border-r border-slate-200/50 dark:border-slate-800/50 overflow-y-auto p-2 shrink-0 relative">
+          {loading && displayData.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-3">
               <RefreshCw size={22} className="animate-spin text-emerald-500"/>
               <p className="text-sm">Đang tải...</p>
@@ -802,6 +759,11 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
             </div>
           ) : (
             <div className="p-1">
+              {loading && (
+                <div className="absolute top-2 right-2">
+                  <RefreshCw size={14} className="animate-spin text-emerald-500"/>
+                </div>
+              )}
               {displayData.map(node => (
                 <TreeNode key={node.id} node={node} defaultOpen={false}
                   selectedFolderId={selectedFolder?.id} onSelect={handleSelectFolder}/>
@@ -903,9 +865,19 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
                   <table className="w-full text-sm border-collapse">
                     <thead>
                       <tr className="sticky top-0 bg-slate-100/95 dark:bg-slate-800/95 backdrop-blur z-10">
-                        {['#','Loại VB','Số VB','Ngày PH','Nơi phát hành','Trích yếu nội dung','Thao tác'].map(h => (
-                          <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap border-b border-slate-200 dark:border-slate-700">
-                            {h}
+                        {['#','Loại VB','Số VB','Ngày PH','Nơi PH','Trích yếu ND','Người XL'].map(h => (
+                          <th key={h} 
+                              className={`px-3 py-2.5 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap border-b border-slate-200 dark:border-slate-700 ${h === 'Ngày PH' ? 'cursor-pointer group hover:text-emerald-500 transition-colors' : ''}`}
+                              onClick={() => { if (h === 'Ngày PH') setSortDateOrder(prev => prev === 'desc' ? 'asc' : 'desc') }}
+                          >
+                            <div className="flex items-center gap-1">
+                              {h}
+                              {h === 'Ngày PH' && (
+                                <span className="text-[10px] bg-slate-200 dark:bg-slate-800 px-1 rounded-sm group-hover:text-emerald-500">
+                                  {sortDateOrder === 'desc' ? '▼' : '▲'}
+                                </span>
+                              )}
+                            </div>
                           </th>
                         ))}
                       </tr>
@@ -929,12 +901,15 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
                                           setAttachTargetId('');
                                           setAttachSearchTerm('');
                                         }}
+                                        onAttachPhieuTrinhClick={(f) => {
+                                          setAttachingPhieuTrinhFor(f);
+                                          setPhieuTrinhTargetId('');
+                                          setPhieuTrinhSearchTerm('');
+                                        }}
+                                        onDelete={handleDeleteFile}
                                         provided={provided} snapshot={snapshot} agencies={agencies}
+                                        childCount={childFiles.length}
                                       />
-                                      {/* Hiển thị file dự thảo đính kèm (con) ngay dưới file cha */}
-                                      {childFiles.map(child => (
-                                        <ChildRow key={child.id} file={child} onDetach={handleDetach} />
-                                      ))}
                                     </>
                                   )}
                                 </Draggable>
@@ -982,7 +957,22 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
               alert('Lỗi gỡ phiếu trình');
             }
           }}
-          onAttachPhieuTrinhClick={(doc) => setAttachingPhieuTrinhFor(doc)}
+          onAttachPhieuTrinhClick={(doc) => {
+            setAttachingPhieuTrinhFor(doc);
+            setPhieuTrinhTargetId('');
+            setPhieuTrinhSearchTerm('');
+            setAnalyzingDoc(null);
+          }}
+          onDelete={() => {
+            handleDeleteFile(analyzingDoc);
+            setAnalyzingDoc(null);
+          }}
+          onAttachClick={(doc) => {
+            setAttachingFile(doc);
+            setAttachTargetId('');
+            setAttachSearchTerm('');
+            setAnalyzingDoc(null);
+          }}
           agencies={agencies}
           documentTypes={documentTypes}
         />
@@ -1134,7 +1124,7 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
             </div>
             <div className="p-5 space-y-4">
               <p className="text-sm text-slate-300">
-                Chọn một file PDF bên dưới để gắn làm Phiếu trình cho văn bản đi: <br/>
+                Chọn một file PDF bên dưới (Văn bản chính) để gắn Phiếu trình này vào: <br/>
                 <strong className="text-amber-400">{attachingPhieuTrinhFor.name || attachingPhieuTrinhFor.file_name}</strong>
               </p>
 
@@ -1202,21 +1192,27 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ 
                         action: 'attach-phieu-trinh', 
-                        child_id: phieuTrinhTargetId, 
-                        parent_id: attachingPhieuTrinhFor.id,
-                        child_name: targetFile?.name || targetFile?.file_name
+                        child_id: attachingPhieuTrinhFor.id, // The Phiếu trình itself
+                        parent_id: phieuTrinhTargetId,       // The Main Document
+                        child_name: attachingPhieuTrinhFor.name || attachingPhieuTrinhFor.file_name
                       })
                     });
                     const data = await res.json();
                     if (data.success) {
                       loadData();
-                      setAnalyzingDoc(prev => ({
-                        ...prev, 
-                        phieu_trinh: {
-                          id: phieuTrinhTargetId,
-                          name: data.newName || targetFile?.name || targetFile?.file_name
+                      setFolderFiles(prev => prev.map(f => f.id === attachingPhieuTrinhFor.id ? { ...f, parent_id: phieuTrinhTargetId, loai_vb: 'Phiếu trình' } : f));
+                      setAnalyzingDoc(prev => {
+                        if (prev && prev.id === phieuTrinhTargetId) {
+                          return {
+                            ...prev, 
+                            phieu_trinh: {
+                              id: attachingPhieuTrinhFor.id,
+                              name: data.newName || attachingPhieuTrinhFor.name || attachingPhieuTrinhFor.file_name
+                            }
+                          };
                         }
-                      }));
+                        return prev;
+                      });
                       setAttachingPhieuTrinhFor(null);
                     } else {
                       alert(data.error || 'Có lỗi xảy ra khi gắn');

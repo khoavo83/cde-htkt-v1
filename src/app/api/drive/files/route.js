@@ -69,7 +69,8 @@ export async function GET(request) {
               d2.ngay_phat_hanh as target_ngay_phat_hanh,
               d2.noi_phat_hanh as target_noi_phat_hanh,
               d2.trich_yeu as target_trich_yeu,
-              d2.noi_gui as target_noi_gui
+              d2.noi_gui as target_noi_gui,
+              d2.nguoi_xu_ly as target_nguoi_xu_ly
        FROM drive_file_metadata d1 
        LEFT JOIN drive_file_metadata d2 ON d1.target_drive_id = d2.file_id 
        WHERE d1.file_id = ANY($1)`,
@@ -182,6 +183,7 @@ export async function GET(request) {
         is_outgoing: existing?.is_outgoing || false,
         parent_id: existing?.parent_id || null,
         draftFiles: existing?.draft_files || [],
+        assignedStaff: existing?.target_nguoi_xu_ly || existing?.nguoi_xu_ly || '',
       };
 
       updatedFiles.push(mergedFile);

@@ -215,34 +215,52 @@ export async function GET() {
         const client = await pool.connect();
         const { rows } = await client.query(`
           SELECT 
-            id,
-            COALESCE(name, file_name) AS name,
-            file_path AS path,
-            drive_file_id AS "driveFileId",
-            drive_web_link AS "driveWebLink",
-            folder,
-            category,
-            document_type AS "documentType",
-            document_number AS "documentNumber",
-            document_date AS "documentDate",
-            issuing_agency AS "issuingAgency",
-            receiving_agency AS "receivingAgency",
-            summary,
-            is_outgoing AS "is_outgoing",
-            COALESCE(size, file_size) AS size,
-            updated_at AS "updatedAt"
-          FROM documents
-          ORDER BY COALESCE(name, file_name) ASC
+            dfm.file_id AS id,
+            dfm.file_name AS name,
+            NULL AS path,
+            dfm.file_id AS "driveFileId",
+            dfm.web_view_link AS "driveWebLink",
+            dfm.folder_name AS folder,
+            'Khác' AS category,
+            dfm.loai_vb AS "documentType",
+            dfm.so_vb AS "documentNumber",
+            dfm.ngay_phat_hanh AS "documentDate",
+            dfm.noi_phat_hanh AS "issuingAgency",
+            dfm.noi_gui AS "receivingAgency",
+            dfm.trich_yeu AS summary,
+            dfm.nguoi_xu_ly AS "assignedStaff",
+            dfm.is_outgoing AS "is_outgoing",
+            NULL AS size,
+            dfm.modified_time AS "updatedAt",
+            p.id AS project_id,
+            COALESCE(p.basic_info->>'shortName', p.name, 'Chưa phân loại dự án') AS project_name
+          FROM drive_file_metadata dfm
+          LEFT JOIN drive_folders_flat dff ON dfm.folder_id = dff.folder_id
+          LEFT JOIN projects p ON dff.project_id = p.id
+          ORDER BY p.name ASC, dfm.file_name ASC
         `);
         client.release();
 
         // Định dạng lại ngày tháng để hiển thị đúng ở Frontend
         const formattedDocs = rows.map(doc => {
-          const fmtDate = (d) => d ? new Date(d).toISOString().split('T')[0] : null;
+          const fmtDate = (d) => {
+            if (!d) return null;
+            const dateObj = new Date(d);
+            return isNaN(dateObj.getTime()) ? d : dateObj.toISOString().split('T')[0];
+          };
+          
+          let updatedIso = null;
+          if (doc.updatedAt) {
+            const upDateObj = new Date(doc.updatedAt);
+            if (!isNaN(upDateObj.getTime())) {
+              updatedIso = upDateObj.toISOString();
+            }
+          }
+
           return {
             ...doc,
             documentDate: fmtDate(doc.documentDate),
-            updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : null
+            updatedAt: updatedIso
           };
         });
 
@@ -325,7 +343,8 @@ export async function POST(request) {
         size: docPayload.size || "1.0 MB",
         notes: docPayload.notes || "",
         plots: docPayload.plots || [],
-        driveUrl: docPayload.driveUrl || "https://drive.google.com"
+        driveUrl: docPayload.driveUrl || "https://drive.google.com",
+        assignedStaff: docPayload.assignedStaff || ""
       };
 
       data.documents.push(newDoc);
