@@ -285,7 +285,7 @@ const DocRow = ({ file, idx, onUpdate, onAnalyze, onAttachClick, onAttachPhieuTr
 // =========================================================
 // Main Component
 // =========================================================
-export default function FolderTree({ projectId, allDocuments = [] }) {
+export default function FolderTree({ projectId, allDocuments = [], onDocumentUpdate }) {
   const [documentTypes, setDocumentTypes] = useState([]);
   const [data, setData]         = useState([]);
   const [agencies, setAgencies] = useState([]);
@@ -937,6 +937,7 @@ export default function FolderTree({ projectId, allDocuments = [] }) {
             // Update the local list
             updateRow(updatedDoc.id, updatedDoc);
             setAnalyzingDoc(null);
+            if (onDocumentUpdate) onDocumentUpdate();
           }} 
           onDetachPhieuTrinh={async (phieuTrinhFileId) => {
             if (!confirm('Bạn có chắc chắn muốn gỡ Phiếu trình này?')) return;

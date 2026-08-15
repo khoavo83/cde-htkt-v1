@@ -851,7 +851,11 @@ export default function Home() {
             <div className="flex-1 min-h-0 overflow-hidden">
               {projectSubTab === 'folders' && (
                 <div className="h-full w-full overflow-y-auto">
-                  <FolderTree projectId={currentProjectId} allDocuments={documents} />
+                  <FolderTree 
+                    projectId={currentProjectId} 
+                    allDocuments={documents} 
+                    onDocumentUpdate={fetchData}
+                  />
                 </div>
               )}
               
@@ -884,6 +888,7 @@ export default function Home() {
           <KPITab 
             documents={documents} 
             onOpenDocument={handleOpenDocument}
+            onRefresh={fetchData}
           />
         )}
 

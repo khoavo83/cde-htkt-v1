@@ -120,6 +120,24 @@
     "modified_time": "2026-07-15T04:46:23.638Z"
   },
   {
+    "id": "1bVbs6aj-eVONqe8qIhEcW3JRzsRYhjMk",
+    "name": "old",
+    "parent_id": "1frye1ZGdv1zK9qbQvDdRqNSJNDWWNbKq",
+    "modified_time": "2026-07-31T03:00:35.274Z"
+  },
+  {
+    "id": "14BAu1MGGKbB6RKmWobLLi5Zw-4wN-U1Y",
+    "name": "Phương án di dời HTKT",
+    "parent_id": "1frye1ZGdv1zK9qbQvDdRqNSJNDWWNbKq",
+    "modified_time": "2026-04-03T04:04:45.841Z"
+  },
+  {
+    "id": "1kzVW0bMuRSIVfLlZSYjo61ycTBmprAYy",
+    "name": "Pháp lý di dời HTKT",
+    "parent_id": "1frye1ZGdv1zK9qbQvDdRqNSJNDWWNbKq",
+    "modified_time": "2026-03-04T08:40:36.002Z"
+  },
+  {
     "id": "1FgqoUmeZMbU8zJk1BSXlh3_9JBYdyXMm",
     "name": "Cấp nước Bến Thành",
     "parent_id": "11NXwys-igovVtqu4a3Y3ZD_GreXs8kw4",
@@ -312,22 +330,34 @@
     "modified_time": "2026-04-06T06:55:04.486Z"
   },
   {
-    "id": "1bVbs6aj-eVONqe8qIhEcW3JRzsRYhjMk",
-    "name": "old",
-    "parent_id": "1frye1ZGdv1zK9qbQvDdRqNSJNDWWNbKq",
-    "modified_time": "2026-07-31T03:00:35.274Z"
+    "id": "1aL9LWxNEC2Y9_3R-j4iTrkqfsNMdqyhs",
+    "name": "1. Pháp lý BCNCKT",
+    "parent_id": "1bDeD2Rp7exQG52743x_CjZfHTzufwxsr",
+    "modified_time": "2026-07-15T02:43:13.602Z"
   },
   {
-    "id": "14BAu1MGGKbB6RKmWobLLi5Zw-4wN-U1Y",
-    "name": "Phương án di dời HTKT",
-    "parent_id": "1frye1ZGdv1zK9qbQvDdRqNSJNDWWNbKq",
-    "modified_time": "2026-04-03T04:04:45.841Z"
+    "id": "1GqXVaq4wMpBJlEcvZ3UVtruLwLIrb7uf",
+    "name": "5. Phê duyệt BCNCKT",
+    "parent_id": "1bDeD2Rp7exQG52743x_CjZfHTzufwxsr",
+    "modified_time": "2026-07-15T02:43:01.996Z"
   },
   {
-    "id": "1kzVW0bMuRSIVfLlZSYjo61ycTBmprAYy",
-    "name": "Pháp lý di dời HTKT",
-    "parent_id": "1frye1ZGdv1zK9qbQvDdRqNSJNDWWNbKq",
-    "modified_time": "2026-03-04T08:40:36.002Z"
+    "id": "1FfltAUP1vSX0Y1k4Wua_3LKHInSo3uZG",
+    "name": "4. Thẩm định BCNCKT",
+    "parent_id": "1bDeD2Rp7exQG52743x_CjZfHTzufwxsr",
+    "modified_time": "2026-07-15T02:42:53.978Z"
+  },
+  {
+    "id": "1zS5lFPld5SJ2K1jMUVeNjCOhY6YVB3x-",
+    "name": "3. Thẩm tra BCNCKT",
+    "parent_id": "1bDeD2Rp7exQG52743x_CjZfHTzufwxsr",
+    "modified_time": "2026-07-15T02:35:12.773Z"
+  },
+  {
+    "id": "1Mz0dEVEItdVqjIq4dWt-7z4cZ6rlyCbv",
+    "name": "2. Báo cáo NCKT",
+    "parent_id": "1bDeD2Rp7exQG52743x_CjZfHTzufwxsr",
+    "modified_time": "2026-07-15T02:35:08.396Z"
   },
   {
     "id": "1EoCZBOnid0RCpDrqImrw_5ZanLxaM2TO",
@@ -372,34 +402,46 @@
     "modified_time": "2026-06-22T09:27:12.723Z"
   },
   {
-    "id": "1aL9LWxNEC2Y9_3R-j4iTrkqfsNMdqyhs",
-    "name": "1. Pháp lý BCNCKT",
-    "parent_id": "1bDeD2Rp7exQG52743x_CjZfHTzufwxsr",
-    "modified_time": "2026-07-15T02:43:13.602Z"
+    "id": "1YicclrboZy2pG-eSoqzGZavUIvxRbYNw",
+    "name": "6. BQLDA Cần Giờ - An Thới Đông",
+    "parent_id": "1cyu30LvJH8PAqFUHA3dVwvkCOqf2l2sD",
+    "modified_time": "2026-07-28T03:42:20.241Z"
   },
   {
-    "id": "1GqXVaq4wMpBJlEcvZ3UVtruLwLIrb7uf",
-    "name": "5. Phê duyệt BCNCKT",
-    "parent_id": "1bDeD2Rp7exQG52743x_CjZfHTzufwxsr",
-    "modified_time": "2026-07-15T02:43:01.996Z"
+    "id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
+    "name": "7. BQLDA Cần Giờ",
+    "parent_id": "1cyu30LvJH8PAqFUHA3dVwvkCOqf2l2sD",
+    "modified_time": "2026-07-28T03:42:06.297Z"
   },
   {
-    "id": "1FfltAUP1vSX0Y1k4Wua_3LKHInSo3uZG",
-    "name": "4. Thẩm định BCNCKT",
-    "parent_id": "1bDeD2Rp7exQG52743x_CjZfHTzufwxsr",
-    "modified_time": "2026-07-15T02:42:53.978Z"
+    "id": "1PcV0CQU1DGeM022TM1qwa3MFyjbAkacW",
+    "name": "5. BQLDA Bình Khánh",
+    "parent_id": "1cyu30LvJH8PAqFUHA3dVwvkCOqf2l2sD",
+    "modified_time": "2026-07-28T03:41:57.568Z"
   },
   {
-    "id": "1zS5lFPld5SJ2K1jMUVeNjCOhY6YVB3x-",
-    "name": "3. Thẩm tra BCNCKT",
-    "parent_id": "1bDeD2Rp7exQG52743x_CjZfHTzufwxsr",
-    "modified_time": "2026-07-15T02:35:12.773Z"
+    "id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
+    "name": "4. BQLDA Nhà Bè",
+    "parent_id": "1cyu30LvJH8PAqFUHA3dVwvkCOqf2l2sD",
+    "modified_time": "2026-07-28T03:41:53.683Z"
   },
   {
-    "id": "1Mz0dEVEItdVqjIq4dWt-7z4cZ6rlyCbv",
-    "name": "2. Báo cáo NCKT",
-    "parent_id": "1bDeD2Rp7exQG52743x_CjZfHTzufwxsr",
-    "modified_time": "2026-07-15T02:35:08.396Z"
+    "id": "1qp6lH3vE8zBu_IJG2wgbZcCJ3N_1APrx",
+    "name": "3. BQLDA Tân Mỹ",
+    "parent_id": "1cyu30LvJH8PAqFUHA3dVwvkCOqf2l2sD",
+    "modified_time": "2026-07-28T03:41:49.823Z"
+  },
+  {
+    "id": "1IANu2QVjSSeTQxS5IUrf4q26T5_MItPu",
+    "name": "2. BQLDA Tân Thuận",
+    "parent_id": "1cyu30LvJH8PAqFUHA3dVwvkCOqf2l2sD",
+    "modified_time": "2026-07-28T03:41:45.985Z"
+  },
+  {
+    "id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "name": "1. BQLDA Xóm Chiếu",
+    "parent_id": "1cyu30LvJH8PAqFUHA3dVwvkCOqf2l2sD",
+    "modified_time": "2026-07-28T03:41:38.355Z"
   },
   {
     "id": "1LITYTDgQvCE-3vgTF5f8TsNvKgwZbeYt",
@@ -462,46 +504,22 @@
     "modified_time": "2026-03-23T06:44:16.081Z"
   },
   {
-    "id": "1YicclrboZy2pG-eSoqzGZavUIvxRbYNw",
-    "name": "6. BQLDA Cần Giờ - An Thới Đông",
-    "parent_id": "1cyu30LvJH8PAqFUHA3dVwvkCOqf2l2sD",
-    "modified_time": "2026-07-28T03:42:20.241Z"
+    "id": "11vZng_JH6T1uN7MNDboopBxDCTB7pL3S",
+    "name": "2. Thẩm quyền phê duyệt HSNVDT",
+    "parent_id": "1lOGRapz37qf9qzrys9x81cXrGJl7KuSq",
+    "modified_time": "2026-07-15T04:45:30.266Z"
   },
   {
-    "id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
-    "name": "7. BQLDA Cần Giờ",
-    "parent_id": "1cyu30LvJH8PAqFUHA3dVwvkCOqf2l2sD",
-    "modified_time": "2026-07-28T03:42:06.297Z"
+    "id": "1lQ5QKBeCYdq7O2W9A7QH2lqn8p34CX_S",
+    "name": "3. Kế hoạch LCNT",
+    "parent_id": "1lOGRapz37qf9qzrys9x81cXrGJl7KuSq",
+    "modified_time": "2026-07-15T04:45:25.970Z"
   },
   {
-    "id": "1PcV0CQU1DGeM022TM1qwa3MFyjbAkacW",
-    "name": "5. BQLDA Bình Khánh",
-    "parent_id": "1cyu30LvJH8PAqFUHA3dVwvkCOqf2l2sD",
-    "modified_time": "2026-07-28T03:41:57.568Z"
-  },
-  {
-    "id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
-    "name": "4. BQLDA Nhà Bè",
-    "parent_id": "1cyu30LvJH8PAqFUHA3dVwvkCOqf2l2sD",
-    "modified_time": "2026-07-28T03:41:53.683Z"
-  },
-  {
-    "id": "1qp6lH3vE8zBu_IJG2wgbZcCJ3N_1APrx",
-    "name": "3. BQLDA Tân Mỹ",
-    "parent_id": "1cyu30LvJH8PAqFUHA3dVwvkCOqf2l2sD",
-    "modified_time": "2026-07-28T03:41:49.823Z"
-  },
-  {
-    "id": "1IANu2QVjSSeTQxS5IUrf4q26T5_MItPu",
-    "name": "2. BQLDA Tân Thuận",
-    "parent_id": "1cyu30LvJH8PAqFUHA3dVwvkCOqf2l2sD",
-    "modified_time": "2026-07-28T03:41:45.985Z"
-  },
-  {
-    "id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
-    "name": "1. BQLDA Xóm Chiếu",
-    "parent_id": "1cyu30LvJH8PAqFUHA3dVwvkCOqf2l2sD",
-    "modified_time": "2026-07-28T03:41:38.355Z"
+    "id": "1EPZCOR9jSlRWd_-ssLDUiheXLYPYqABL",
+    "name": "1. Chủ trương chỉ định thầu",
+    "parent_id": "1lOGRapz37qf9qzrys9x81cXrGJl7KuSq",
+    "modified_time": "2026-07-15T04:40:26.601Z"
   },
   {
     "id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
@@ -534,22 +552,52 @@
     "modified_time": "2026-07-15T09:39:57.396Z"
   },
   {
-    "id": "11vZng_JH6T1uN7MNDboopBxDCTB7pL3S",
-    "name": "2. Thẩm quyền phê duyệt HSNVDT",
-    "parent_id": "1lOGRapz37qf9qzrys9x81cXrGJl7KuSq",
-    "modified_time": "2026-07-15T04:45:30.266Z"
+    "id": "1EE7b-8XTgTyuOgx_kbfag_5EgYkqssBM",
+    "name": "Viễn thông",
+    "parent_id": "14BAu1MGGKbB6RKmWobLLi5Zw-4wN-U1Y",
+    "modified_time": "2026-04-03T04:05:34.036Z"
   },
   {
-    "id": "1lQ5QKBeCYdq7O2W9A7QH2lqn8p34CX_S",
-    "name": "3. Kế hoạch LCNT",
-    "parent_id": "1lOGRapz37qf9qzrys9x81cXrGJl7KuSq",
-    "modified_time": "2026-07-15T04:45:25.970Z"
+    "id": "1GnfZWgdW8uuysNmyUpDNSN8_aVY7Fzuk",
+    "name": "Thoát nước",
+    "parent_id": "14BAu1MGGKbB6RKmWobLLi5Zw-4wN-U1Y",
+    "modified_time": "2026-04-03T04:05:31.436Z"
   },
   {
-    "id": "1EPZCOR9jSlRWd_-ssLDUiheXLYPYqABL",
-    "name": "1. Chủ trương chỉ định thầu",
-    "parent_id": "1lOGRapz37qf9qzrys9x81cXrGJl7KuSq",
-    "modified_time": "2026-07-15T04:40:26.601Z"
+    "id": "1I49DpgBijx3u3U-f8x5dTgDcrCs9jOE-",
+    "name": "Lưới điện",
+    "parent_id": "14BAu1MGGKbB6RKmWobLLi5Zw-4wN-U1Y",
+    "modified_time": "2026-04-03T04:05:28.143Z"
+  },
+  {
+    "id": "1FNEm4Yv5wWRDw6LDoQh_M5X8TfVmtuU9",
+    "name": "Lâm nghiệp",
+    "parent_id": "14BAu1MGGKbB6RKmWobLLi5Zw-4wN-U1Y",
+    "modified_time": "2026-04-03T04:05:24.827Z"
+  },
+  {
+    "id": "1W2ckQPipJ4zcUXEuR1cNt_Afpzqf4BIm",
+    "name": "Chiếu sáng",
+    "parent_id": "14BAu1MGGKbB6RKmWobLLi5Zw-4wN-U1Y",
+    "modified_time": "2026-04-03T04:05:21.034Z"
+  },
+  {
+    "id": "1zKGOg6Mo1Xavx0JlgGB3vHdJiMFEi0T_",
+    "name": "Cây xanh",
+    "parent_id": "14BAu1MGGKbB6RKmWobLLi5Zw-4wN-U1Y",
+    "modified_time": "2026-04-03T04:05:17.942Z"
+  },
+  {
+    "id": "1jB8H9P2ZRx69fk7y372P7JeOaOOTTXya",
+    "name": "Cấp nước",
+    "parent_id": "14BAu1MGGKbB6RKmWobLLi5Zw-4wN-U1Y",
+    "modified_time": "2026-04-03T04:05:14.201Z"
+  },
+  {
+    "id": "1eHn7xUe7en-7xPFiwIgdQ14RMQNyIAs6",
+    "name": "Biển báo",
+    "parent_id": "14BAu1MGGKbB6RKmWobLLi5Zw-4wN-U1Y",
+    "modified_time": "2026-04-03T04:05:10.770Z"
   },
   {
     "id": "17mwDce7guznqm7v6gWlks4vV7KEr3c-h",
@@ -630,298 +678,10 @@
     "modified_time": "2026-04-22T03:11:17.736Z"
   },
   {
-    "id": "1EE7b-8XTgTyuOgx_kbfag_5EgYkqssBM",
-    "name": "Viễn thông",
-    "parent_id": "14BAu1MGGKbB6RKmWobLLi5Zw-4wN-U1Y",
-    "modified_time": "2026-04-03T04:05:34.036Z"
-  },
-  {
-    "id": "1GnfZWgdW8uuysNmyUpDNSN8_aVY7Fzuk",
-    "name": "Thoát nước",
-    "parent_id": "14BAu1MGGKbB6RKmWobLLi5Zw-4wN-U1Y",
-    "modified_time": "2026-04-03T04:05:31.436Z"
-  },
-  {
-    "id": "1I49DpgBijx3u3U-f8x5dTgDcrCs9jOE-",
-    "name": "Lưới điện",
-    "parent_id": "14BAu1MGGKbB6RKmWobLLi5Zw-4wN-U1Y",
-    "modified_time": "2026-04-03T04:05:28.143Z"
-  },
-  {
-    "id": "1FNEm4Yv5wWRDw6LDoQh_M5X8TfVmtuU9",
-    "name": "Lâm nghiệp",
-    "parent_id": "14BAu1MGGKbB6RKmWobLLi5Zw-4wN-U1Y",
-    "modified_time": "2026-04-03T04:05:24.827Z"
-  },
-  {
-    "id": "1W2ckQPipJ4zcUXEuR1cNt_Afpzqf4BIm",
-    "name": "Chiếu sáng",
-    "parent_id": "14BAu1MGGKbB6RKmWobLLi5Zw-4wN-U1Y",
-    "modified_time": "2026-04-03T04:05:21.034Z"
-  },
-  {
-    "id": "1zKGOg6Mo1Xavx0JlgGB3vHdJiMFEi0T_",
-    "name": "Cây xanh",
-    "parent_id": "14BAu1MGGKbB6RKmWobLLi5Zw-4wN-U1Y",
-    "modified_time": "2026-04-03T04:05:17.942Z"
-  },
-  {
-    "id": "1jB8H9P2ZRx69fk7y372P7JeOaOOTTXya",
-    "name": "Cấp nước",
-    "parent_id": "14BAu1MGGKbB6RKmWobLLi5Zw-4wN-U1Y",
-    "modified_time": "2026-04-03T04:05:14.201Z"
-  },
-  {
-    "id": "1eHn7xUe7en-7xPFiwIgdQ14RMQNyIAs6",
-    "name": "Biển báo",
-    "parent_id": "14BAu1MGGKbB6RKmWobLLi5Zw-4wN-U1Y",
-    "modified_time": "2026-04-03T04:05:10.770Z"
-  },
-  {
     "id": "1NFpAp_fvtSdiNiftknkZ2a70Zn3lvgrl",
     "name": "QR code cung cấp bản vẽ",
     "parent_id": "1Art2QJht6nvFUb3qJwZT43QEZyJAXbkN",
     "modified_time": "2026-06-12T10:26:22.502Z"
-  },
-  {
-    "id": "1Xd_DEDyreQaOOABjuZ0QbNjk_uMOlgYF",
-    "name": "QR code trình bản vẽ",
-    "parent_id": "19vu0_KYlw7DwBbmcm522xzqtORMjPuse",
-    "modified_time": "2026-06-12T10:26:12.574Z"
-  },
-  {
-    "id": "1wfLqeernbelW8rXEl73i80V_Tr13HQqJ",
-    "name": "5. Bồi thường cây rừng",
-    "parent_id": "11mICHVMMHqTwq9SLx0W6cAOXwT88Z6yd",
-    "modified_time": "2026-08-10T02:06:48.035Z"
-  },
-  {
-    "id": "1_4VWQzLZO5aN9e4-Ls4GIEe0sAXUwX9_",
-    "name": "4. Di dời HTKT",
-    "parent_id": "11mICHVMMHqTwq9SLx0W6cAOXwT88Z6yd",
-    "modified_time": "2026-08-10T02:06:43.980Z"
-  },
-  {
-    "id": "14cYIlMEQ97Poay5hasAsWbPPt_JTk4zO",
-    "name": "3. Bồi thường đất",
-    "parent_id": "11mICHVMMHqTwq9SLx0W6cAOXwT88Z6yd",
-    "modified_time": "2026-08-10T02:06:38.864Z"
-  },
-  {
-    "id": "1-X9wO19Jejc-FL-L0H6r9gZL5-ROEFMC",
-    "name": "2. Bố trí TĐC",
-    "parent_id": "11mICHVMMHqTwq9SLx0W6cAOXwT88Z6yd",
-    "modified_time": "2026-08-10T02:06:31.284Z"
-  },
-  {
-    "id": "1jsm6CX0uYYWzpoGT75Engvbgw-6w355B",
-    "name": "1. Thông tin",
-    "parent_id": "11mICHVMMHqTwq9SLx0W6cAOXwT88Z6yd",
-    "modified_time": "2026-08-10T02:06:08.841Z"
-  },
-  {
-    "id": "1RRQ5voY605K277EHwlln_cqVDw7AmgI8",
-    "name": "Di dời HTKT XC",
-    "parent_id": "1qO8Y6DScs7Bj-2UbXcdrhJlrKJFqdf7a",
-    "modified_time": "2026-08-10T01:56:28.094Z"
-  },
-  {
-    "id": "1dwEjKvLWVyshbZJBsuiYhUm7uWHckPM5",
-    "name": "Di dời HTKT NB",
-    "parent_id": "1XkhCoo_G6eM3_aZFaGp_qK9NiUeiQigP",
-    "modified_time": "2026-08-10T01:56:19.515Z"
-  },
-  {
-    "id": "1LX-zfBqdesy7FBZ9802gExRKJs4MS7li",
-    "name": "HTKT-",
-    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
-    "modified_time": "2026-07-15T03:20:55.174Z"
-  },
-  {
-    "id": "1P3VSO69Z0LXwpyPOfw75JrLhXKeLZZ89",
-    "name": "Nhà thầu",
-    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
-    "modified_time": "2026-07-15T03:20:48.937Z"
-  },
-  {
-    "id": "1NiJHH2Q1zdm9Cp4wJnRD-WEOrCakCvbD",
-    "name": "3.3. Quyết toán HĐ",
-    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
-    "modified_time": "2026-07-15T03:19:59.182Z"
-  },
-  {
-    "id": "15hIj-gYpma_Hn34s0eDesKqyTsP4VFTF",
-    "name": "3.4. Thanh lý HĐ",
-    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
-    "modified_time": "2026-07-15T03:19:54.708Z"
-  },
-  {
-    "id": "1CNbSbWZeKxUF8bEkZ4chPZmJN3gawJ1a",
-    "name": "3.2. Tạm ứng - Thanh toán",
-    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
-    "modified_time": "2026-07-15T03:19:35.315Z"
-  },
-  {
-    "id": "1UIjWSgT0V10tbryBjeHeBxRUg8GHCbPb",
-    "name": "3.1. Nghiệm thu",
-    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
-    "modified_time": "2026-07-15T03:19:21.322Z"
-  },
-  {
-    "id": "1TOch4b3tf4STL7Lbl42AAVthX2g1iETn",
-    "name": "3.5. Bàn giao",
-    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
-    "modified_time": "2026-07-15T03:09:17.519Z"
-  },
-  {
-    "id": "1RJNMnuAF2E5p7sCILLT8bf9Ci8diHsYY",
-    "name": "2.5",
-    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
-    "modified_time": "2026-07-15T03:08:50.891Z"
-  },
-  {
-    "id": "1wxAJfMs9rJQE4c95l-9q1yNX1ZuQzWCd",
-    "name": "2.4",
-    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
-    "modified_time": "2026-07-15T03:08:41.216Z"
-  },
-  {
-    "id": "1goNa9XV0eg8JR8dGgC5q7nY9QIY-BAJv",
-    "name": "2.3",
-    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
-    "modified_time": "2026-07-15T03:08:26.557Z"
-  },
-  {
-    "id": "1Qdc3iusBLhYIxXvM1tsUMB9GFRskcHfO",
-    "name": "2.2. Kế hoạch - Tiến độ",
-    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
-    "modified_time": "2026-07-15T03:05:31.855Z"
-  },
-  {
-    "id": "1BTlRwIxc1NC3ouBCe-triIwObz5J4jzL",
-    "name": "2.1. Ký kết PLHĐ",
-    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
-    "modified_time": "2026-07-15T03:05:12.562Z"
-  },
-  {
-    "id": "1HkOXHIHeuTZryjVddcXAOxcWF-8S16ii",
-    "name": "1.4. Ký kết HĐ",
-    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
-    "modified_time": "2026-07-15T03:04:49.114Z"
-  },
-  {
-    "id": "1aycdyDn7CKERKD9QbzOshyhpq41FlpIA",
-    "name": "1.3. Phê duyệt KQLCNT",
-    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
-    "modified_time": "2026-07-15T03:04:41.013Z"
-  },
-  {
-    "id": "1MUJwqmxmJTmsxgdX8TiSSoJEMz_5S6Ca",
-    "name": "1.2. Đánh giá NLNT",
-    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
-    "modified_time": "2026-07-15T03:04:26.029Z"
-  },
-  {
-    "id": "1qci5bTGNt9W-WHOVU0FsJ5W72ev-Wppe",
-    "name": "1.1. Hồ sơ NVDT",
-    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
-    "modified_time": "2026-07-15T03:04:15.792Z"
-  },
-  {
-    "id": "1GhXjKMONqTs3N8y8Ux6j7zcbJNjYbxH6",
-    "name": "HTKT-",
-    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
-    "modified_time": "2026-07-15T03:20:55.174Z"
-  },
-  {
-    "id": "1bncmjR4OqPK0ms7kTprJ4G3VqX6f3zeG",
-    "name": "Nhà thầu",
-    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
-    "modified_time": "2026-07-15T03:20:48.937Z"
-  },
-  {
-    "id": "1egp1Geo-Kihus95qeoSfYTW2hB7VZtic",
-    "name": "3.3. Quyết toán HĐ",
-    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
-    "modified_time": "2026-07-15T03:19:59.182Z"
-  },
-  {
-    "id": "1Vw4SALvAjNbau7tS3IkAMBSKeOpNwZbK",
-    "name": "3.4. Thanh lý HĐ",
-    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
-    "modified_time": "2026-07-15T03:19:54.708Z"
-  },
-  {
-    "id": "1Yt9i73bDvqYkP6tgHFjhahkBpyeNT1j2",
-    "name": "3.2. Tạm ứng - Thanh toán",
-    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
-    "modified_time": "2026-07-15T03:19:35.315Z"
-  },
-  {
-    "id": "11otgIL8RaiGErSUXtoOz0NG2G4QIqtky",
-    "name": "3.1. Nghiệm thu",
-    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
-    "modified_time": "2026-07-15T03:19:21.322Z"
-  },
-  {
-    "id": "1rgaKjBjEC7KkJWs63hbrrDnv_MkRnqW4",
-    "name": "3.5. Bàn giao",
-    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
-    "modified_time": "2026-07-15T03:09:17.519Z"
-  },
-  {
-    "id": "1ey8pQ5Sj6NdUkb8BR-KzA32PUY23Srns",
-    "name": "2.5",
-    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
-    "modified_time": "2026-07-15T03:08:50.891Z"
-  },
-  {
-    "id": "15adjxYz89pMWEiLEDiW6R21syMLoJYBL",
-    "name": "2.4",
-    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
-    "modified_time": "2026-07-15T03:08:41.216Z"
-  },
-  {
-    "id": "1EhR_l1ReUu__a_UD9Xwmfuh3jMhItOe5",
-    "name": "2.3",
-    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
-    "modified_time": "2026-07-15T03:08:26.557Z"
-  },
-  {
-    "id": "1mH7kAbGjRUqzs40is5x9m5Okc34-u0gM",
-    "name": "2.2. Kế hoạch - Tiến độ",
-    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
-    "modified_time": "2026-07-15T03:05:31.855Z"
-  },
-  {
-    "id": "1fQvPC_AGpl6gl60ruCpFzofBmjJ3ADYP",
-    "name": "2.1. Ký kết PLHĐ",
-    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
-    "modified_time": "2026-07-15T03:05:12.562Z"
-  },
-  {
-    "id": "1ZTEeY9jaKkpwb_rx6U0KoeCPrYtYzGqG",
-    "name": "1.4. Ký kết HĐ",
-    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
-    "modified_time": "2026-07-15T03:04:49.114Z"
-  },
-  {
-    "id": "1U19zJQru_x5obIQpfCF9OSb3oIQz-qBv",
-    "name": "1.3. Phê duyệt KQLCNT",
-    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
-    "modified_time": "2026-07-15T03:04:41.013Z"
-  },
-  {
-    "id": "1efE-zE80DoMrX8R8nUR-o69YuT6vYCkc",
-    "name": "1.2. Đánh giá NLNT",
-    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
-    "modified_time": "2026-07-15T03:04:26.029Z"
-  },
-  {
-    "id": "1aUgjNuhUu2pLX1n4_DfmL0q8O0Ln5cdx",
-    "name": "1.1. Hồ sơ NVDT",
-    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
-    "modified_time": "2026-07-15T03:04:15.792Z"
   },
   {
     "id": "1d0PirhZdsMB9rvf9H7vsNuifTVnumH7u",
@@ -1116,196 +876,226 @@
     "modified_time": "2026-07-05T13:43:59.501Z"
   },
   {
-    "id": "1iub8hLaiNWBoJGk7-QDclMVDhF47YEX_",
+    "id": "1LX-zfBqdesy7FBZ9802gExRKJs4MS7li",
     "name": "HTKT-",
-    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
     "modified_time": "2026-07-15T03:20:55.174Z"
   },
   {
-    "id": "11XJSy-c3UMjEvclALfJSQhX6twCPmTLA",
+    "id": "1P3VSO69Z0LXwpyPOfw75JrLhXKeLZZ89",
     "name": "Nhà thầu",
-    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
     "modified_time": "2026-07-15T03:20:48.937Z"
   },
   {
-    "id": "1VFJeipyFgUjazXc1Rf42bLavIpD-T9P0",
+    "id": "1NiJHH2Q1zdm9Cp4wJnRD-WEOrCakCvbD",
     "name": "3.3. Quyết toán HĐ",
-    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
     "modified_time": "2026-07-15T03:19:59.182Z"
   },
   {
-    "id": "1C-1Jvll5DtT_Bx98YI0RU0iyZ4zoLTM6",
+    "id": "15hIj-gYpma_Hn34s0eDesKqyTsP4VFTF",
     "name": "3.4. Thanh lý HĐ",
-    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
     "modified_time": "2026-07-15T03:19:54.708Z"
   },
   {
-    "id": "1sE2uiS65I-8krDN36vDvz1gzQ7dYblqu",
+    "id": "1CNbSbWZeKxUF8bEkZ4chPZmJN3gawJ1a",
     "name": "3.2. Tạm ứng - Thanh toán",
-    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
     "modified_time": "2026-07-15T03:19:35.315Z"
   },
   {
-    "id": "1C0vRaqVwa5K30LRAO1WGROxD3bU6F0rv",
+    "id": "1UIjWSgT0V10tbryBjeHeBxRUg8GHCbPb",
     "name": "3.1. Nghiệm thu",
-    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
     "modified_time": "2026-07-15T03:19:21.322Z"
   },
   {
-    "id": "1L7G_-5dleSJkpRWKMwsUiWgsZkpy8aII",
+    "id": "1TOch4b3tf4STL7Lbl42AAVthX2g1iETn",
     "name": "3.5. Bàn giao",
-    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
     "modified_time": "2026-07-15T03:09:17.519Z"
   },
   {
-    "id": "1JvZ4cSyG9OndVIFveHu53pskxtW3d67L",
+    "id": "1RJNMnuAF2E5p7sCILLT8bf9Ci8diHsYY",
     "name": "2.5",
-    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
     "modified_time": "2026-07-15T03:08:50.891Z"
   },
   {
-    "id": "1NNk79MlRBeabPnx3GhSgh5J-LbCZEjCh",
+    "id": "1wxAJfMs9rJQE4c95l-9q1yNX1ZuQzWCd",
     "name": "2.4",
-    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
     "modified_time": "2026-07-15T03:08:41.216Z"
   },
   {
-    "id": "1L9HDIEu6dnnvFNMBIonQod6h-2eKOSVd",
+    "id": "1goNa9XV0eg8JR8dGgC5q7nY9QIY-BAJv",
     "name": "2.3",
-    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
     "modified_time": "2026-07-15T03:08:26.557Z"
   },
   {
-    "id": "1K1aVMAs6tH1W_BZmUM5u9sGbzSkUn5_T",
+    "id": "1Qdc3iusBLhYIxXvM1tsUMB9GFRskcHfO",
     "name": "2.2. Kế hoạch - Tiến độ",
-    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
     "modified_time": "2026-07-15T03:05:31.855Z"
   },
   {
-    "id": "1lXI2vRFRTyGHPYjnHKRJDiGicfgxJIw9",
+    "id": "1BTlRwIxc1NC3ouBCe-triIwObz5J4jzL",
     "name": "2.1. Ký kết PLHĐ",
-    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
     "modified_time": "2026-07-15T03:05:12.562Z"
   },
   {
-    "id": "1jlaNCf6kvHdHcbHEowVs5PyM5QpVM6D4",
+    "id": "1HkOXHIHeuTZryjVddcXAOxcWF-8S16ii",
     "name": "1.4. Ký kết HĐ",
-    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
     "modified_time": "2026-07-15T03:04:49.114Z"
   },
   {
-    "id": "1FEVslZqsojbPJfub-GCiKK7tpoqu4Dbz",
+    "id": "1aycdyDn7CKERKD9QbzOshyhpq41FlpIA",
     "name": "1.3. Phê duyệt KQLCNT",
-    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
     "modified_time": "2026-07-15T03:04:41.013Z"
   },
   {
-    "id": "1zExXd04zOEgMa7WGpeI9OaVQVMiAObYJ",
+    "id": "1MUJwqmxmJTmsxgdX8TiSSoJEMz_5S6Ca",
     "name": "1.2. Đánh giá NLNT",
-    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
     "modified_time": "2026-07-15T03:04:26.029Z"
   },
   {
-    "id": "15ZpN3-SxXrwyqY3WgcP78QEi06vaFY0w",
+    "id": "1qci5bTGNt9W-WHOVU0FsJ5W72ev-Wppe",
     "name": "1.1. Hồ sơ NVDT",
-    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "parent_id": "1UPI12wZhCtFTG3qI2G1InDOChAopvXAh",
     "modified_time": "2026-07-15T03:04:15.792Z"
   },
   {
-    "id": "1ycTdgEpq2Fhw_dq_MJYHrNcRWmHboAju",
-    "name": "2.3. Thẩm tra BCNCKT",
-    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
-    "modified_time": "2026-07-15T04:05:16.579Z"
-  },
-  {
-    "id": "119tDNl4VAKbLpkA8ISNtVHmjzMHHvCCx",
-    "name": "Tam Kiệt",
-    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
-    "modified_time": "2026-07-15T04:04:28.687Z"
-  },
-  {
-    "id": "1jCeX3MW2k5TIgmuDnaCsfCAfIGWPVusX",
+    "id": "1GhXjKMONqTs3N8y8Ux6j7zcbJNjYbxH6",
     "name": "HTKT-",
-    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
     "modified_time": "2026-07-15T03:20:55.174Z"
   },
   {
-    "id": "1nr-eXj27cemyUa5S0kf8hVInGW-vMrfM",
+    "id": "1bncmjR4OqPK0ms7kTprJ4G3VqX6f3zeG",
+    "name": "Nhà thầu",
+    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
+    "modified_time": "2026-07-15T03:20:48.937Z"
+  },
+  {
+    "id": "1egp1Geo-Kihus95qeoSfYTW2hB7VZtic",
     "name": "3.3. Quyết toán HĐ",
-    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
     "modified_time": "2026-07-15T03:19:59.182Z"
   },
   {
-    "id": "1TBzTbHiHz15aDYUi-QnfVheiwnHeNh4i",
+    "id": "1Vw4SALvAjNbau7tS3IkAMBSKeOpNwZbK",
     "name": "3.4. Thanh lý HĐ",
-    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
     "modified_time": "2026-07-15T03:19:54.708Z"
   },
   {
-    "id": "1w2sBG-lMrsqMKh225WE3t55-tJZoOuiH",
+    "id": "1Yt9i73bDvqYkP6tgHFjhahkBpyeNT1j2",
     "name": "3.2. Tạm ứng - Thanh toán",
-    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
     "modified_time": "2026-07-15T03:19:35.315Z"
   },
   {
-    "id": "1w7ZC9z6lZwYBHDo0KZHMIRftyvrUa7k_",
+    "id": "11otgIL8RaiGErSUXtoOz0NG2G4QIqtky",
     "name": "3.1. Nghiệm thu",
-    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
     "modified_time": "2026-07-15T03:19:21.322Z"
   },
   {
-    "id": "17Saofqqz7cXziMYZ_nNHwLHHmj-DWZXW",
+    "id": "1rgaKjBjEC7KkJWs63hbrrDnv_MkRnqW4",
     "name": "3.5. Bàn giao",
-    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
     "modified_time": "2026-07-15T03:09:17.519Z"
   },
   {
-    "id": "1lKcAYIpcSyRzaIEnYiu5neImszY5UHpH",
+    "id": "1ey8pQ5Sj6NdUkb8BR-KzA32PUY23Srns",
     "name": "2.5",
-    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
     "modified_time": "2026-07-15T03:08:50.891Z"
   },
   {
-    "id": "1DSiq65VZfARdPMEGnLJHfff4ILbLYiYh",
+    "id": "15adjxYz89pMWEiLEDiW6R21syMLoJYBL",
     "name": "2.4",
-    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
     "modified_time": "2026-07-15T03:08:41.216Z"
   },
   {
-    "id": "1NdEi2TNGCK2TCXWpsTJ4XI4bcxgQtjKJ",
+    "id": "1EhR_l1ReUu__a_UD9Xwmfuh3jMhItOe5",
+    "name": "2.3",
+    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
+    "modified_time": "2026-07-15T03:08:26.557Z"
+  },
+  {
+    "id": "1mH7kAbGjRUqzs40is5x9m5Okc34-u0gM",
     "name": "2.2. Kế hoạch - Tiến độ",
-    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
     "modified_time": "2026-07-15T03:05:31.855Z"
   },
   {
-    "id": "1wVI-S6jP3fQ9lEdb2hTbmAvLQucxtEB3",
+    "id": "1fQvPC_AGpl6gl60ruCpFzofBmjJ3ADYP",
     "name": "2.1. Ký kết PLHĐ",
-    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
     "modified_time": "2026-07-15T03:05:12.562Z"
   },
   {
-    "id": "1whA97PAUs6j70wBwjh3Yh0dGdLT_Wo7p",
+    "id": "1ZTEeY9jaKkpwb_rx6U0KoeCPrYtYzGqG",
     "name": "1.4. Ký kết HĐ",
-    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
     "modified_time": "2026-07-15T03:04:49.114Z"
   },
   {
-    "id": "1N3BHllKl0e7dwbRmsHqxyGfgXw2lYWru",
+    "id": "1U19zJQru_x5obIQpfCF9OSb3oIQz-qBv",
     "name": "1.3. Phê duyệt KQLCNT",
-    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
     "modified_time": "2026-07-15T03:04:41.013Z"
   },
   {
-    "id": "1hEMeicdcXCFqQvJcXL2EECLGkgfHPl4y",
+    "id": "1efE-zE80DoMrX8R8nUR-o69YuT6vYCkc",
     "name": "1.2. Đánh giá NLNT",
-    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
     "modified_time": "2026-07-15T03:04:26.029Z"
   },
   {
-    "id": "1j9KexBLPWBRy6at-AJ6wEaLZlkDVoBER",
+    "id": "1aUgjNuhUu2pLX1n4_DfmL0q8O0Ln5cdx",
     "name": "1.1. Hồ sơ NVDT",
-    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "parent_id": "1OsJX8hEaa9yZ5gnQBKRSteiADox-YmKD",
     "modified_time": "2026-07-15T03:04:15.792Z"
+  },
+  {
+    "id": "1wfLqeernbelW8rXEl73i80V_Tr13HQqJ",
+    "name": "5. Bồi thường cây rừng",
+    "parent_id": "11mICHVMMHqTwq9SLx0W6cAOXwT88Z6yd",
+    "modified_time": "2026-08-10T02:06:48.035Z"
+  },
+  {
+    "id": "1_4VWQzLZO5aN9e4-Ls4GIEe0sAXUwX9_",
+    "name": "4. Di dời HTKT",
+    "parent_id": "11mICHVMMHqTwq9SLx0W6cAOXwT88Z6yd",
+    "modified_time": "2026-08-10T02:06:43.980Z"
+  },
+  {
+    "id": "14cYIlMEQ97Poay5hasAsWbPPt_JTk4zO",
+    "name": "3. Bồi thường đất",
+    "parent_id": "11mICHVMMHqTwq9SLx0W6cAOXwT88Z6yd",
+    "modified_time": "2026-08-10T02:06:38.864Z"
+  },
+  {
+    "id": "1-X9wO19Jejc-FL-L0H6r9gZL5-ROEFMC",
+    "name": "2. Bố trí TĐC",
+    "parent_id": "11mICHVMMHqTwq9SLx0W6cAOXwT88Z6yd",
+    "modified_time": "2026-08-10T02:06:31.284Z"
+  },
+  {
+    "id": "1jsm6CX0uYYWzpoGT75Engvbgw-6w355B",
+    "name": "1. Thông tin",
+    "parent_id": "11mICHVMMHqTwq9SLx0W6cAOXwT88Z6yd",
+    "modified_time": "2026-08-10T02:06:08.841Z"
   },
   {
     "id": "1K5V3CqHZYdnFfANk123DmldeNTjE_v_U",
@@ -1500,100 +1290,112 @@
     "modified_time": "2026-07-15T03:04:15.792Z"
   },
   {
-    "id": "13tvZzHHsajGrwMPjQV_j0PKhZ-VpvGpF",
-    "name": "3.6. TTĐĐBĐ",
-    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
-    "modified_time": "2026-08-10T02:48:21.371Z"
+    "id": "1iub8hLaiNWBoJGk7-QDclMVDhF47YEX_",
+    "name": "HTKT-",
+    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "modified_time": "2026-07-15T03:20:55.174Z"
   },
   {
-    "id": "1wIO47MUMsbq078oLxonCGCuQM3gfOcGt",
-    "name": "0. Pháp lý",
-    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
-    "modified_time": "2026-08-10T02:31:04.507Z"
+    "id": "11XJSy-c3UMjEvclALfJSQhX6twCPmTLA",
+    "name": "Nhà thầu",
+    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "modified_time": "2026-07-15T03:20:48.937Z"
   },
   {
-    "id": "14QTEnAuxfdF3I0SXQb2HJAHw3G4Ekp9f",
-    "name": "3.4. Thanh lý HĐ",
-    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
-    "modified_time": "2026-07-15T03:20:21.035Z"
-  },
-  {
-    "id": "1S6Uv7t8nH2pqO5JfK2llgL2CRiV-4yAB",
+    "id": "1VFJeipyFgUjazXc1Rf42bLavIpD-T9P0",
     "name": "3.3. Quyết toán HĐ",
-    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
-    "modified_time": "2026-07-15T03:20:17.430Z"
+    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "modified_time": "2026-07-15T03:19:59.182Z"
   },
   {
-    "id": "1Nd7N1iGBpalFTsrtYKlR-boMqqJu4Kvy",
-    "name": "3.5. Bàn giao",
-    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
-    "modified_time": "2026-07-15T03:09:09.348Z"
+    "id": "1C-1Jvll5DtT_Bx98YI0RU0iyZ4zoLTM6",
+    "name": "3.4. Thanh lý HĐ",
+    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "modified_time": "2026-07-15T03:19:54.708Z"
   },
   {
-    "id": "1QvnmoVfavebSz1te14v6F9yuRJcyWiEb",
-    "name": "2.5. Trao đổi",
-    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
-    "modified_time": "2026-07-15T03:07:27.166Z"
-  },
-  {
-    "id": "1O3WisUtQLjCr5IXchjlwtV4zr3ulJ1BZ",
-    "name": "2.4. Cắm mốc GPMB",
-    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
-    "modified_time": "2026-07-15T03:07:12.712Z"
-  },
-  {
-    "id": "1dulmazGGmm-pjMrr1htahJs64perL185",
-    "name": "2.3. Bản đồ vị trí",
-    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
-    "modified_time": "2026-07-15T03:07:07.747Z"
-  },
-  {
-    "id": "1_822vXcOWVdI1omdpKWhQRUYzKJNlkWV",
-    "name": "2.2. Kế hoạch - Tiến độ",
-    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
-    "modified_time": "2026-07-15T03:07:01.261Z"
-  },
-  {
-    "id": "1VEbUzjh2a6Jbs4ZUWP8JH5jbQVS-yWs-",
-    "name": "2.1. Ký kết PLHĐ",
-    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
-    "modified_time": "2026-07-15T03:06:56.983Z"
-  },
-  {
-    "id": "1T75VnPo7SHq1b3VccngHfjHHHZ2N97dt",
-    "name": "1.1. Hồ sơ NVDT",
-    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
-    "modified_time": "2026-06-24T08:13:33.652Z"
-  },
-  {
-    "id": "1DulXPcaRHqlZ4kbiPOb95cSjaQqj-B3i",
+    "id": "1sE2uiS65I-8krDN36vDvz1gzQ7dYblqu",
     "name": "3.2. Tạm ứng - Thanh toán",
-    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
-    "modified_time": "2026-06-24T08:04:05.592Z"
+    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "modified_time": "2026-07-15T03:19:35.315Z"
   },
   {
-    "id": "1Geb4rq3txpZab7lVF7O3wqJBWiFLzYte",
+    "id": "1C0vRaqVwa5K30LRAO1WGROxD3bU6F0rv",
     "name": "3.1. Nghiệm thu",
-    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
-    "modified_time": "2026-06-24T08:03:56.959Z"
+    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "modified_time": "2026-07-15T03:19:21.322Z"
   },
   {
-    "id": "1J9HEfsFGiI1aCCu3Lbe5z8gzDkZ0JcjE",
+    "id": "1L7G_-5dleSJkpRWKMwsUiWgsZkpy8aII",
+    "name": "3.5. Bàn giao",
+    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "modified_time": "2026-07-15T03:09:17.519Z"
+  },
+  {
+    "id": "1JvZ4cSyG9OndVIFveHu53pskxtW3d67L",
+    "name": "2.5",
+    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "modified_time": "2026-07-15T03:08:50.891Z"
+  },
+  {
+    "id": "1NNk79MlRBeabPnx3GhSgh5J-LbCZEjCh",
+    "name": "2.4",
+    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "modified_time": "2026-07-15T03:08:41.216Z"
+  },
+  {
+    "id": "1L9HDIEu6dnnvFNMBIonQod6h-2eKOSVd",
+    "name": "2.3",
+    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "modified_time": "2026-07-15T03:08:26.557Z"
+  },
+  {
+    "id": "1K1aVMAs6tH1W_BZmUM5u9sGbzSkUn5_T",
+    "name": "2.2. Kế hoạch - Tiến độ",
+    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "modified_time": "2026-07-15T03:05:31.855Z"
+  },
+  {
+    "id": "1lXI2vRFRTyGHPYjnHKRJDiGicfgxJIw9",
+    "name": "2.1. Ký kết PLHĐ",
+    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "modified_time": "2026-07-15T03:05:12.562Z"
+  },
+  {
+    "id": "1jlaNCf6kvHdHcbHEowVs5PyM5QpVM6D4",
     "name": "1.4. Ký kết HĐ",
-    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
-    "modified_time": "2026-06-24T08:03:10.194Z"
+    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "modified_time": "2026-07-15T03:04:49.114Z"
   },
   {
-    "id": "1zsZSD09tWUjFw7A-6rFQ8aRftff_knsf",
+    "id": "1FEVslZqsojbPJfub-GCiKK7tpoqu4Dbz",
     "name": "1.3. Phê duyệt KQLCNT",
-    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
-    "modified_time": "2026-06-24T08:03:06.110Z"
+    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "modified_time": "2026-07-15T03:04:41.013Z"
   },
   {
-    "id": "1EJL0wFbcbENHoqvhSFwhBq3eCt5dCpSq",
+    "id": "1zExXd04zOEgMa7WGpeI9OaVQVMiAObYJ",
     "name": "1.2. Đánh giá NLNT",
-    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
-    "modified_time": "2026-06-24T08:03:01.668Z"
+    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "modified_time": "2026-07-15T03:04:26.029Z"
+  },
+  {
+    "id": "15ZpN3-SxXrwyqY3WgcP78QEi06vaFY0w",
+    "name": "1.1. Hồ sơ NVDT",
+    "parent_id": "1m9F-hSYeuglR2S3Jv89uqNfmZ0uckhs9",
+    "modified_time": "2026-07-15T03:04:15.792Z"
+  },
+  {
+    "id": "1dwEjKvLWVyshbZJBsuiYhUm7uWHckPM5",
+    "name": "Di dời HTKT NB",
+    "parent_id": "1XkhCoo_G6eM3_aZFaGp_qK9NiUeiQigP",
+    "modified_time": "2026-08-10T01:56:19.515Z"
+  },
+  {
+    "id": "1RRQ5voY605K277EHwlln_cqVDw7AmgI8",
+    "name": "Di dời HTKT XC",
+    "parent_id": "1qO8Y6DScs7Bj-2UbXcdrhJlrKJFqdf7a",
+    "modified_time": "2026-08-10T01:56:28.094Z"
   },
   {
     "id": "1josX_yo6kRSJ9_hMa3Gh9yCGVHxEia7M",
@@ -1690,102 +1492,6 @@
     "name": "3.2. Tạm ứng - Thanh toán",
     "parent_id": "1ytAQzhnXwNREnbT7SvxrDOKQYIfobTlP",
     "modified_time": "2026-06-24T08:21:07.934Z"
-  },
-  {
-    "id": "1yc8QWNLeRYXzo8IshmnCUmg42ydKmpZO",
-    "name": "2.4. HSNVDT gói TV4",
-    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
-    "modified_time": "2026-07-15T09:36:32.970Z"
-  },
-  {
-    "id": "1VFOZlCokv4GsXt--Iyhs5WtYYo69A8A-",
-    "name": "2.3. HSNVDT gói TV3",
-    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
-    "modified_time": "2026-07-15T09:36:26.318Z"
-  },
-  {
-    "id": "1X3Dso-9ItTiy_O5qS4vOBM5RTurBo7zr",
-    "name": "BR",
-    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
-    "modified_time": "2026-07-15T03:55:36.694Z"
-  },
-  {
-    "id": "1O0xKc0I9h9N-bPG4sw5_YSLGtPgZCcHm",
-    "name": "HTKT-TV1",
-    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
-    "modified_time": "2026-07-15T03:53:38.358Z"
-  },
-  {
-    "id": "1zfflIOT3844y3OQMxMNh5nDIvbgzYzGU",
-    "name": "3.3. Quyết toán HĐ",
-    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
-    "modified_time": "2026-07-15T03:19:59.182Z"
-  },
-  {
-    "id": "1a0JU8hwrSpGf4Xn4Lvc1Y87Ltef0Qhn-",
-    "name": "3.4. Thanh lý HĐ",
-    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
-    "modified_time": "2026-07-15T03:19:54.708Z"
-  },
-  {
-    "id": "1p4kupfqyb8nsc4tjvacY8Iq3vbSrcWbe",
-    "name": "3.2. Tạm ứng - Thanh toán",
-    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
-    "modified_time": "2026-07-15T03:19:35.315Z"
-  },
-  {
-    "id": "1qY6HHTjAqEeOoUkw2VMryP06FiIkHuQl",
-    "name": "3.1. Nghiệm thu",
-    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
-    "modified_time": "2026-07-15T03:19:21.322Z"
-  },
-  {
-    "id": "1FZdbakQ9qTB0Xv3cEXuGif_mIIasrIiR",
-    "name": "3.5. Bàn giao",
-    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
-    "modified_time": "2026-07-15T03:09:17.519Z"
-  },
-  {
-    "id": "14IKbKDZID50S2MbDMokf45W9Rl2m5Q1J",
-    "name": "2.5",
-    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
-    "modified_time": "2026-07-15T03:08:50.891Z"
-  },
-  {
-    "id": "11DXpyOKLgvkKfU8saytlPBCJwxDvRO-6",
-    "name": "2.2. Kế hoạch - Tiến độ",
-    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
-    "modified_time": "2026-07-15T03:05:31.855Z"
-  },
-  {
-    "id": "1i3j5cC7y7AGXWUiKFuiCqO6_Ok3xmVpY",
-    "name": "2.1. Ký kết PLHĐ",
-    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
-    "modified_time": "2026-07-15T03:05:12.562Z"
-  },
-  {
-    "id": "1EpsgDCOVOGxYP-4mk5f76Ul2PAs7E5vW",
-    "name": "1.4. Ký kết HĐ",
-    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
-    "modified_time": "2026-07-15T03:04:49.114Z"
-  },
-  {
-    "id": "1iOS77MD7oC6XwExiOgqw-19c184IhY37",
-    "name": "1.3. Phê duyệt KQLCNT",
-    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
-    "modified_time": "2026-07-15T03:04:41.013Z"
-  },
-  {
-    "id": "1PF-vtkf-MVEQjsLAZtZ1QU-mkCT-sAwW",
-    "name": "1.2. Đánh giá NLNT",
-    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
-    "modified_time": "2026-07-15T03:04:26.029Z"
-  },
-  {
-    "id": "1IlyGgxrN5ROA9sNOY0-EMTPd3ay3R1Si",
-    "name": "1.1. Hồ sơ NVDT",
-    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
-    "modified_time": "2026-07-15T03:04:15.792Z"
   },
   {
     "id": "10APi5iSJM0H69_OZP3DE9mpE6rdTkT1c",
@@ -1890,6 +1596,294 @@
     "modified_time": "2026-05-20T10:44:06.497Z"
   },
   {
+    "id": "13tvZzHHsajGrwMPjQV_j0PKhZ-VpvGpF",
+    "name": "3.6. TTĐĐBĐ",
+    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
+    "modified_time": "2026-08-10T02:48:21.371Z"
+  },
+  {
+    "id": "1wIO47MUMsbq078oLxonCGCuQM3gfOcGt",
+    "name": "0. Pháp lý",
+    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
+    "modified_time": "2026-08-10T02:31:04.507Z"
+  },
+  {
+    "id": "14QTEnAuxfdF3I0SXQb2HJAHw3G4Ekp9f",
+    "name": "3.4. Thanh lý HĐ",
+    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
+    "modified_time": "2026-07-15T03:20:21.035Z"
+  },
+  {
+    "id": "1S6Uv7t8nH2pqO5JfK2llgL2CRiV-4yAB",
+    "name": "3.3. Quyết toán HĐ",
+    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
+    "modified_time": "2026-07-15T03:20:17.430Z"
+  },
+  {
+    "id": "1Nd7N1iGBpalFTsrtYKlR-boMqqJu4Kvy",
+    "name": "3.5. Bàn giao",
+    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
+    "modified_time": "2026-07-15T03:09:09.348Z"
+  },
+  {
+    "id": "1QvnmoVfavebSz1te14v6F9yuRJcyWiEb",
+    "name": "2.5. Trao đổi",
+    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
+    "modified_time": "2026-07-15T03:07:27.166Z"
+  },
+  {
+    "id": "1O3WisUtQLjCr5IXchjlwtV4zr3ulJ1BZ",
+    "name": "2.4. Cắm mốc GPMB",
+    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
+    "modified_time": "2026-07-15T03:07:12.712Z"
+  },
+  {
+    "id": "1dulmazGGmm-pjMrr1htahJs64perL185",
+    "name": "2.3. Bản đồ vị trí",
+    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
+    "modified_time": "2026-07-15T03:07:07.747Z"
+  },
+  {
+    "id": "1_822vXcOWVdI1omdpKWhQRUYzKJNlkWV",
+    "name": "2.2. Kế hoạch - Tiến độ",
+    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
+    "modified_time": "2026-07-15T03:07:01.261Z"
+  },
+  {
+    "id": "1VEbUzjh2a6Jbs4ZUWP8JH5jbQVS-yWs-",
+    "name": "2.1. Ký kết PLHĐ",
+    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
+    "modified_time": "2026-07-15T03:06:56.983Z"
+  },
+  {
+    "id": "1T75VnPo7SHq1b3VccngHfjHHHZ2N97dt",
+    "name": "1.1. Hồ sơ NVDT",
+    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
+    "modified_time": "2026-06-24T08:13:33.652Z"
+  },
+  {
+    "id": "1DulXPcaRHqlZ4kbiPOb95cSjaQqj-B3i",
+    "name": "3.2. Tạm ứng - Thanh toán",
+    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
+    "modified_time": "2026-06-24T08:04:05.592Z"
+  },
+  {
+    "id": "1Geb4rq3txpZab7lVF7O3wqJBWiFLzYte",
+    "name": "3.1. Nghiệm thu",
+    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
+    "modified_time": "2026-06-24T08:03:56.959Z"
+  },
+  {
+    "id": "1J9HEfsFGiI1aCCu3Lbe5z8gzDkZ0JcjE",
+    "name": "1.4. Ký kết HĐ",
+    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
+    "modified_time": "2026-06-24T08:03:10.194Z"
+  },
+  {
+    "id": "1zsZSD09tWUjFw7A-6rFQ8aRftff_knsf",
+    "name": "1.3. Phê duyệt KQLCNT",
+    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
+    "modified_time": "2026-06-24T08:03:06.110Z"
+  },
+  {
+    "id": "1EJL0wFbcbENHoqvhSFwhBq3eCt5dCpSq",
+    "name": "1.2. Đánh giá NLNT",
+    "parent_id": "1Bfjlp93zG0Z_LKmIg2qfs_IQo70uw8PH",
+    "modified_time": "2026-06-24T08:03:01.668Z"
+  },
+  {
+    "id": "1ycTdgEpq2Fhw_dq_MJYHrNcRWmHboAju",
+    "name": "2.3. Thẩm tra BCNCKT",
+    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "modified_time": "2026-07-15T04:05:16.579Z"
+  },
+  {
+    "id": "119tDNl4VAKbLpkA8ISNtVHmjzMHHvCCx",
+    "name": "Tam Kiệt",
+    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "modified_time": "2026-07-15T04:04:28.687Z"
+  },
+  {
+    "id": "1jCeX3MW2k5TIgmuDnaCsfCAfIGWPVusX",
+    "name": "HTKT-",
+    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "modified_time": "2026-07-15T03:20:55.174Z"
+  },
+  {
+    "id": "1nr-eXj27cemyUa5S0kf8hVInGW-vMrfM",
+    "name": "3.3. Quyết toán HĐ",
+    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "modified_time": "2026-07-15T03:19:59.182Z"
+  },
+  {
+    "id": "1TBzTbHiHz15aDYUi-QnfVheiwnHeNh4i",
+    "name": "3.4. Thanh lý HĐ",
+    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "modified_time": "2026-07-15T03:19:54.708Z"
+  },
+  {
+    "id": "1w2sBG-lMrsqMKh225WE3t55-tJZoOuiH",
+    "name": "3.2. Tạm ứng - Thanh toán",
+    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "modified_time": "2026-07-15T03:19:35.315Z"
+  },
+  {
+    "id": "1w7ZC9z6lZwYBHDo0KZHMIRftyvrUa7k_",
+    "name": "3.1. Nghiệm thu",
+    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "modified_time": "2026-07-15T03:19:21.322Z"
+  },
+  {
+    "id": "17Saofqqz7cXziMYZ_nNHwLHHmj-DWZXW",
+    "name": "3.5. Bàn giao",
+    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "modified_time": "2026-07-15T03:09:17.519Z"
+  },
+  {
+    "id": "1lKcAYIpcSyRzaIEnYiu5neImszY5UHpH",
+    "name": "2.5",
+    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "modified_time": "2026-07-15T03:08:50.891Z"
+  },
+  {
+    "id": "1DSiq65VZfARdPMEGnLJHfff4ILbLYiYh",
+    "name": "2.4",
+    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "modified_time": "2026-07-15T03:08:41.216Z"
+  },
+  {
+    "id": "1NdEi2TNGCK2TCXWpsTJ4XI4bcxgQtjKJ",
+    "name": "2.2. Kế hoạch - Tiến độ",
+    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "modified_time": "2026-07-15T03:05:31.855Z"
+  },
+  {
+    "id": "1wVI-S6jP3fQ9lEdb2hTbmAvLQucxtEB3",
+    "name": "2.1. Ký kết PLHĐ",
+    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "modified_time": "2026-07-15T03:05:12.562Z"
+  },
+  {
+    "id": "1whA97PAUs6j70wBwjh3Yh0dGdLT_Wo7p",
+    "name": "1.4. Ký kết HĐ",
+    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "modified_time": "2026-07-15T03:04:49.114Z"
+  },
+  {
+    "id": "1N3BHllKl0e7dwbRmsHqxyGfgXw2lYWru",
+    "name": "1.3. Phê duyệt KQLCNT",
+    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "modified_time": "2026-07-15T03:04:41.013Z"
+  },
+  {
+    "id": "1hEMeicdcXCFqQvJcXL2EECLGkgfHPl4y",
+    "name": "1.2. Đánh giá NLNT",
+    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "modified_time": "2026-07-15T03:04:26.029Z"
+  },
+  {
+    "id": "1j9KexBLPWBRy6at-AJ6wEaLZlkDVoBER",
+    "name": "1.1. Hồ sơ NVDT",
+    "parent_id": "1sL5nDxkcBUJ8RcabKqPtkEkqBRXs1IBm",
+    "modified_time": "2026-07-15T03:04:15.792Z"
+  },
+  {
+    "id": "1yc8QWNLeRYXzo8IshmnCUmg42ydKmpZO",
+    "name": "2.4. HSNVDT gói TV4",
+    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
+    "modified_time": "2026-07-15T09:36:32.970Z"
+  },
+  {
+    "id": "1VFOZlCokv4GsXt--Iyhs5WtYYo69A8A-",
+    "name": "2.3. HSNVDT gói TV3",
+    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
+    "modified_time": "2026-07-15T09:36:26.318Z"
+  },
+  {
+    "id": "1X3Dso-9ItTiy_O5qS4vOBM5RTurBo7zr",
+    "name": "BR",
+    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
+    "modified_time": "2026-07-15T03:55:36.694Z"
+  },
+  {
+    "id": "1O0xKc0I9h9N-bPG4sw5_YSLGtPgZCcHm",
+    "name": "HTKT-TV1",
+    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
+    "modified_time": "2026-07-15T03:53:38.358Z"
+  },
+  {
+    "id": "1zfflIOT3844y3OQMxMNh5nDIvbgzYzGU",
+    "name": "3.3. Quyết toán HĐ",
+    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
+    "modified_time": "2026-07-15T03:19:59.182Z"
+  },
+  {
+    "id": "1a0JU8hwrSpGf4Xn4Lvc1Y87Ltef0Qhn-",
+    "name": "3.4. Thanh lý HĐ",
+    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
+    "modified_time": "2026-07-15T03:19:54.708Z"
+  },
+  {
+    "id": "1p4kupfqyb8nsc4tjvacY8Iq3vbSrcWbe",
+    "name": "3.2. Tạm ứng - Thanh toán",
+    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
+    "modified_time": "2026-07-15T03:19:35.315Z"
+  },
+  {
+    "id": "1qY6HHTjAqEeOoUkw2VMryP06FiIkHuQl",
+    "name": "3.1. Nghiệm thu",
+    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
+    "modified_time": "2026-07-15T03:19:21.322Z"
+  },
+  {
+    "id": "1FZdbakQ9qTB0Xv3cEXuGif_mIIasrIiR",
+    "name": "3.5. Bàn giao",
+    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
+    "modified_time": "2026-07-15T03:09:17.519Z"
+  },
+  {
+    "id": "14IKbKDZID50S2MbDMokf45W9Rl2m5Q1J",
+    "name": "2.5",
+    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
+    "modified_time": "2026-07-15T03:08:50.891Z"
+  },
+  {
+    "id": "11DXpyOKLgvkKfU8saytlPBCJwxDvRO-6",
+    "name": "2.2. Kế hoạch - Tiến độ",
+    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
+    "modified_time": "2026-07-15T03:05:31.855Z"
+  },
+  {
+    "id": "1i3j5cC7y7AGXWUiKFuiCqO6_Ok3xmVpY",
+    "name": "2.1. Ký kết PLHĐ",
+    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
+    "modified_time": "2026-07-15T03:05:12.562Z"
+  },
+  {
+    "id": "1EpsgDCOVOGxYP-4mk5f76Ul2PAs7E5vW",
+    "name": "1.4. Ký kết HĐ",
+    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
+    "modified_time": "2026-07-15T03:04:49.114Z"
+  },
+  {
+    "id": "1iOS77MD7oC6XwExiOgqw-19c184IhY37",
+    "name": "1.3. Phê duyệt KQLCNT",
+    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
+    "modified_time": "2026-07-15T03:04:41.013Z"
+  },
+  {
+    "id": "1PF-vtkf-MVEQjsLAZtZ1QU-mkCT-sAwW",
+    "name": "1.2. Đánh giá NLNT",
+    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
+    "modified_time": "2026-07-15T03:04:26.029Z"
+  },
+  {
+    "id": "1IlyGgxrN5ROA9sNOY0-EMTPd3ay3R1Si",
+    "name": "1.1. Hồ sơ NVDT",
+    "parent_id": "1Eo9QqlqqyJcEHVq-uppfYUxte0gH6iC-",
+    "modified_time": "2026-07-15T03:04:15.792Z"
+  },
+  {
     "id": "1TVuBn8HGUedVznxvhyfemoMFZMfz9jZr",
     "name": "2026-06-08_112_CV_VSP_đính kèm Tài liệu PA tuyến BT-CG",
     "parent_id": "17mwDce7guznqm7v6gWlks4vV7KEr3c-h",
@@ -1908,10 +1902,16 @@
     "modified_time": "2026-05-18T01:45:02.862Z"
   },
   {
-    "id": "1JeZTbGL__Yhaq-5Drbd656bDfX9aaL_M",
-    "name": "Hình ảnh",
-    "parent_id": "1xKIHK3U7u0FwEVV2Wx4yLUwUgYEp0_3v",
-    "modified_time": "2026-04-15T03:27:38.402Z"
+    "id": "1fgoVEO6rtQN_IHKpxxG6GPgKuGwUCFAw",
+    "name": "6. Báo cáo vướng mắc GPMB",
+    "parent_id": "19C-J8T0Ynz-DQJL75HAWB82IZYpOGMho",
+    "modified_time": "2026-05-04T03:08:48.292Z"
+  },
+  {
+    "id": "1B1MP_7xF34sn0j6I8chfBJA_qZtyQq0m",
+    "name": "Khu đầu mối hạ tầng kỹ thuật",
+    "parent_id": "19C-J8T0Ynz-DQJL75HAWB82IZYpOGMho",
+    "modified_time": "2026-02-27T03:26:47.357Z"
   },
   {
     "id": "1--r4URdvXI17gZS8WyYM-d4UvsSO062o",
@@ -1924,6 +1924,12 @@
     "name": "1. Ho so Du an Tuyen duong sat Ben Thanh Can Gio",
     "parent_id": "1W9mL2MhQ1XOSq4R6E-Fyx_6C53mxUW1G",
     "modified_time": "2026-06-08T03:41:18.458Z"
+  },
+  {
+    "id": "1JeZTbGL__Yhaq-5Drbd656bDfX9aaL_M",
+    "name": "Hình ảnh",
+    "parent_id": "1xKIHK3U7u0FwEVV2Wx4yLUwUgYEp0_3v",
+    "modified_time": "2026-04-15T03:27:38.402Z"
   },
   {
     "id": "15-dIyqkdUSvKR6-ruqCa5POAILCu-Apl",
@@ -1974,52 +1980,106 @@
     "modified_time": "2026-05-16T03:52:45.867Z"
   },
   {
-    "id": "1fgoVEO6rtQN_IHKpxxG6GPgKuGwUCFAw",
-    "name": "6. Báo cáo vướng mắc GPMB",
-    "parent_id": "19C-J8T0Ynz-DQJL75HAWB82IZYpOGMho",
-    "modified_time": "2026-05-04T03:08:48.292Z"
-  },
-  {
-    "id": "1B1MP_7xF34sn0j6I8chfBJA_qZtyQq0m",
-    "name": "Khu đầu mối hạ tầng kỹ thuật",
-    "parent_id": "19C-J8T0Ynz-DQJL75HAWB82IZYpOGMho",
-    "modified_time": "2026-02-27T03:26:47.357Z"
-  },
-  {
     "id": "1pVY7pPwE7yzZ8BvnB4vvqBiuKgN9AOE3",
     "name": "old",
     "parent_id": "1brzpg3n16HX5Uhr4LJbcszdq0K_Hb7y_",
     "modified_time": "2026-07-06T06:45:49.430Z"
   },
   {
-    "id": "1h0cQn-l0umIB28nifsAyu3gQFDUtHs7a",
-    "name": "2. Kinh nghiệm nhà thầu",
-    "parent_id": "119tDNl4VAKbLpkA8ISNtVHmjzMHHvCCx",
-    "modified_time": "2026-05-20T10:25:00.518Z"
+    "id": "14Uq4AN9rWdmIfQVamKD16ZjzHlQinVZv",
+    "name": "Đánh giá NLNT gói TV5",
+    "parent_id": "1josX_yo6kRSJ9_hMa3Gh9yCGVHxEia7M",
+    "modified_time": "2026-07-15T03:56:51.374Z"
   },
   {
-    "id": "1la4GNQ6HcX_myXi_yEoiBqTfSUQjPqyu",
-    "name": "1. Pháp lý công ty",
-    "parent_id": "119tDNl4VAKbLpkA8ISNtVHmjzMHHvCCx",
-    "modified_time": "2026-05-20T10:24:59.843Z"
+    "id": "1M4dK-bS0c7bnWv9NGTCihtfsBsEUma1r",
+    "name": "5. NHAN SU BT-CG TV2",
+    "parent_id": "1cmUl0AD6YrZGSTGBlkbMmhb318wcvEO3",
+    "modified_time": "2026-05-17T10:37:34.426Z"
   },
   {
-    "id": "1YSpVazGS7VbprCTVyKn9ZYtr9rITzFbe",
-    "name": "TV4 Tam Kiệt",
-    "parent_id": "119tDNl4VAKbLpkA8ISNtVHmjzMHHvCCx",
-    "modified_time": "2026-05-20T10:24:33.594Z"
+    "id": "1GpXVfbSsVst06HvMg9A_3i0Lh3OdtT0h",
+    "name": "PDF - GPMB BT-CG",
+    "parent_id": "1LfMtLFx9H1qJoWSAsGKM2is3tPnwcD3H",
+    "modified_time": "2026-03-30T11:14:10.848Z"
   },
   {
-    "id": "17JFxKrxDOINHLMufR8e6nlS8UfYwDfdB",
-    "name": "2. NV va chi phi tham tra",
-    "parent_id": "119tDNl4VAKbLpkA8ISNtVHmjzMHHvCCx",
-    "modified_time": "2026-05-20T03:37:22.000Z"
+    "id": "1Art9oGVgbtYvOpwD35fubAbkKILX9DtG",
+    "name": "Dinh kem BB kiem tra",
+    "parent_id": "1aT3Rg_JYC8gXgE9uWqidzLPzYzLkEOo9",
+    "modified_time": "2026-06-22T09:31:29.720Z"
   },
   {
-    "id": "1DjtBdnocfQPgvun7t3DxRAdrhPb2qQsv",
-    "name": "3. HỒ SƠ NHÂN SỰ THỰC HIỆN",
-    "parent_id": "119tDNl4VAKbLpkA8ISNtVHmjzMHHvCCx",
-    "modified_time": "2026-05-20T01:21:08.000Z"
+    "id": "16JYn9wak6q_D68HY_yB9w8hSUXXhKYt0",
+    "name": "Tham khao",
+    "parent_id": "1aT3Rg_JYC8gXgE9uWqidzLPzYzLkEOo9",
+    "modified_time": "2026-06-22T09:31:29.646Z"
+  },
+  {
+    "id": "1K7rBnnuUab5WS3kQnroztxzPh4AhXOG0",
+    "name": "2. Hội đồng thẩm định ĐTM",
+    "parent_id": "1eMQDi1wweq3ltJ0I49m5vHpo45VVnkJ3",
+    "modified_time": "2026-07-15T04:03:39.732Z"
+  },
+  {
+    "id": "1M8Dq0zEYvFK01uGoy1K1BF3bCUy3dZpr",
+    "name": "1. Pháp lý đầu vào",
+    "parent_id": "1eMQDi1wweq3ltJ0I49m5vHpo45VVnkJ3",
+    "modified_time": "2026-07-15T04:03:34.779Z"
+  },
+  {
+    "id": "1sNZxLUbPQ9TOirg_-Ogfo4WoRYbjNz_V",
+    "name": "TV",
+    "parent_id": "1eMQDi1wweq3ltJ0I49m5vHpo45VVnkJ3",
+    "modified_time": "2026-03-22T06:01:19.273Z"
+  },
+  {
+    "id": "1Sg7iQ4-76rZAzc18ZScrPNz_slH8KYVh",
+    "name": "2026-06-27_file TV3 gửi",
+    "parent_id": "1SzQaQm-wHOdHPIwpdnQ89zNeX-iVTO7H",
+    "modified_time": "2026-07-15T03:02:14.108Z"
+  },
+  {
+    "id": "1MPgqW1UmBUfTk4H7nF12IlGH8OrsA59Y",
+    "name": "2026-06-23_BCNCKT trình lần 3",
+    "parent_id": "1SzQaQm-wHOdHPIwpdnQ89zNeX-iVTO7H",
+    "modified_time": "2026-07-15T03:01:50.749Z"
+  },
+  {
+    "id": "1hUcLbV_3ZweTI96kNczZEYDhnZo1FBiQ",
+    "name": "2026-06-06_BCNCKT trình lần 2",
+    "parent_id": "1SzQaQm-wHOdHPIwpdnQ89zNeX-iVTO7H",
+    "modified_time": "2026-07-15T03:01:44.445Z"
+  },
+  {
+    "id": "1VPTPnQ-eQbmZDyhAqbnwzR4IMNlJiC91",
+    "name": "2026-05-22_BCNCKT trình lần 1",
+    "parent_id": "1SzQaQm-wHOdHPIwpdnQ89zNeX-iVTO7H",
+    "modified_time": "2026-07-15T03:01:37.303Z"
+  },
+  {
+    "id": "145dArwOKFzZAkEhu9GNNOgu7L04JI9n5",
+    "name": "2026-07-07_TMDT GPMB (BT-CG)",
+    "parent_id": "1SzQaQm-wHOdHPIwpdnQ89zNeX-iVTO7H",
+    "modified_time": "2026-07-15T03:00:58.474Z"
+  },
+  {
+    "id": "1MIUTt7kBt24UGf6dvZbn3KEtgLa6bPsH",
+    "name": "Tv4",
+    "parent_id": "1pi7JlEBFJN9oGHjWCKpuMlgFGWZ79rB4",
+    "modified_time": "2026-05-20T10:53:44.527Z"
+  },
+  {
+    "id": "1NebACmJjdKs_YdZpQZIxIocoHl-AMcsu",
+    "name": "Tv3",
+    "parent_id": "1pi7JlEBFJN9oGHjWCKpuMlgFGWZ79rB4",
+    "modified_time": "2026-05-20T10:53:30.929Z"
+  },
+  {
+    "id": "137P1xVyudgj9eJUXg1RmelPNI3ejDGk0",
+    "name": "Tv5",
+    "parent_id": "1pi7JlEBFJN9oGHjWCKpuMlgFGWZ79rB4",
+    "modified_time": "2026-05-20T10:44:57.113Z"
   },
   {
     "id": "1bZyJOjKqHOhTZDRqLpT4RRw8KqQIBl6W",
@@ -2050,6 +2110,12 @@
     "name": "Đo đạc",
     "parent_id": "13tvZzHHsajGrwMPjQV_j0PKhZ-VpvGpF",
     "modified_time": "2026-03-23T04:19:13.280Z"
+  },
+  {
+    "id": "1RBFmYJ6J4_bbPbyOIFeS6-clBKy22Fv_",
+    "name": "Hình ảnh",
+    "parent_id": "1O3WisUtQLjCr5IXchjlwtV4zr3ulJ1BZ",
+    "modified_time": "2026-07-03T03:48:07.825Z"
   },
   {
     "id": "1p8MArY77hA2ZRrQxPYzWhlYqT9PKgKtR",
@@ -2106,112 +2172,46 @@
     "modified_time": "2026-06-26T07:05:51.258Z"
   },
   {
-    "id": "1RBFmYJ6J4_bbPbyOIFeS6-clBKy22Fv_",
-    "name": "Hình ảnh",
-    "parent_id": "1O3WisUtQLjCr5IXchjlwtV4zr3ulJ1BZ",
-    "modified_time": "2026-07-03T03:48:07.825Z"
-  },
-  {
     "id": "1z7Oix2FVbll6sO3EUy483tpEtGxg9ztF",
     "name": "Pháp lý",
     "parent_id": "1DulXPcaRHqlZ4kbiPOb95cSjaQqj-B3i",
     "modified_time": "2026-06-27T04:08:47.069Z"
   },
   {
-    "id": "14Uq4AN9rWdmIfQVamKD16ZjzHlQinVZv",
-    "name": "Đánh giá NLNT gói TV5",
-    "parent_id": "1josX_yo6kRSJ9_hMa3Gh9yCGVHxEia7M",
-    "modified_time": "2026-07-15T03:56:51.374Z"
+    "id": "1h0cQn-l0umIB28nifsAyu3gQFDUtHs7a",
+    "name": "2. Kinh nghiệm nhà thầu",
+    "parent_id": "119tDNl4VAKbLpkA8ISNtVHmjzMHHvCCx",
+    "modified_time": "2026-05-20T10:25:00.518Z"
   },
   {
-    "id": "1M4dK-bS0c7bnWv9NGTCihtfsBsEUma1r",
-    "name": "5. NHAN SU BT-CG TV2",
-    "parent_id": "1cmUl0AD6YrZGSTGBlkbMmhb318wcvEO3",
-    "modified_time": "2026-05-17T10:37:34.426Z"
+    "id": "1la4GNQ6HcX_myXi_yEoiBqTfSUQjPqyu",
+    "name": "1. Pháp lý công ty",
+    "parent_id": "119tDNl4VAKbLpkA8ISNtVHmjzMHHvCCx",
+    "modified_time": "2026-05-20T10:24:59.843Z"
   },
   {
-    "id": "1Art9oGVgbtYvOpwD35fubAbkKILX9DtG",
-    "name": "Dinh kem BB kiem tra",
-    "parent_id": "1aT3Rg_JYC8gXgE9uWqidzLPzYzLkEOo9",
-    "modified_time": "2026-06-22T09:31:29.720Z"
+    "id": "1YSpVazGS7VbprCTVyKn9ZYtr9rITzFbe",
+    "name": "TV4 Tam Kiệt",
+    "parent_id": "119tDNl4VAKbLpkA8ISNtVHmjzMHHvCCx",
+    "modified_time": "2026-05-20T10:24:33.594Z"
   },
   {
-    "id": "16JYn9wak6q_D68HY_yB9w8hSUXXhKYt0",
-    "name": "Tham khao",
-    "parent_id": "1aT3Rg_JYC8gXgE9uWqidzLPzYzLkEOo9",
-    "modified_time": "2026-06-22T09:31:29.646Z"
+    "id": "17JFxKrxDOINHLMufR8e6nlS8UfYwDfdB",
+    "name": "2. NV va chi phi tham tra",
+    "parent_id": "119tDNl4VAKbLpkA8ISNtVHmjzMHHvCCx",
+    "modified_time": "2026-05-20T03:37:22.000Z"
   },
   {
-    "id": "1K7rBnnuUab5WS3kQnroztxzPh4AhXOG0",
-    "name": "2. Hội đồng thẩm định ĐTM",
-    "parent_id": "1eMQDi1wweq3ltJ0I49m5vHpo45VVnkJ3",
-    "modified_time": "2026-07-15T04:03:39.732Z"
+    "id": "1DjtBdnocfQPgvun7t3DxRAdrhPb2qQsv",
+    "name": "3. HỒ SƠ NHÂN SỰ THỰC HIỆN",
+    "parent_id": "119tDNl4VAKbLpkA8ISNtVHmjzMHHvCCx",
+    "modified_time": "2026-05-20T01:21:08.000Z"
   },
   {
-    "id": "1M8Dq0zEYvFK01uGoy1K1BF3bCUy3dZpr",
-    "name": "1. Pháp lý đầu vào",
-    "parent_id": "1eMQDi1wweq3ltJ0I49m5vHpo45VVnkJ3",
-    "modified_time": "2026-07-15T04:03:34.779Z"
-  },
-  {
-    "id": "1sNZxLUbPQ9TOirg_-Ogfo4WoRYbjNz_V",
-    "name": "TV",
-    "parent_id": "1eMQDi1wweq3ltJ0I49m5vHpo45VVnkJ3",
-    "modified_time": "2026-03-22T06:01:19.273Z"
-  },
-  {
-    "id": "1GpXVfbSsVst06HvMg9A_3i0Lh3OdtT0h",
-    "name": "PDF - GPMB BT-CG",
-    "parent_id": "1LfMtLFx9H1qJoWSAsGKM2is3tPnwcD3H",
-    "modified_time": "2026-03-30T11:14:10.848Z"
-  },
-  {
-    "id": "1Sg7iQ4-76rZAzc18ZScrPNz_slH8KYVh",
-    "name": "2026-06-27_file TV3 gửi",
-    "parent_id": "1SzQaQm-wHOdHPIwpdnQ89zNeX-iVTO7H",
-    "modified_time": "2026-07-15T03:02:14.108Z"
-  },
-  {
-    "id": "1MPgqW1UmBUfTk4H7nF12IlGH8OrsA59Y",
-    "name": "2026-06-23_BCNCKT trình lần 3",
-    "parent_id": "1SzQaQm-wHOdHPIwpdnQ89zNeX-iVTO7H",
-    "modified_time": "2026-07-15T03:01:50.749Z"
-  },
-  {
-    "id": "1hUcLbV_3ZweTI96kNczZEYDhnZo1FBiQ",
-    "name": "2026-06-06_BCNCKT trình lần 2",
-    "parent_id": "1SzQaQm-wHOdHPIwpdnQ89zNeX-iVTO7H",
-    "modified_time": "2026-07-15T03:01:44.445Z"
-  },
-  {
-    "id": "1VPTPnQ-eQbmZDyhAqbnwzR4IMNlJiC91",
-    "name": "2026-05-22_BCNCKT trình lần 1",
-    "parent_id": "1SzQaQm-wHOdHPIwpdnQ89zNeX-iVTO7H",
-    "modified_time": "2026-07-15T03:01:37.303Z"
-  },
-  {
-    "id": "145dArwOKFzZAkEhu9GNNOgu7L04JI9n5",
-    "name": "2026-07-07_TMDT GPMB (BT-CG)",
-    "parent_id": "1SzQaQm-wHOdHPIwpdnQ89zNeX-iVTO7H",
-    "modified_time": "2026-07-15T03:00:58.474Z"
-  },
-  {
-    "id": "1MIUTt7kBt24UGf6dvZbn3KEtgLa6bPsH",
-    "name": "Tv4",
-    "parent_id": "1pi7JlEBFJN9oGHjWCKpuMlgFGWZ79rB4",
-    "modified_time": "2026-05-20T10:53:44.527Z"
-  },
-  {
-    "id": "1NebACmJjdKs_YdZpQZIxIocoHl-AMcsu",
-    "name": "Tv3",
-    "parent_id": "1pi7JlEBFJN9oGHjWCKpuMlgFGWZ79rB4",
-    "modified_time": "2026-05-20T10:53:30.929Z"
-  },
-  {
-    "id": "137P1xVyudgj9eJUXg1RmelPNI3ejDGk0",
-    "name": "Tv5",
-    "parent_id": "1pi7JlEBFJN9oGHjWCKpuMlgFGWZ79rB4",
-    "modified_time": "2026-05-20T10:44:57.113Z"
+    "id": "1gYop50PILGnw_09VUejbN1kkYk1RumOE",
+    "name": "ANH-JPG",
+    "parent_id": "10RDyUrHmYV-qlc03ErwaB51ufS4uhb6S",
+    "modified_time": "2026-05-18T03:05:00.503Z"
   },
   {
     "id": "1-HKQXmMv1DmlYXkRoa5c_YFjhMJkbV56",
@@ -2230,24 +2230,6 @@
     "name": "Duong_sat_BTCG_V0.2026.June.08",
     "parent_id": "1cUPNPvsr9ucilszQ2ruvun0YN3Fkf_cO",
     "modified_time": "2026-06-08T03:41:13.066Z"
-  },
-  {
-    "id": "1gYop50PILGnw_09VUejbN1kkYk1RumOE",
-    "name": "ANH-JPG",
-    "parent_id": "10RDyUrHmYV-qlc03ErwaB51ufS4uhb6S",
-    "modified_time": "2026-05-18T03:05:00.503Z"
-  },
-  {
-    "id": "1iaSZMbmdYl6FfuQ15Ayh-LdxVTCIA3KL",
-    "name": "Tap II_Ban ve so bo",
-    "parent_id": "1NvcADjJ7TEGsjky-jB2cyXWO0YFoV74W",
-    "modified_time": "2026-08-14T02:20:10.396Z"
-  },
-  {
-    "id": "1ejoLlsY157ypI7Yfu6jUBdFsfDcglORC",
-    "name": "Khảo sát lập BCNCKT",
-    "parent_id": "1DZ9CJq9fK-q8RBKnwaNEDSzNskT4dSTD",
-    "modified_time": "2026-05-16T03:58:38.726Z"
   },
   {
     "id": "185eo9wWHFiyz54p7-1joQh7hFUWV73QL",
@@ -2284,6 +2266,18 @@
     "name": "01. Tờ trình",
     "parent_id": "15-dIyqkdUSvKR6-ruqCa5POAILCu-Apl",
     "modified_time": "2026-08-14T02:18:52.723Z"
+  },
+  {
+    "id": "1ejoLlsY157ypI7Yfu6jUBdFsfDcglORC",
+    "name": "Khảo sát lập BCNCKT",
+    "parent_id": "1DZ9CJq9fK-q8RBKnwaNEDSzNskT4dSTD",
+    "modified_time": "2026-05-16T03:58:38.726Z"
+  },
+  {
+    "id": "1iaSZMbmdYl6FfuQ15Ayh-LdxVTCIA3KL",
+    "name": "Tap II_Ban ve so bo",
+    "parent_id": "1NvcADjJ7TEGsjky-jB2cyXWO0YFoV74W",
+    "modified_time": "2026-08-14T02:20:10.396Z"
   },
   {
     "id": "16TSesJjXUXN7NuXazWGfqPpeCU5RbHVe",
@@ -2328,64 +2322,40 @@
     "modified_time": "2026-01-25T11:07:43.982Z"
   },
   {
-    "id": "1aWRiX1SC2a5VnZwIQU6PL7dCDCkhZwRk",
-    "name": "E-ĐXKT tham tra BCNCKT GPMB BT-CG",
-    "parent_id": "1YSpVazGS7VbprCTVyKn9ZYtr9rITzFbe",
-    "modified_time": "2026-05-20T10:24:59.830Z"
+    "id": "1vT2LanPslJ_e8QjuxIJo2PN00FSs_YCH",
+    "name": "1 - Phap ly DA",
+    "parent_id": "1MPgqW1UmBUfTk4H7nF12IlGH8OrsA59Y",
+    "modified_time": "2026-06-27T04:55:06.214Z"
   },
   {
-    "id": "1gfsizSfaW7PYDWsCtha4zlIa-vjmbJc0",
-    "name": "3. Bao cao tai chinh Tam Kiet",
-    "parent_id": "1la4GNQ6HcX_myXi_yEoiBqTfSUQjPqyu",
-    "modified_time": "2026-05-19T19:48:56.000Z"
+    "id": "1leQjg0u9b88buGIeydgc8UWHacOnfQMd",
+    "name": "2 - BCNCKT DA",
+    "parent_id": "1MPgqW1UmBUfTk4H7nF12IlGH8OrsA59Y",
+    "modified_time": "2026-06-27T04:54:58.972Z"
   },
   {
-    "id": "1ztYjuRl2SD5N27DcNfHg4u4lbdavNePT",
-    "name": "2. Giay CNKD va Chung chi nang luc",
-    "parent_id": "1la4GNQ6HcX_myXi_yEoiBqTfSUQjPqyu",
-    "modified_time": "2026-05-19T03:17:18.000Z"
+    "id": "1dcG7v2tu82KHIhLKOYMRkzJOsCI_e4zi",
+    "name": "TMDT GPMB (BT-CG) 24.06.2026",
+    "parent_id": "1Sg7iQ4-76rZAzc18ZScrPNz_slH8KYVh",
+    "modified_time": "2026-06-26T08:35:17.736Z"
   },
   {
-    "id": "19TrrgR3Do7Rg_0JGJsdQRLB7cdQV8wlr",
-    "name": "0- MỤC LỤC HS",
-    "parent_id": "1la4GNQ6HcX_myXi_yEoiBqTfSUQjPqyu",
-    "modified_time": "2026-05-19T03:17:18.000Z"
+    "id": "1X5_0QAH7N58UOG6J1A5vj5J59uWFMdIc",
+    "name": "CPTV",
+    "parent_id": "145dArwOKFzZAkEhu9GNNOgu7L04JI9n5",
+    "modified_time": "2026-06-24T08:13:19.085Z"
   },
   {
-    "id": "1JwuA8arGDBhory49vHDoaQc_5aNMqqWa",
-    "name": "1. CƠ CẤU TỔ CHỨC",
-    "parent_id": "1la4GNQ6HcX_myXi_yEoiBqTfSUQjPqyu",
-    "modified_time": "2026-05-19T03:17:18.000Z"
+    "id": "1eINdozsNUErJt4aUs6kTtnh-xiDmtwgq",
+    "name": "BCNCKT",
+    "parent_id": "1VPTPnQ-eQbmZDyhAqbnwzR4IMNlJiC91",
+    "modified_time": "2026-05-27T02:33:13.861Z"
   },
   {
-    "id": "1mENOuDbmQmJOsGESAOq6zRA9scOnIyEA",
-    "name": "Thẩm tra - Cao tốc mộc bài - TP4",
-    "parent_id": "1h0cQn-l0umIB28nifsAyu3gQFDUtHs7a",
-    "modified_time": "2026-05-19T19:54:12.000Z"
-  },
-  {
-    "id": "1Bki7VT4u4oeGAcYWEDt7cERkJa5y6IxO",
-    "name": "Rạch Văn Thánh",
-    "parent_id": "1h0cQn-l0umIB28nifsAyu3gQFDUtHs7a",
-    "modified_time": "2026-05-19T19:54:12.000Z"
-  },
-  {
-    "id": "1alXaia1bKNcsSxDWJqEMI-HasbLLq5FD",
-    "name": "Cầu đường Bình Tiên",
-    "parent_id": "1h0cQn-l0umIB28nifsAyu3gQFDUtHs7a",
-    "modified_time": "2026-05-19T19:54:12.000Z"
-  },
-  {
-    "id": "16AoV5q7m4DKVrcEiWPoGl8_q4FXjuhrf",
-    "name": "Quốc lộ 1A - DATP1",
-    "parent_id": "1h0cQn-l0umIB28nifsAyu3gQFDUtHs7a",
-    "modified_time": "2026-05-19T19:54:12.000Z"
-  },
-  {
-    "id": "1ZfcpahX9JDF8aOVQEsnNKD5uRryq6gek",
-    "name": "Quốc lộ 1A - DATP2",
-    "parent_id": "1h0cQn-l0umIB28nifsAyu3gQFDUtHs7a",
-    "modified_time": "2026-05-19T19:54:12.000Z"
+    "id": "1jjoJwrJGmipoOA4YdMbq0FqO876_zeez",
+    "name": "BDVT-Tuyen Duong Sat Ben Thanh - Can Gio - IN KY",
+    "parent_id": "1bZyJOjKqHOhTZDRqLpT4RRw8KqQIBl6W",
+    "modified_time": "2026-06-13T07:57:47.458Z"
   },
   {
     "id": "1m_6m5Nsi9tvsYM8-1-jGwaEhgzgLuuhm",
@@ -2448,16 +2418,124 @@
     "modified_time": "2026-05-25T02:38:04.254Z"
   },
   {
-    "id": "1jjoJwrJGmipoOA4YdMbq0FqO876_zeez",
-    "name": "BDVT-Tuyen Duong Sat Ben Thanh - Can Gio - IN KY",
-    "parent_id": "1bZyJOjKqHOhTZDRqLpT4RRw8KqQIBl6W",
-    "modified_time": "2026-06-13T07:57:47.458Z"
-  },
-  {
     "id": "1_v4XIW4Nlk0pxeIZ5VSm7crsH2plhKY3",
     "name": "2025-05-24",
     "parent_id": "1-yZh0PV_1uwzTiV-0zMbKAc83pv4TE5X",
     "modified_time": "2026-05-26T07:49:37.768Z"
+  },
+  {
+    "id": "1U4ngN575sQyECif6cv9AFBJjiTvF43lY",
+    "name": "CAD",
+    "parent_id": "1zvM-3XhtgxOZ6sTN3pDF2AovSvgWYai0",
+    "modified_time": "2026-06-26T06:57:40.844Z"
+  },
+  {
+    "id": "1AIAB31WStNK0PQgjUsKRgBQ__Xkh4pS1",
+    "name": "6. Xã Nhà Bè",
+    "parent_id": "1RBFmYJ6J4_bbPbyOIFeS6-clBKy22Fv_",
+    "modified_time": "2026-07-03T03:56:54.982Z"
+  },
+  {
+    "id": "1FPx04bcpJ22vIBhvob8I-SUoQIxFZSps",
+    "name": "9. Xã Cần Giờ",
+    "parent_id": "1RBFmYJ6J4_bbPbyOIFeS6-clBKy22Fv_",
+    "modified_time": "2026-07-03T03:54:18.191Z"
+  },
+  {
+    "id": "10YWi88mFDTQGrLfne6EQ5k7_l17CaXfb",
+    "name": "CAD",
+    "parent_id": "1IoORfalFq2QVShGsmaJwTGyrW7ghtATY",
+    "modified_time": "2026-06-26T06:56:52.144Z"
+  },
+  {
+    "id": "18kCNmcW-6BcwUlRKes2z-WCkcXpJa2Z-",
+    "name": "CAD",
+    "parent_id": "1MqrD0a4rbOSCi7AF0guHZBAnrJuOjK50",
+    "modified_time": "2026-06-25T03:56:39.244Z"
+  },
+  {
+    "id": "1VlPQMrx99KRgbLcSCm6_tIFTI_2ntu9j",
+    "name": "CAD",
+    "parent_id": "1dsxG9J-JWERwQYhKSLFOGKaAzQZHn3ZU",
+    "modified_time": "2026-06-25T03:58:57.023Z"
+  },
+  {
+    "id": "1oabPibmCrrwlbfGHcIgHitU-44gDcy9z",
+    "name": "CAD",
+    "parent_id": "1ev4-TVRZMInzmdbo116zhLlJQhNdfrSB",
+    "modified_time": "2026-06-26T06:43:00.259Z"
+  },
+  {
+    "id": "1el9nyr77oKEGhFgUnLsqCtF25iFl3ro7",
+    "name": "CAD",
+    "parent_id": "1Yqdr4TDWVBis2DVLg-Nc9bUUUf99XgMS",
+    "modified_time": "2026-06-25T03:58:15.316Z"
+  },
+  {
+    "id": "1aWRiX1SC2a5VnZwIQU6PL7dCDCkhZwRk",
+    "name": "E-ĐXKT tham tra BCNCKT GPMB BT-CG",
+    "parent_id": "1YSpVazGS7VbprCTVyKn9ZYtr9rITzFbe",
+    "modified_time": "2026-05-20T10:24:59.830Z"
+  },
+  {
+    "id": "1mENOuDbmQmJOsGESAOq6zRA9scOnIyEA",
+    "name": "Thẩm tra - Cao tốc mộc bài - TP4",
+    "parent_id": "1h0cQn-l0umIB28nifsAyu3gQFDUtHs7a",
+    "modified_time": "2026-05-19T19:54:12.000Z"
+  },
+  {
+    "id": "1Bki7VT4u4oeGAcYWEDt7cERkJa5y6IxO",
+    "name": "Rạch Văn Thánh",
+    "parent_id": "1h0cQn-l0umIB28nifsAyu3gQFDUtHs7a",
+    "modified_time": "2026-05-19T19:54:12.000Z"
+  },
+  {
+    "id": "1alXaia1bKNcsSxDWJqEMI-HasbLLq5FD",
+    "name": "Cầu đường Bình Tiên",
+    "parent_id": "1h0cQn-l0umIB28nifsAyu3gQFDUtHs7a",
+    "modified_time": "2026-05-19T19:54:12.000Z"
+  },
+  {
+    "id": "16AoV5q7m4DKVrcEiWPoGl8_q4FXjuhrf",
+    "name": "Quốc lộ 1A - DATP1",
+    "parent_id": "1h0cQn-l0umIB28nifsAyu3gQFDUtHs7a",
+    "modified_time": "2026-05-19T19:54:12.000Z"
+  },
+  {
+    "id": "1ZfcpahX9JDF8aOVQEsnNKD5uRryq6gek",
+    "name": "Quốc lộ 1A - DATP2",
+    "parent_id": "1h0cQn-l0umIB28nifsAyu3gQFDUtHs7a",
+    "modified_time": "2026-05-19T19:54:12.000Z"
+  },
+  {
+    "id": "1gfsizSfaW7PYDWsCtha4zlIa-vjmbJc0",
+    "name": "3. Bao cao tai chinh Tam Kiet",
+    "parent_id": "1la4GNQ6HcX_myXi_yEoiBqTfSUQjPqyu",
+    "modified_time": "2026-05-19T19:48:56.000Z"
+  },
+  {
+    "id": "1ztYjuRl2SD5N27DcNfHg4u4lbdavNePT",
+    "name": "2. Giay CNKD va Chung chi nang luc",
+    "parent_id": "1la4GNQ6HcX_myXi_yEoiBqTfSUQjPqyu",
+    "modified_time": "2026-05-19T03:17:18.000Z"
+  },
+  {
+    "id": "19TrrgR3Do7Rg_0JGJsdQRLB7cdQV8wlr",
+    "name": "0- MỤC LỤC HS",
+    "parent_id": "1la4GNQ6HcX_myXi_yEoiBqTfSUQjPqyu",
+    "modified_time": "2026-05-19T03:17:18.000Z"
+  },
+  {
+    "id": "1JwuA8arGDBhory49vHDoaQc_5aNMqqWa",
+    "name": "1. CƠ CẤU TỔ CHỨC",
+    "parent_id": "1la4GNQ6HcX_myXi_yEoiBqTfSUQjPqyu",
+    "modified_time": "2026-05-19T03:17:18.000Z"
+  },
+  {
+    "id": "1va3Vn3FW7a-p6FfYbVnPpx-MfLKu9656",
+    "name": "CAD",
+    "parent_id": "1iXs2Z4HYdoGu8eMS1aNWGkiWn1ba4cgf",
+    "modified_time": "2026-06-25T03:57:26.544Z"
   },
   {
     "id": "1dZq2tg6Ch51gofYIkGq4kK1Ih_4evSHk",
@@ -2520,106 +2598,10 @@
     "modified_time": "2026-05-20T02:20:58.000Z"
   },
   {
-    "id": "10YWi88mFDTQGrLfne6EQ5k7_l17CaXfb",
-    "name": "CAD",
-    "parent_id": "1IoORfalFq2QVShGsmaJwTGyrW7ghtATY",
-    "modified_time": "2026-06-26T06:56:52.144Z"
-  },
-  {
-    "id": "1U4ngN575sQyECif6cv9AFBJjiTvF43lY",
-    "name": "CAD",
-    "parent_id": "1zvM-3XhtgxOZ6sTN3pDF2AovSvgWYai0",
-    "modified_time": "2026-06-26T06:57:40.844Z"
-  },
-  {
-    "id": "18kCNmcW-6BcwUlRKes2z-WCkcXpJa2Z-",
-    "name": "CAD",
-    "parent_id": "1MqrD0a4rbOSCi7AF0guHZBAnrJuOjK50",
-    "modified_time": "2026-06-25T03:56:39.244Z"
-  },
-  {
-    "id": "1VlPQMrx99KRgbLcSCm6_tIFTI_2ntu9j",
-    "name": "CAD",
-    "parent_id": "1dsxG9J-JWERwQYhKSLFOGKaAzQZHn3ZU",
-    "modified_time": "2026-06-25T03:58:57.023Z"
-  },
-  {
-    "id": "1oabPibmCrrwlbfGHcIgHitU-44gDcy9z",
-    "name": "CAD",
-    "parent_id": "1ev4-TVRZMInzmdbo116zhLlJQhNdfrSB",
-    "modified_time": "2026-06-26T06:43:00.259Z"
-  },
-  {
-    "id": "1el9nyr77oKEGhFgUnLsqCtF25iFl3ro7",
-    "name": "CAD",
-    "parent_id": "1Yqdr4TDWVBis2DVLg-Nc9bUUUf99XgMS",
-    "modified_time": "2026-06-25T03:58:15.316Z"
-  },
-  {
-    "id": "1va3Vn3FW7a-p6FfYbVnPpx-MfLKu9656",
-    "name": "CAD",
-    "parent_id": "1iXs2Z4HYdoGu8eMS1aNWGkiWn1ba4cgf",
-    "modified_time": "2026-06-25T03:57:26.544Z"
-  },
-  {
-    "id": "1AIAB31WStNK0PQgjUsKRgBQ__Xkh4pS1",
-    "name": "6. Xã Nhà Bè",
-    "parent_id": "1RBFmYJ6J4_bbPbyOIFeS6-clBKy22Fv_",
-    "modified_time": "2026-07-03T03:56:54.982Z"
-  },
-  {
-    "id": "1FPx04bcpJ22vIBhvob8I-SUoQIxFZSps",
-    "name": "9. Xã Cần Giờ",
-    "parent_id": "1RBFmYJ6J4_bbPbyOIFeS6-clBKy22Fv_",
-    "modified_time": "2026-07-03T03:54:18.191Z"
-  },
-  {
-    "id": "1dcG7v2tu82KHIhLKOYMRkzJOsCI_e4zi",
-    "name": "TMDT GPMB (BT-CG) 24.06.2026",
-    "parent_id": "1Sg7iQ4-76rZAzc18ZScrPNz_slH8KYVh",
-    "modified_time": "2026-06-26T08:35:17.736Z"
-  },
-  {
-    "id": "1X5_0QAH7N58UOG6J1A5vj5J59uWFMdIc",
-    "name": "CPTV",
-    "parent_id": "145dArwOKFzZAkEhu9GNNOgu7L04JI9n5",
-    "modified_time": "2026-06-24T08:13:19.085Z"
-  },
-  {
-    "id": "1vT2LanPslJ_e8QjuxIJo2PN00FSs_YCH",
-    "name": "1 - Phap ly DA",
-    "parent_id": "1MPgqW1UmBUfTk4H7nF12IlGH8OrsA59Y",
-    "modified_time": "2026-06-27T04:55:06.214Z"
-  },
-  {
-    "id": "1leQjg0u9b88buGIeydgc8UWHacOnfQMd",
-    "name": "2 - BCNCKT DA",
-    "parent_id": "1MPgqW1UmBUfTk4H7nF12IlGH8OrsA59Y",
-    "modified_time": "2026-06-27T04:54:58.972Z"
-  },
-  {
-    "id": "1eINdozsNUErJt4aUs6kTtnh-xiDmtwgq",
-    "name": "BCNCKT",
-    "parent_id": "1VPTPnQ-eQbmZDyhAqbnwzR4IMNlJiC91",
-    "modified_time": "2026-05-27T02:33:13.861Z"
-  },
-  {
     "id": "1pPFCd48n3gggqfsgMdx5sTm7t_Igp6lA",
     "name": "26.03.31.Binh do hien trang - Standard",
     "parent_id": "18z2WIG4QzUOI6yNlBr8czh0lfA6jPukw",
     "modified_time": "2026-07-21T08:20:28.579Z"
-  },
-  {
-    "id": "1e4rdDT9t1QqPFE4oovIDsP7JpQN_8g-m",
-    "name": "Duong_sat_BTCG",
-    "parent_id": "1aihOkor3tD2UYcjzzbauAib3NSAR6Y6A",
-    "modified_time": "2026-06-08T03:38:57.624Z"
-  },
-  {
-    "id": "1Q_LwTbKyOewFdZnUEP9iyu-14jWxVTM-",
-    "name": "A3 keo dai",
-    "parent_id": "1iaSZMbmdYl6FfuQ15Ayh-LdxVTCIA3KL",
-    "modified_time": "2026-08-14T02:20:10.670Z"
   },
   {
     "id": "1fRumLxBWrBQO5fNidrqLZgekFfjQ3hJB",
@@ -2652,10 +2634,16 @@
     "modified_time": "2026-08-14T02:19:03.978Z"
   },
   {
-    "id": "1D60gthNHXczc5R7VkNCkD0X7XNaMs9cN",
-    "name": "CAD File",
-    "parent_id": "17hBnZBcZcxNGufOCCdLWQ9nkHFaBamNZ",
-    "modified_time": "2026-04-10T03:21:39.691Z"
+    "id": "1e4rdDT9t1QqPFE4oovIDsP7JpQN_8g-m",
+    "name": "Duong_sat_BTCG",
+    "parent_id": "1aihOkor3tD2UYcjzzbauAib3NSAR6Y6A",
+    "modified_time": "2026-06-08T03:38:57.624Z"
+  },
+  {
+    "id": "1Q_LwTbKyOewFdZnUEP9iyu-14jWxVTM-",
+    "name": "A3 keo dai",
+    "parent_id": "1iaSZMbmdYl6FfuQ15Ayh-LdxVTCIA3KL",
+    "modified_time": "2026-08-14T02:20:10.670Z"
   },
   {
     "id": "1vJsD2sJqDGGvRc1J7eF27OXXEfbh4VvY",
@@ -2676,22 +2664,28 @@
     "modified_time": "2026-02-11T07:16:23.750Z"
   },
   {
+    "id": "1D60gthNHXczc5R7VkNCkD0X7XNaMs9cN",
+    "name": "CAD File",
+    "parent_id": "17hBnZBcZcxNGufOCCdLWQ9nkHFaBamNZ",
+    "modified_time": "2026-04-10T03:21:39.691Z"
+  },
+  {
     "id": "1nhuTApxMgYd5ihPgT8mdcvDAlg48a0ij",
     "name": "CAD file",
     "parent_id": "1dwSvBcWLlMX1-ZIDUNOM_wLmIR2UF7vo",
     "modified_time": "2026-01-25T04:39:32.237Z"
   },
   {
+    "id": "1f8SgntdddZWaahMMQHiDkqpeaXCKCNSq",
+    "name": "CPTV",
+    "parent_id": "1dcG7v2tu82KHIhLKOYMRkzJOsCI_e4zi",
+    "modified_time": "2026-06-24T08:13:19.085Z"
+  },
+  {
     "id": "1gtQw701BLNaB4wSb8ShmOvMfyJHid-3G",
     "name": "TAI LIEU DON GIA",
     "parent_id": "1m_6m5Nsi9tvsYM8-1-jGwaEhgzgLuuhm",
     "modified_time": "2026-05-27T09:03:10.628Z"
-  },
-  {
-    "id": "1472lpwi6dIJk4AtF4s-T4_864kTIWCMt",
-    "name": "HSNV_DUTOAN BEN THANH-CANGIO-2705",
-    "parent_id": "1yVsh5MjUxzqv1R2Kilyz3Ox2glSeV71O",
-    "modified_time": "2026-05-27T07:45:10.172Z"
   },
   {
     "id": "19UK9LLCn6vtydA0mw3zYOcycmD2QnnRP",
@@ -2706,22 +2700,16 @@
     "modified_time": "2026-05-26T07:14:28.039Z"
   },
   {
+    "id": "1472lpwi6dIJk4AtF4s-T4_864kTIWCMt",
+    "name": "HSNV_DUTOAN BEN THANH-CANGIO-2705",
+    "parent_id": "1yVsh5MjUxzqv1R2Kilyz3Ox2glSeV71O",
+    "modified_time": "2026-05-27T07:45:10.172Z"
+  },
+  {
     "id": "1zkjZ4MHrzpFJeU6RD5hW-eZv7H2e6Fu1",
     "name": "00 HSNL-TTDDBD-Ben Thanh-Can Gio",
     "parent_id": "1QeGtILh5VU47vH8QDORIfK0_0escuNBi",
     "modified_time": "2026-06-01T07:42:10.163Z"
-  },
-  {
-    "id": "1g_YadR6vZNb6nyrtAm_GLebGdHj9N7-6",
-    "name": "KHUONG LUONG DU TOAN",
-    "parent_id": "17TwY5MnT110sT-NqpdopYewpXy3_kUEE",
-    "modified_time": "2026-05-26T10:48:38.327Z"
-  },
-  {
-    "id": "1in8yAfb19kgcRqtpTBiMRso5YJFCEhwq",
-    "name": "TAI LIEU DON GIA",
-    "parent_id": "17TwY5MnT110sT-NqpdopYewpXy3_kUEE",
-    "modified_time": "2026-05-26T09:59:58.186Z"
   },
   {
     "id": "1CBRT5na0SRxGORFzMCBUYxKwkQUbNp2D",
@@ -2754,28 +2742,16 @@
     "modified_time": "2026-04-10T06:52:14.944Z"
   },
   {
-    "id": "1f8SgntdddZWaahMMQHiDkqpeaXCKCNSq",
-    "name": "CPTV",
-    "parent_id": "1dcG7v2tu82KHIhLKOYMRkzJOsCI_e4zi",
-    "modified_time": "2026-06-24T08:13:19.085Z"
+    "id": "1g_YadR6vZNb6nyrtAm_GLebGdHj9N7-6",
+    "name": "KHUONG LUONG DU TOAN",
+    "parent_id": "17TwY5MnT110sT-NqpdopYewpXy3_kUEE",
+    "modified_time": "2026-05-26T10:48:38.327Z"
   },
   {
-    "id": "1rhHfs2RgBMv8teND8AczS0qLueX9Uozd",
-    "name": "MAP_Trucau",
-    "parent_id": "1e4rdDT9t1QqPFE4oovIDsP7JpQN_8g-m",
-    "modified_time": "2026-06-08T03:38:57.624Z"
-  },
-  {
-    "id": "1niF7GrUZ0TypJdnPV7esL_qBpYf10cdh",
-    "name": "CAD_BanVe_25062026",
-    "parent_id": "1e4rdDT9t1QqPFE4oovIDsP7JpQN_8g-m",
-    "modified_time": "2026-06-08T03:38:28.691Z"
-  },
-  {
-    "id": "13fLzQCqcXd8l8fx9VTFXW-8Frh2ICmzG",
-    "name": "Map_CMD_trucau",
-    "parent_id": "1e4rdDT9t1QqPFE4oovIDsP7JpQN_8g-m",
-    "modified_time": "2026-06-08T03:37:25.742Z"
+    "id": "1in8yAfb19kgcRqtpTBiMRso5YJFCEhwq",
+    "name": "TAI LIEU DON GIA",
+    "parent_id": "17TwY5MnT110sT-NqpdopYewpXy3_kUEE",
+    "modified_time": "2026-05-26T09:59:58.186Z"
   },
   {
     "id": "1Gi1I3gdqO4S5YfNMLbhqsab3WBhpCMv_",
@@ -2800,6 +2776,24 @@
     "name": "PlotCfgs",
     "parent_id": "1pPFCd48n3gggqfsgMdx5sTm7t_Igp6lA",
     "modified_time": "2026-07-21T08:20:28.586Z"
+  },
+  {
+    "id": "1rhHfs2RgBMv8teND8AczS0qLueX9Uozd",
+    "name": "MAP_Trucau",
+    "parent_id": "1e4rdDT9t1QqPFE4oovIDsP7JpQN_8g-m",
+    "modified_time": "2026-06-08T03:38:57.624Z"
+  },
+  {
+    "id": "1niF7GrUZ0TypJdnPV7esL_qBpYf10cdh",
+    "name": "CAD_BanVe_25062026",
+    "parent_id": "1e4rdDT9t1QqPFE4oovIDsP7JpQN_8g-m",
+    "modified_time": "2026-06-08T03:38:28.691Z"
+  },
+  {
+    "id": "13fLzQCqcXd8l8fx9VTFXW-8Frh2ICmzG",
+    "name": "Map_CMD_trucau",
+    "parent_id": "1e4rdDT9t1QqPFE4oovIDsP7JpQN_8g-m",
+    "modified_time": "2026-06-08T03:37:25.742Z"
   },
   {
     "id": "1d8aiAKOeDAZiYzxTDm8y-KsU6UlO-4k7",
@@ -2940,6 +2934,30 @@
     "modified_time": "2026-01-25T04:39:32.744Z"
   },
   {
+    "id": "1I5yBA7zflzoG6sZ58HsM2EbERl6ZhM6U",
+    "name": "4 HOP DONG TUONG TU",
+    "parent_id": "1MbIVBnWPWUZUBbJ3M_Tke51yf4iQqKtI",
+    "modified_time": "2026-05-30T04:10:21.267Z"
+  },
+  {
+    "id": "1fKGURywUyfVMS1JBg4XqVTbH2l1-GzEU",
+    "name": "3 GIAY PHEP HOAT DONG ĐĐBĐ",
+    "parent_id": "1MbIVBnWPWUZUBbJ3M_Tke51yf4iQqKtI",
+    "modified_time": "2026-05-30T04:09:40.550Z"
+  },
+  {
+    "id": "17P8M6Hf_-aX72IhhR_-f5Bz_IhCv753G",
+    "name": "2 QĐ THANH LAP QĐ DOI TEN TTĐĐBĐ",
+    "parent_id": "1MbIVBnWPWUZUBbJ3M_Tke51yf4iQqKtI",
+    "modified_time": "2026-05-30T04:08:38.377Z"
+  },
+  {
+    "id": "1DT5WWXOoYLw9eMwjz4WBUVXzsmizx7iU",
+    "name": "1 GIOI THIEU",
+    "parent_id": "1MbIVBnWPWUZUBbJ3M_Tke51yf4iQqKtI",
+    "modified_time": "2026-05-30T04:08:38.257Z"
+  },
+  {
     "id": "1NKtAYkp5xjHIjB4UFxPN29QrvJrzBjgB",
     "name": "6 HOP DONG 4780 VD3 TONG THE",
     "parent_id": "1ISvVrpQvVCt9TayMLqCR3GcYG_Ev-HMJ",
@@ -2976,36 +2994,6 @@
     "modified_time": "2026-02-26T07:53:39.750Z"
   },
   {
-    "id": "1I5yBA7zflzoG6sZ58HsM2EbERl6ZhM6U",
-    "name": "4 HOP DONG TUONG TU",
-    "parent_id": "1MbIVBnWPWUZUBbJ3M_Tke51yf4iQqKtI",
-    "modified_time": "2026-05-30T04:10:21.267Z"
-  },
-  {
-    "id": "1fKGURywUyfVMS1JBg4XqVTbH2l1-GzEU",
-    "name": "3 GIAY PHEP HOAT DONG ĐĐBĐ",
-    "parent_id": "1MbIVBnWPWUZUBbJ3M_Tke51yf4iQqKtI",
-    "modified_time": "2026-05-30T04:09:40.550Z"
-  },
-  {
-    "id": "17P8M6Hf_-aX72IhhR_-f5Bz_IhCv753G",
-    "name": "2 QĐ THANH LAP QĐ DOI TEN TTĐĐBĐ",
-    "parent_id": "1MbIVBnWPWUZUBbJ3M_Tke51yf4iQqKtI",
-    "modified_time": "2026-05-30T04:08:38.377Z"
-  },
-  {
-    "id": "1DT5WWXOoYLw9eMwjz4WBUVXzsmizx7iU",
-    "name": "1 GIOI THIEU",
-    "parent_id": "1MbIVBnWPWUZUBbJ3M_Tke51yf4iQqKtI",
-    "modified_time": "2026-05-30T04:08:38.257Z"
-  },
-  {
-    "id": "16yV2xbVa6eUkU7uN4vN-N-Q0JUEf0Sb4",
-    "name": "HOP DONG 111589 NANG CAP RACH BEN MUONG",
-    "parent_id": "1A-xzNoRlwCoGVV0yMxe3kCMUtoxVTbcI",
-    "modified_time": "2026-05-22T02:41:21.124Z"
-  },
-  {
     "id": "1YNVwSKnRvseEexGXpei3w37R-8DpPNPb",
     "name": "3 HOP DONG 133199  MOC BAI",
     "parent_id": "1I5yBA7zflzoG6sZ58HsM2EbERl6ZhM6U",
@@ -3022,5 +3010,11 @@
     "name": "1 HOP DONG 121392 TRUNG NAM",
     "parent_id": "1I5yBA7zflzoG6sZ58HsM2EbERl6ZhM6U",
     "modified_time": "2026-05-30T04:10:25.537Z"
+  },
+  {
+    "id": "16yV2xbVa6eUkU7uN4vN-N-Q0JUEf0Sb4",
+    "name": "HOP DONG 111589 NANG CAP RACH BEN MUONG",
+    "parent_id": "1A-xzNoRlwCoGVV0yMxe3kCMUtoxVTbcI",
+    "modified_time": "2026-05-22T02:41:21.124Z"
   }
 ]
