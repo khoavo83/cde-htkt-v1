@@ -138,11 +138,6 @@ export default function DocumentAnalyzeModal({
 
     if (isOpen && doc) {
       fetchStaffs();
-      setAnalysisResult(null);
-      setAnalysisMode(null);
-      setExtractedText('');
-      setExtractMode(null);
-      setAiReading(false);
       setWarning('');
       setError('');
       setShowConfirm(false);
