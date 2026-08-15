@@ -50,14 +50,6 @@ export default function DocumentAnalyzeModal({
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const [analyzing, setAnalyzing] = useState(false);
-  const [extracting, setExtracting] = useState(false);
-  const [aiReading, setAiReading] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState(null);
-  const [analysisMode, setAnalysisMode] = useState(null); 
-  const [extractedText, setExtractedText] = useState('');
-  const [extractMode, setExtractMode] = useState(null); // 'ocr' | 'ai'
-  
   const [warning, setWarning] = useState('');
   const [error, setError] = useState('');
 
@@ -213,112 +205,6 @@ export default function DocumentAnalyzeModal({
     onClose();
   };
 
-  const handleAnalyze = async () => {
-    setAnalyzing(true);
-    setError('');
-    setWarning('');
-    try {
-      const res = await fetch('/api/documents/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fileId: doc.id,
-          fileName: doc.name || doc.file_name,
-          folderName: doc.folder,
-        }),
-      });
-      const data = await res.json();
-
-      if (data.success && data.analysis) {
-        setAnalysisResult(data.analysis);
-        setAnalysisMode(data.analysis.analysisMode || 'unknown');
-        if (data.warning) setWarning(data.warning);
-
-        // Update form data directly with AI results
-        setFormData(prev => ({
-          ...prev,
-          documentNumber: data.analysis.documentNumber || prev.documentNumber,
-          issuedDate: data.analysis.issuedDate || prev.issuedDate,
-          issuer: data.analysis.issuer || prev.issuer,
-          notes: data.analysis.notes || prev.notes,
-          category: data.analysis.category || prev.category,
-          receiver: data.analysis.receiver || prev.receiver, // Fallback if AI provides receiver
-        }));
-      } else {
-        setError(data.error || 'Phân tích thất bại');
-      }
-    } catch (err) {
-      setError('Lỗi kết nối server: ' + err.message);
-    } finally {
-      setAnalyzing(false);
-    }
-  };
-
-  const handleExtractText = async () => {
-    setExtracting(true);
-    setError('');
-    setWarning('');
-    try {
-      const res = await fetch('/api/documents/extract-text', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filePath: doc.path, fileId: doc.id }),
-      });
-      const data = await res.json();
-
-      if (data.success && data.text) {
-        setExtractedText(data.text);
-        setExtractMode('ocr');
-        // Kiểm tra xem text có vẻ bị lỗi font không (nhiều ký tự lạ, thiếu dấu TV)
-        const weirdCharCount = (data.text.match(/[§©®°¡¢£¤¥¦¨ª«¬­¯±²³´µ¶·¸¹º»¼½¾¿]/g) || []).length;
-        if (weirdCharCount > 5) {
-          setWarning('⚠️ Phát hiện lỗi font: File PDF này dùng font đặc biệt nên một số chữ tiếng Việt có thể bị sai dấu. Hãy đối chiếu với nội dung PDF bên trái để chỉnh sửa.');
-        }
-      } else {
-        setError(data.error || 'Trích xuất chữ thất bại (Có thể do file scan ảnh, không chứa text)');
-      }
-    } catch (err) {
-      setError('Lỗi kết nối server: ' + err.message);
-    } finally {
-      setExtracting(false);
-    }
-  };
-
-  const handleAiRead = async () => {
-    setAiReading(true);
-    setError('');
-    setWarning('');
-    try {
-      const res = await fetch('/api/documents/ai-read', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          filePath: doc.path, 
-          fileId: doc.id,
-          fileName: doc.name || doc.file_name 
-        }),
-      });
-      const data = await res.json();
-
-      if (data.success && data.text) {
-        setExtractedText(data.text);
-        setExtractMode('ai');
-      } else {
-        setError(data.error || 'AI đọc thất bại');
-      }
-    } catch (err) {
-      setError('Lỗi kết nối server: ' + err.message);
-    } finally {
-      setAiReading(false);
-    }
-  };
-
-  const handleCopyText = () => {
-    if (extractedText) {
-      navigator.clipboard.writeText(extractedText);
-    }
-  };
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -377,29 +263,10 @@ export default function DocumentAnalyzeModal({
     }
   };
 
-  const getModeBadge = () => {
-    if (!analysisMode) return null;
-    if (analysisMode?.includes('gemini')) {
-      return (
-        <span className="inline-flex items-center gap-1 text-[10px] px-2.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 font-bold ml-2">
-          <Sparkles className="w-3 h-3" />
-          Gemini Flash AI
-        </span>
-      );
-    }
-    return (
-      <span className="inline-flex items-center gap-1 text-[10px] px-2.5 py-0.5 rounded-full bg-violet-500/15 text-violet-400 border border-violet-500/30 font-bold ml-2">
-        <Shield className="w-3 h-3" />
-        Regex Cải tiến
-      </span>
-    );
-  };
-
   // Chuẩn bị URL embed cho iframe
   let embedUrl = '';
   if (doc.driveWebLink || doc.webViewLink || doc.web_view_link) {
     const link = doc.driveWebLink || doc.webViewLink || doc.web_view_link;
-    // Dùng URL preview của Google Drive
     const fileIdMatch = link.match(/\/d\/([a-zA-Z0-9_-]+)/);
     if (fileIdMatch) {
       embedUrl = `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`;
@@ -407,7 +274,6 @@ export default function DocumentAnalyzeModal({
       embedUrl = link.replace(/\/view.*$/, '/preview');
     }
   } else if (doc.path) {
-    // Dùng API trực tiếp với Chrome PDF viewer, yêu cầu hiển thị từng trang (view=Fit)
     embedUrl = `/api/documents/view?path=${encodeURIComponent(doc.path)}#toolbar=1&navpanes=1&scrollbar=1&view=Fit`;
   }
 
@@ -427,14 +293,14 @@ export default function DocumentAnalyzeModal({
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b border-slate-800/80 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 shadow-sm shrink-0">
           <div className="flex items-center gap-3 pr-8 min-w-0">
-            <div className="p-2.5 bg-gradient-to-br from-cyan-500/20 to-blue-500/10 border border-cyan-500/30 rounded-xl shrink-0 shadow-inner">
-              <Sparkles className="w-6 h-6 text-cyan-400" />
+            <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl shrink-0 shadow-inner">
+              <FileText className="w-6 h-6 text-emerald-400" />
             </div>
             <div className="min-w-0">
               <div className="flex items-start">
                 <h2 className="text-sm font-bold text-emerald-400 flex items-start gap-2 group whitespace-normal leading-snug">
                   <Shield className="w-4 h-4 mt-0.5 shrink-0" />
-                  <span className="text-slate-200 select-text">{phapLyString || 'Phân tích & Nhập liệu Văn bản'}</span>
+                  <span className="text-slate-200 select-text">{phapLyString || 'Thông tin & Nhập liệu Văn bản'}</span>
                   {phapLyString && (
                     <button 
                       onClick={() => navigator.clipboard.writeText(phapLyString)}
@@ -445,9 +311,6 @@ export default function DocumentAnalyzeModal({
                     </button>
                   )}
                 </h2>
-                <div className="mt-0.5 shrink-0">
-                  {getModeBadge()}
-                </div>
               </div>
               <div className="text-[11px] text-slate-400 max-w-lg mt-1 flex flex-col gap-0.5">
                 <span className="truncate" title={doc.name || doc.file_name}>
@@ -566,32 +429,6 @@ export default function DocumentAnalyzeModal({
                 </div>
               )}
               
-              {/* Vùng hiển thị Text trích xuất (nếu có) */}
-              {extractedText && (
-                <div className="bg-slate-950/80 border border-slate-700/60 rounded-xl overflow-hidden shadow-inner">
-                  <div className="flex items-center justify-between px-3.5 py-2 bg-slate-800/60 border-b border-slate-700/60">
-                    <span className="text-[11px] font-bold text-slate-300 flex items-center gap-1.5">
-                      <Type className="w-3.5 h-3.5 text-slate-400" />
-                      'OCR Code (Trang đầu)'
-                    </span>
-                    <button 
-                      onClick={handleCopyText}
-                      className="text-[10px] bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 rounded-md flex items-center gap-1 transition-colors"
-                    >
-                      <Copy className="w-3 h-3" /> Copy
-                    </button>
-                  </div>
-                  <div className="p-3">
-                    <textarea
-                      readOnly
-                      value={extractedText}
-                      rows={5}
-                      className="w-full bg-transparent text-[11px] text-slate-300 focus:outline-none resize-none custom-scrollbar"
-                    />
-                  </div>
-                </div>
-              )}
-
               {/* Nút check Công văn đi */}
               <div className="mb-4">
                 <div className="flex items-center gap-3 flex-wrap">
@@ -886,47 +723,21 @@ export default function DocumentAnalyzeModal({
                 
                 {/* Nút hành động */}
                 <div className="col-span-12 pt-4 mt-2 border-t border-slate-800/80">
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                    
-                    {/* Các công cụ trích xuất AI */}
-                    <div className="flex items-center justify-center sm:justify-start gap-2 w-full sm:w-auto">
-                      <button
-                        onClick={handleExtractText}
-                        disabled={extracting}
-                        className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-slate-200 rounded-xl text-sm font-bold flex items-center gap-2 transition-all border border-slate-600/50 shadow-sm"
-                        title="Trích xuất chữ bằng thư viện code (nhanh, có thể sai font)"
-                      >
-                        {extracting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Type className="w-4 h-4" />}
-                        OCR Code
-                      </button>
-                      <button
-                        onClick={handleAnalyze}
-                        disabled={analyzing}
-                        className="px-5 py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-lg shadow-cyan-500/20"
-                        title="Tự động phân tích và điền vào form"
-                      >
-                        {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                        Phân tích Tự động
-                      </button>
-                    </div>
-
-                    {/* Các nút Hủy / Lưu */}
-                    <div className="flex items-center justify-center sm:justify-end gap-3 w-full sm:w-auto">
-                      <button
-                        onClick={handleClose}
-                        className="px-5 py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
-                      >
-                        <XCircle className="w-4 h-4" />
-                        Hủy
-                      </button>
-                      <button
-                        onClick={() => setShowConfirm(true)}
-                        className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/20"
-                      >
-                        <Save className="w-4 h-4" />
-                        Lưu thông tin
-                      </button>
-                    </div>
+                  <div className="flex items-center justify-end gap-3 w-full">
+                    <button
+                      onClick={handleClose}
+                      className="px-5 py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
+                    >
+                      <XCircle className="w-4 h-4" />
+                      Hủy
+                    </button>
+                    <button
+                      onClick={() => setShowConfirm(true)}
+                      className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/20"
+                    >
+                      <Save className="w-4 h-4" />
+                      Lưu thông tin
+                    </button>
                   </div>
                 </div>
 
