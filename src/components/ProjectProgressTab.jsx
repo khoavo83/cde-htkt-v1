@@ -58,6 +58,24 @@ const toISODate = (val) => {
   return s.split('T')[0];
 };
 
+// Parse DD/MM/YYYY or YYYY-MM-DD to timestamp in ms
+const parseDateToTime = (dateStr) => {
+  if (!dateStr) return null;
+  if (dateStr instanceof Date) return dateStr.getTime();
+  const s = String(dateStr).trim();
+  if (s.includes('/')) {
+    const parts = s.split('/');
+    if (parts.length === 3) {
+      const d = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10) - 1;
+      const y = parseInt(parts[2], 10);
+      return new Date(y, m, d).getTime();
+    }
+  }
+  const t = new Date(s).getTime();
+  return isNaN(t) ? null : t;
+};
+
 export default function ProjectProgressTab({ 
   projectId, 
   projectName, 
