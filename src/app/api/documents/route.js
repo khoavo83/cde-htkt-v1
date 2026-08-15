@@ -245,8 +245,17 @@ export async function GET() {
         const formattedDocs = rows.map(doc => {
           const fmtDate = (d) => {
             if (!d) return null;
-            const dateObj = new Date(d);
-            return isNaN(dateObj.getTime()) ? d : dateObj.toISOString().split('T')[0];
+            const s = String(d).trim();
+            if (s.includes('/')) {
+              const parts = s.split('/');
+              if (parts.length === 3) {
+                return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+              }
+            }
+            if (s.includes('-')) {
+              return s.split('T')[0];
+            }
+            return s;
           };
           
           let updatedIso = null;
@@ -260,6 +269,7 @@ export async function GET() {
           return {
             ...doc,
             documentDate: fmtDate(doc.documentDate),
+            ngay_phat_hanh: doc.documentDate || fmtDate(doc.documentDate),
             updatedAt: updatedIso
           };
         });
