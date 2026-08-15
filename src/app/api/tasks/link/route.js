@@ -3,6 +3,15 @@ import fs from 'fs';
 import path from 'path';
 import { Pool } from 'pg';
 
+export const dynamic = 'force-dynamic';
+
+const pool = process.env.DATABASE_URL && !process.env.DATABASE_URL.includes("[YOUR_PASSWORD]")
+  ? new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.DATABASE_URL.includes('127.0.0.1') ? false : { rejectUnauthorized: false }
+    })
+  : null;
+
 const getDbPath = () => path.join(process.cwd(), 'src', 'data', 'db.json');
 
 function readDb() {
@@ -20,58 +29,45 @@ function writeDb(data) {
 
 export async function POST(request) {
   try {
-    const { taskId, documentPath } = await request.json();
+    const { taskId, documentPath, fileId } = await request.json();
     
-    if (!taskId || !documentPath) {
-      return NextResponse.json({ error: "Thiếu thông tin taskId hoặc documentPath" }, { status: 400 });
+    if (!taskId || (!documentPath && !fileId)) {
+      return NextResponse.json({ error: "Thiếu thông tin taskId hoặc fileId/documentPath" }, { status: 400 });
     }
 
     let syncedToSupabase = false;
     let dbErrorMessage = null;
 
-    // 1. Ghi liên kết vào Supabase
-    if (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes("[YOUR_PASSWORD]")) {
-      const pool = new Pool({
-        connectionString: process.env.DATABASE_URL,
-        ssl: { rejectUnauthorized: false }
-      });
-
+    if (pool) {
+      let client = null;
       try {
-        const client = await pool.connect();
-        
-        // Thêm bản ghi liên kết vào bảng task_documents
+        client = await pool.connect();
         const query = `
-          INSERT INTO task_documents (task_id, document_path)
-          VALUES ($1, $2)
-          ON CONFLICT DO NOTHING
+          INSERT INTO task_documents (task_id, file_id, document_path)
+          VALUES ($1, $2, $3)
         `;
-        
-        await client.query(query, [taskId, documentPath]);
-        client.release();
-        await pool.end();
+        await client.query(query, [taskId, fileId || null, documentPath || '']);
         syncedToSupabase = true;
       } catch (dbError) {
         dbErrorMessage = dbError.message;
         console.error("Lỗi khi ghi liên kết tài liệu vào Supabase:", dbError.message);
-        await pool.end();
+      } finally {
+        if (client) client.release();
       }
     }
 
-    // 2. Ghi nhận vào db.json cục bộ để đồng bộ offline
+    // Ghi nhận vào db.json
     try {
       const data = readDb();
       const taskIndex = data.tasks.findIndex(t => t.id === taskId);
-      
       if (taskIndex !== -1) {
         if (!data.tasks[taskIndex].documents) {
           data.tasks[taskIndex].documents = [];
         }
-        
-        const fileName = path.basename(documentPath);
+        const fileName = documentPath ? path.basename(documentPath) : (fileId || 'document');
         if (!data.tasks[taskIndex].documents.includes(fileName)) {
           data.tasks[taskIndex].documents.push(fileName);
           writeDb(data);
-          console.log(`Đã ghi nhận liên kết file ${fileName} vào task ${taskId} trong db.json.`);
         }
       }
     } catch (fsError) {
@@ -83,6 +79,62 @@ export async function POST(request) {
       syncedToSupabase, 
       error: dbErrorMessage 
     });
+
+  } catch (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const taskId = searchParams.get('taskId');
+    const fileId = searchParams.get('fileId');
+    const documentName = searchParams.get('documentName');
+
+    if (!taskId) {
+      return NextResponse.json({ error: 'Thiếu taskId' }, { status: 400 });
+    }
+
+    if (pool) {
+      let client = null;
+      try {
+        client = await pool.connect();
+        if (fileId) {
+          await client.query('DELETE FROM task_documents WHERE task_id = $1 AND file_id = $2', [taskId, fileId]);
+        } else if (documentName) {
+          await client.query(`
+            DELETE FROM task_documents 
+            WHERE task_id = $1 
+              AND (document_path = $2 OR substring(document_path from '[^/]+$') = $2)
+          `, [taskId, documentName]);
+        } else {
+          await client.query('DELETE FROM task_documents WHERE task_id = $1', [taskId]);
+        }
+      } catch (dbError) {
+        console.error("Lỗi xóa liên kết trên Supabase:", dbError.message);
+      } finally {
+        if (client) client.release();
+      }
+    }
+
+    // Gỡ trong db.json
+    try {
+      const data = readDb();
+      const taskIndex = data.tasks.findIndex(t => t.id === taskId);
+      if (taskIndex !== -1 && data.tasks[taskIndex].documents) {
+        if (documentName) {
+          data.tasks[taskIndex].documents = data.tasks[taskIndex].documents.filter(d => d !== documentName);
+        } else if (!fileId && !documentName) {
+          data.tasks[taskIndex].documents = [];
+        }
+        writeDb(data);
+      }
+    } catch (e) {
+      console.error('Error unlinking in db.json:', e);
+    }
+
+    return NextResponse.json({ success: true, message: 'Đã gỡ liên kết tài liệu thành công' });
 
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

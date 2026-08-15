@@ -6,6 +6,7 @@ import FolderTree from '@/components/FolderTree';
 import DocumentAnalyzeModal from '@/components/DocumentAnalyzeModal';
 import SettingsTab from '@/components/SettingsTab';
 import KPITab from '@/components/KPITab';
+import ProjectProgressTab from '@/components/ProjectProgressTab';
 import { 
   FileText, 
   Layers, 
@@ -123,7 +124,8 @@ export default function Home() {
         }
       } catch (e) { console.error('Lỗi tải loại văn bản:', e); }
 
-      setTasks(tasksData);
+      const taskList = Array.isArray(tasksData) ? tasksData : (tasksData?.tasks || []);
+      setTasks(taskList);
       
       if (projData.projects) {
         setProjects(projData.projects);
@@ -133,8 +135,8 @@ export default function Home() {
       }
       
       // Chọn mặc định task đầu tiên nếu có dữ liệu
-      if (tasksData.length > 0 && !selectedTaskId) {
-        setSelectedTaskId(tasksData[0].id);
+      if (taskList.length > 0 && !selectedTaskId) {
+        setSelectedTaskId(taskList[0].id);
       }
       
       if (docsData.documents) {
@@ -299,19 +301,20 @@ export default function Home() {
 
   // Tính toán nhanh số liệu thống kê công việc
   const stats = useMemo(() => {
-    const total = tasks.length;
+    const taskList = Array.isArray(tasks) ? tasks : (tasks?.tasks || []);
+    const total = taskList.length;
     if (total === 0) return { total: 0, completed: 0, processing: 0, pending: 0, percentCompleted: 0 };
     
-    const completed = tasks.filter(t => t.status === 'completed').length;
-    const processing = tasks.filter(t => t.status === 'processing').length;
-    const pending = tasks.filter(t => t.status === 'pending').length;
+    const completed = taskList.filter(t => t.status === 'completed' || t.progress_percent >= 100).length;
+    const processing = taskList.filter(t => t.status === 'processing' || (t.progress_percent > 0 && t.progress_percent < 100)).length;
+    const pending = taskList.filter(t => t.status === 'pending' || !t.progress_percent).length;
     const percentCompleted = Math.round((completed / total) * 100);
 
     return { total, completed, processing, pending, percentCompleted };
   }, [tasks]);
 
   // Bộ lọc văn bản và liên kết
-  const selectedTask = tasks.find(t => t.id === selectedTaskId);
+  const selectedTask = Array.isArray(tasks) ? tasks.find(t => t.id === selectedTaskId) : null;
   
   const allDraftFileIds = useMemo(() => {
     const ids = new Set();
@@ -824,14 +827,14 @@ export default function Home() {
         {/* ──── TAB: QUẢN LÝ DỰ ÁN ──── */}
         {activeMainTab === 'projects' && (
           <div className="h-full flex flex-col overflow-hidden p-3 sm:p-4">
-            <div className="flex justify-between items-center mb-4 shrink-0">
+            <div className="flex justify-between items-center mb-3 shrink-0">
               <div className="flex gap-2">
                 <button 
                   onClick={() => setProjectSubTab('progress')}
                   className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${projectSubTab === 'progress' ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 border border-transparent'}`}
                 >
                   <div className="flex items-center gap-1.5">
-                    <Briefcase className="w-3.5 h-3.5" /> Tiến độ Hạng mục
+                    <Briefcase className="w-3.5 h-3.5" /> Tiến độ
                   </div>
                 </button>
                 <button 
@@ -843,77 +846,25 @@ export default function Home() {
                   </div>
                 </button>
               </div>
-              {projectSubTab === 'progress' && <span className="text-[10px] text-slate-400 hidden sm:inline">Chọn việc để liên kết hồ sơ (chuyển sang tab Văn bản)</span>}
             </div>
 
-            <div className="flex-1 min-h-0 overflow-y-auto">
+            <div className="flex-1 min-h-0 overflow-hidden">
               {projectSubTab === 'folders' && (
-                <div className="h-full w-full">
+                <div className="h-full w-full overflow-y-auto">
                   <FolderTree projectId={currentProjectId} allDocuments={documents} />
                 </div>
               )}
               
               {projectSubTab === 'progress' && (
-                <>
-                  {loading ? (
-                    <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-                      <RefreshCw className="w-8 h-8 animate-spin text-emerald-400 mb-2" />
-                      <span>Đang tải...</span>
-                    </div>
-                  ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {tasks.map((task) => {
-                  const isSelected = task.id === selectedTaskId;
-                  return (
-                    <div key={task.id}
-                      onClick={() => { setSelectedTaskId(task.id); }}
-                      className={`bg-slate-900/60 rounded-xl border p-4 cursor-pointer transition-all duration-200 ${
-                        isSelected ? 'border-emerald-500 shadow-md shadow-emerald-500/10 bg-slate-900/40' : 'border-slate-800/80 hover:border-slate-700/60'
-                      }`}>
-                      <div className="flex justify-between items-start gap-3">
-                        <div className="min-w-0">
-                          <span className={`inline-block text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider mb-2 ${
-                            task.category === 'Rà phá bom mìn' ? 'bg-red-500/10 text-red-400 border border-red-500/20'
-                            : task.category === 'Hạ tầng kỹ thuật' ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
-                            : 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
-                          }`}>{task.category}</span>
-                          <h4 className="text-xs font-bold text-slate-100 truncate" title={task.title}>{task.title}</h4>
-                          <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1.5">
-                            <User className="w-3 h-3 text-slate-500" />
-                            <span>Đơn vị: {task.assignedTo}</span>
-                          </p>
-                          {task.documents && task.documents.length > 0 && (
-                            <p className="text-[10px] text-emerald-400 mt-1 flex items-center gap-1.5 font-medium">
-                              <FileText className="w-3 h-3" />
-                              <span>{task.documents.length} văn bản đã liên kết</span>
-                            </p>
-                          )}
-                        </div>
-                        <span className={`text-[10px] font-semibold flex items-center gap-1.5 shrink-0 ${
-                          task.status === 'completed' ? 'text-emerald-400' : 'text-amber-400'
-                        }`}>
-                          {task.status === 'completed' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5 animate-pulse" />}
-                          {task.status === 'completed' ? 'Hoàn thành' : 'Đang xử lý'}
-                        </span>
-                      </div>
-                      <div className="mt-4 pt-3 border-t border-slate-800/60" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex justify-between items-center text-[10px] text-slate-400 mb-1">
-                          <span>Tiến độ:</span>
-                          <span className="font-bold text-slate-200">{task.progress}%</span>
-                        </div>
-                        <input type="range" min="0" max="100" step="5"
-                          value={task.progress}
-                          disabled={updatingTaskId === task.id}
-                          onChange={(e) => handleUpdateTaskProgress(task.id, parseInt(e.target.value))}
-                          className="w-full accent-emerald-500 h-1 bg-slate-800 rounded-lg cursor-pointer disabled:opacity-40" />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-            </>
-            )}
+                <div className="h-full w-full">
+                  <ProjectProgressTab 
+                    projectId={currentProjectId}
+                    projectName={projects.find(p => p.id === currentProjectId)?.basic_info?.shortName || projects.find(p => p.id === currentProjectId)?.name}
+                    allDocuments={documents}
+                    onOpenDocument={handleOpenDocument}
+                  />
+                </div>
+              )}
             </div>
           </div>
         )}
