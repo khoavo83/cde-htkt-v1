@@ -209,7 +209,7 @@ function parseReportFile() {
 
 export async function GET() {
   try {
-    // 1. Thử kết nối Supabase và đọc trực tiếp từ bảng documents
+    // 1. Thử kết nối Supabase và đọc trực tiếp từ bảng drive_file_metadata
     if (pool) {
       try {
         const client = await pool.connect();
@@ -267,7 +267,7 @@ export async function GET() {
         console.log(`Lấy thành công ${formattedDocs.length} tài liệu từ Supabase.`);
         return NextResponse.json({ source: 'live_supabase_db', documents: formattedDocs });
       } catch (dbError) {
-        console.error("Lỗi truy vấn bảng documents trên Supabase, chuyển sang dùng dữ liệu cục bộ:", dbError.message);
+        console.error("Lỗi truy vấn bảng drive_file_metadata trên Supabase, chuyển sang dùng dữ liệu cục bộ:", dbError.message);
       }
     }
 
