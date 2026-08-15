@@ -380,6 +380,29 @@ export default function FolderTree({ projectId, allDocuments = [], onDocumentUpd
     finally  { setSyncing(false); }
   };
 
+  const handleSyncCurrentFolder = async () => {
+    if (!selectedFolder) {
+      await handleSync();
+      return;
+    }
+    setLoadingFiles(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/drive/files?folderId=${selectedFolder.id}&t=${Date.now()}`);
+      const json = await res.json();
+      if (json.files) {
+        setFolderFiles(json.files);
+        if (onDocumentUpdate) onDocumentUpdate();
+      } else {
+        setError(json.error || 'Lỗi đồng bộ thư mục');
+      }
+    } catch (e) {
+      setError('Lỗi khi đồng bộ thư mục');
+    } finally {
+      setLoadingFiles(false);
+    }
+  };
+
   const handleExportExcel = async () => {
     try {
       setExporting(true);
@@ -852,14 +875,36 @@ export default function FolderTree({ projectId, allDocuments = [], onDocumentUpd
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     {anyLoading && (
                       <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
                         <RefreshCw size={11} className="animate-spin"/>
                         <span>AI đang phân tích...</span>
                       </div>
                     )}
-                    <span className="text-xs text-slate-400 hidden sm:inline">Nhấp vào ô để sửa • 🔄 Phân tích lại</span>
+                    
+                    {/* Nút thao tác nhanh thư mục hiện tại */}
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={handleSyncCurrentFolder}
+                        disabled={loadingFiles || syncing}
+                        className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-emerald-400 border border-slate-700/80 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 shadow-sm"
+                        title={selectedFolder ? `Đồng bộ nhanh thư mục "${selectedFolder.name}"` : "Đồng bộ toàn bộ dự án"}
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${loadingFiles || syncing ? 'animate-spin text-emerald-400' : 'text-emerald-400'}`} />
+                        <span className="hidden md:inline">{loadingFiles || syncing ? 'Đang đồng bộ...' : 'Đồng bộ thư mục'}</span>
+                      </button>
+
+                      <button
+                        onClick={handleExportExcel}
+                        disabled={exporting || filteredFiles.length === 0}
+                        className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-emerald-400 border border-slate-700/80 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 shadow-sm"
+                        title={selectedFolder ? `Xuất Excel danh sách văn bản trong "${selectedFolder.name}"` : "Xuất Excel kết quả tìm kiếm"}
+                      >
+                        <Download className={`w-3.5 h-3.5 ${exporting ? 'animate-bounce text-emerald-400' : 'text-emerald-400'}`} />
+                        <span className="hidden md:inline">{exporting ? 'Đang xuất...' : 'Xuất Excel'}</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
                 
