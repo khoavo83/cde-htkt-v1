@@ -787,18 +787,24 @@ export default function FolderTree({ projectId, allDocuments = [], onDocumentUpd
             <span className="hidden sm:inline">Tìm</span>
           </button>
           
-          <div className="w-px h-8 bg-slate-300 dark:bg-slate-700 mx-2 hidden sm:block"></div>
+          <div className="w-px h-8 bg-slate-300 dark:bg-slate-700 mx-1 hidden sm:block"></div>
           
-          <button onClick={handleExportExcel} disabled={exporting}
-            className="flex items-center gap-2 px-3 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors disabled:opacity-50 text-sm font-medium whitespace-nowrap">
+          <button 
+            onClick={handleExportExcel} 
+            disabled={exporting}
+            className="p-2.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors disabled:opacity-50 shadow-sm flex items-center justify-center shrink-0"
+            title={exporting ? 'Đang xuất...' : (selectedFolder ? `Xuất Excel thư mục "${selectedFolder.name}"` : 'Xuất Excel toàn bộ dự án')}
+          >
             <Download size={16} className={exporting ? 'animate-bounce' : ''}/>
-            <span className="hidden sm:inline">{exporting ? 'Đang xuất...' : (selectedFolder ? 'Xuất Excel Thư mục' : 'Xuất Excel Dự án')}</span>
           </button>
 
-          <button onClick={handleSync} disabled={syncing}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors disabled:opacity-50 text-sm font-medium whitespace-nowrap">
+          <button 
+            onClick={handleSync} 
+            disabled={syncing}
+            className="p-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors disabled:opacity-50 shadow-sm flex items-center justify-center shrink-0"
+            title={syncing ? 'Đang đồng bộ...' : 'Đồng bộ toàn bộ dự án'}
+          >
             <RefreshCw size={16} className={syncing ? 'animate-spin' : ''}/>
-            <span className="hidden sm:inline">{syncing ? 'Đang đồng bộ...' : 'Đồng bộ'}</span>
           </button>
         </div>
       </div>
@@ -883,26 +889,24 @@ export default function FolderTree({ projectId, allDocuments = [], onDocumentUpd
                       </div>
                     )}
                     
-                    {/* Nút thao tác nhanh thư mục hiện tại */}
-                    <div className="flex items-center gap-1.5">
+                    {/* Nút thao tác nhanh thư mục hiện tại (Icon only) */}
+                    <div className="flex items-center gap-1">
                       <button
                         onClick={handleSyncCurrentFolder}
                         disabled={loadingFiles || syncing}
-                        className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-emerald-400 border border-slate-700/80 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 shadow-sm"
+                        className="p-1.5 bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-emerald-400 border border-slate-700/80 rounded-lg transition-all disabled:opacity-50 shadow-sm flex items-center justify-center"
                         title={selectedFolder ? `Đồng bộ nhanh thư mục "${selectedFolder.name}"` : "Đồng bộ toàn bộ dự án"}
                       >
                         <RefreshCw className={`w-3.5 h-3.5 ${loadingFiles || syncing ? 'animate-spin text-emerald-400' : 'text-emerald-400'}`} />
-                        <span className="hidden md:inline">{loadingFiles || syncing ? 'Đang đồng bộ...' : 'Đồng bộ thư mục'}</span>
                       </button>
 
                       <button
                         onClick={handleExportExcel}
                         disabled={exporting || filteredFiles.length === 0}
-                        className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-emerald-400 border border-slate-700/80 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 shadow-sm"
+                        className="p-1.5 bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-emerald-400 border border-slate-700/80 rounded-lg transition-all disabled:opacity-50 shadow-sm flex items-center justify-center"
                         title={selectedFolder ? `Xuất Excel danh sách văn bản trong "${selectedFolder.name}"` : "Xuất Excel kết quả tìm kiếm"}
                       >
                         <Download className={`w-3.5 h-3.5 ${exporting ? 'animate-bounce text-emerald-400' : 'text-emerald-400'}`} />
-                        <span className="hidden md:inline">{exporting ? 'Đang xuất...' : 'Xuất Excel'}</span>
                       </button>
                     </div>
                   </div>
