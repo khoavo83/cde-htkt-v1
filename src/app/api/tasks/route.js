@@ -187,16 +187,28 @@ export async function GET(request) {
           FROM task_documents td
           LEFT JOIN drive_file_metadata dfm 
             ON (td.file_id IS NOT NULL AND td.file_id = dfm.file_id) 
-            OR substring(td.document_path from '[^/]+$') = dfm.file_name
+            OR (td.file_id IS NULL AND substring(td.document_path from '[^/]+$') = dfm.file_name)
         `;
         const linksRes = await client.query(linksQuery);
 
-        // Nhóm tài liệu theo task_id
+        // Nhóm tài liệu theo task_id (kèm khử trùng lặp file)
         const taskLinksMap = new Map();
+        const taskSeenDocsMap = new Map();
+
         for (const row of linksRes.rows) {
           if (!taskLinksMap.has(row.task_id)) {
             taskLinksMap.set(row.task_id, []);
+            taskSeenDocsMap.set(row.task_id, new Set());
           }
+
+          const docUniqueKey = row.file_id || row.document_path || row.file_name;
+          if (docUniqueKey && taskSeenDocsMap.get(row.task_id).has(docUniqueKey)) {
+            continue; // Bỏ qua file bị trùng lặp
+          }
+          if (docUniqueKey) {
+            taskSeenDocsMap.get(row.task_id).add(docUniqueKey);
+          }
+
           taskLinksMap.get(row.task_id).push({
             file_id: row.file_id,
             name: row.file_name || (row.document_path ? path.basename(row.document_path) : 'Văn bản'),

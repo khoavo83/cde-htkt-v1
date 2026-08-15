@@ -29,10 +29,30 @@ function writeDb(data) {
 
 export async function POST(request) {
   try {
-    const { taskId, documentPath, fileId } = await request.json();
+    const { action, taskId, documentPath, fileId } = await request.json();
     
     if (!taskId || (!documentPath && !fileId)) {
       return NextResponse.json({ error: "Thiếu thông tin taskId hoặc fileId/documentPath" }, { status: 400 });
+    }
+
+    if (action === 'unlink') {
+      if (pool) {
+        let client = null;
+        try {
+          client = await pool.connect();
+          await client.query(
+            `DELETE FROM task_documents WHERE task_id = $1 AND (
+              (file_id IS NOT NULL AND file_id = $2) OR 
+              document_path = $3 OR 
+              document_path LIKE $4
+            )`,
+            [taskId, fileId || null, documentPath || '', `%${documentPath}%`]
+          );
+        } finally {
+          if (client) client.release();
+        }
+      }
+      return NextResponse.json({ success: true, message: 'Đã gỡ liên kết' });
     }
 
     let syncedToSupabase = false;
@@ -42,11 +62,23 @@ export async function POST(request) {
       let client = null;
       try {
         client = await pool.connect();
-        const query = `
-          INSERT INTO task_documents (task_id, file_id, document_path)
-          VALUES ($1, $2, $3)
-        `;
-        await client.query(query, [taskId, fileId || null, documentPath || '']);
+        
+        // Kiểm tra tránh trùng lặp liên kết
+        const checkRes = await client.query(
+          `SELECT 1 FROM task_documents WHERE task_id = $1 AND (
+            (file_id IS NOT NULL AND file_id = $2) OR 
+            document_path = $3
+          )`,
+          [taskId, fileId || null, documentPath || '']
+        );
+
+        if (checkRes.rows.length === 0) {
+          const query = `
+            INSERT INTO task_documents (task_id, file_id, document_path)
+            VALUES ($1, $2, $3)
+          `;
+          await client.query(query, [taskId, fileId || null, documentPath || '']);
+        }
         syncedToSupabase = true;
       } catch (dbError) {
         dbErrorMessage = dbError.message;
