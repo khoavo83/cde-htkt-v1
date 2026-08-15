@@ -28,7 +28,7 @@ function writeDb(data) {
   fs.writeFileSync(dbPath, JSON.stringify(data, null, 2), 'utf-8');
 }
 
-// Parse DD/MM/YYYY or YYYY-MM-DD to timestamp
+// Parse DD/MM/YYYY or YYYY-MM-DD to timestamp in ms (dùng 12:00 trưa để tránh lệch múi giờ)
 function parseDateToTime(dateStr) {
   if (!dateStr) return null;
   if (dateStr instanceof Date) return dateStr.getTime();
@@ -39,24 +39,20 @@ function parseDateToTime(dateStr) {
       const d = parseInt(parts[0], 10);
       const m = parseInt(parts[1], 10) - 1;
       const y = parseInt(parts[2], 10);
-      return new Date(y, m, d).getTime();
+      return new Date(y, m, d, 12, 0, 0).getTime();
+    }
+  }
+  if (s.includes('-')) {
+    const parts = s.split('T')[0].split('-');
+    if (parts.length === 3) {
+      const y = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10) - 1;
+      const d = parseInt(parts[2], 10);
+      return new Date(y, m, d, 12, 0, 0).getTime();
     }
   }
   const t = new Date(s).getTime();
   return isNaN(t) ? null : t;
-}
-
-function formatDateISO(dateVal) {
-  if (!dateVal) return null;
-  if (dateVal instanceof Date) return dateVal.toISOString().split('T')[0];
-  const s = String(dateVal).trim();
-  if (s.includes('/')) {
-    const parts = s.split('/');
-    if (parts.length === 3) {
-      return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-    }
-  }
-  return s.split('T')[0];
 }
 
 // Tính toán tình trạng tự động dựa trên ngày văn bản trễ nhất vs ngày kết thúc
@@ -67,7 +63,7 @@ function evaluateTaskStatus(task, linkedDocs) {
   
   const endDateTime = parseDateToTime(endDateStr);
   const startDateTime = parseDateToTime(startDateStr);
-  const now = new Date().setHours(0, 0, 0, 0);
+  const now = new Date().setHours(12, 0, 0, 0);
 
   // Tìm ngày văn bản trễ nhất trong các văn bản liên kết
   let latestDocDateStr = null;
@@ -91,34 +87,33 @@ function evaluateTaskStatus(task, linkedDocs) {
   let statusColor = 'blue'; // 'green', 'red', 'yellow', 'blue', 'slate'
   let delayDays = 0;
 
-  if (progress >= 100) {
-    // Đã hoàn thành
-    if (latestDocDateTime && endDateTime) {
-      if (latestDocDateTime <= endDateTime) {
-        calculatedStatus = 'completed_on_time';
-        statusText = 'Hoàn thành đúng hạn';
-        statusColor = 'green';
-      } else {
-        calculatedStatus = 'completed_late';
-        delayDays = Math.ceil((latestDocDateTime - endDateTime) / (1000 * 60 * 60 * 24));
-        statusText = `Hoàn thành trễ ${delayDays} ngày`;
-        statusColor = 'red';
-      }
-    } else {
+  if (latestDocDateTime && endDateTime) {
+    // Đã có văn bản thực tế liên kết
+    if (latestDocDateTime <= endDateTime) {
       calculatedStatus = 'completed_on_time';
-      statusText = 'Đã hoàn thành';
+      statusText = `Đúng hạn (VB: ${latestDocDateStr})`;
       statusColor = 'green';
+    } else {
+      calculatedStatus = 'completed_late';
+      delayDays = Math.ceil((latestDocDateTime - endDateTime) / (1000 * 60 * 60 * 24));
+      statusText = `Trễ hạn ${delayDays} ngày (VB: ${latestDocDateStr})`;
+      statusColor = 'red';
     }
+  } else if (progress >= 100) {
+    // Đã hoàn thành (chưa gắn VB)
+    calculatedStatus = 'completed_on_time';
+    statusText = 'Hoàn thành 100%';
+    statusColor = 'green';
   } else if (progress > 0) {
     // Đang thực hiện
     if (endDateTime && now > endDateTime) {
       calculatedStatus = 'in_progress_late';
       delayDays = Math.ceil((now - endDateTime) / (1000 * 60 * 60 * 24));
-      statusText = `Trễ hạn (${delayDays} ngày)`;
+      statusText = `Quá hạn ${delayDays} ngày`;
       statusColor = 'red';
     } else {
       calculatedStatus = 'in_progress_on_time';
-      statusText = 'Đang thực hiện';
+      statusText = `Đang làm (${progress}%)`;
       statusColor = 'blue';
     }
   } else {
@@ -160,7 +155,10 @@ export async function GET(request) {
         let tasksQuery = `
           SELECT 
             id, project_id, stt, title, group_name, stage, assigned_to,
-            progress_percent, start_date, end_date, duration_days,
+            progress_percent, 
+            TO_CHAR(start_date, 'YYYY-MM-DD') AS start_date, 
+            TO_CHAR(end_date, 'YYYY-MM-DD') AS end_date, 
+            duration_days,
             legal_basis, notes, parent_id, order_index, status, created_at, updated_at
           FROM tasks
         `;
@@ -173,35 +171,13 @@ export async function GET(request) {
 
         const tasksRes = await client.query(tasksQuery, params);
 
-        // Nếu dự án BT-CG chưa có task nào, tự động seed
-        if (tasksRes.rows.length === 0 && projectId === '1ZjUVuusk_wD8GnsXXhBthpj8BvyG3fz2') {
-          console.log('Seeding initial tasks for project BT-CG...');
-          let order = 0;
-          for (const t of DEFAULT_TASKS_BTCG) {
-            order++;
-            const taskId = `task-btcg-${order.toString().padStart(2, '0')}`;
-            await client.query(`
-              INSERT INTO tasks (
-                id, project_id, stt, title, group_name, stage, assigned_to,
-                progress_percent, start_date, end_date, duration_days,
-                legal_basis, notes, order_index, status
-              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-            `, [
-              taskId, projectId, t.stt, t.title, t.group_name || '', t.stage || '',
-              t.assigned_to || '', t.progress_percent || 0, t.start_date || null,
-              t.end_date || null, t.duration_days || '', t.legal_basis || '',
-              t.notes || '', order, t.progress_percent === 100 ? 'completed' : 'processing'
-            ]);
-          }
-        }
-
-        // Lấy tất cả liên kết văn bản kèm metadata chi tiết
+        // Lấy tất cả liên kết văn bản kèm metadata chi tiết từ drive_file_metadata
         const linksQuery = `
           SELECT 
             td.task_id, 
             td.document_path,
-            dfm.file_id, 
-            dfm.file_name, 
+            td.file_id,
+            COALESCE(dfm.file_name, td.document_path) AS file_name, 
             dfm.loai_vb, 
             dfm.so_vb, 
             dfm.ngay_phat_hanh, 
@@ -225,12 +201,12 @@ export async function GET(request) {
             file_id: row.file_id,
             name: row.file_name || (row.document_path ? path.basename(row.document_path) : 'Văn bản'),
             document_path: row.document_path,
-            loai_vb: row.loai_vb,
-            so_vb: row.so_vb,
-            ngay_phat_hanh: row.ngay_phat_hanh,
-            noi_phat_hanh: row.noi_phat_hanh,
-            trich_yeu: row.trich_yeu,
-            web_view_link: row.web_view_link
+            loai_vb: row.loai_vb || 'Khác',
+            so_vb: row.so_vb || '',
+            ngay_phat_hanh: row.ngay_phat_hanh || '',
+            noi_phat_hanh: row.noi_phat_hanh || '',
+            trich_yeu: row.trich_yeu || '',
+            web_view_link: row.web_view_link || ''
           });
         }
 
@@ -250,10 +226,10 @@ export async function GET(request) {
             assignedTo: task.assigned_to || '',
             progress: Number(task.progress_percent || 0),
             progress_percent: Number(task.progress_percent || 0),
-            start_date: formatDateISO(task.start_date),
-            startDate: formatDateISO(task.start_date),
-            end_date: formatDateISO(task.end_date),
-            endDate: formatDateISO(task.end_date),
+            start_date: task.start_date || null,
+            startDate: task.start_date || null,
+            end_date: task.end_date || null,
+            endDate: task.end_date || null,
             duration_days: task.duration_days || '',
             legal_basis: task.legal_basis || '',
             notes: task.notes || '',

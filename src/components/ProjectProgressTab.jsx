@@ -58,7 +58,7 @@ const toISODate = (val) => {
   return s.split('T')[0];
 };
 
-// Parse DD/MM/YYYY or YYYY-MM-DD to timestamp in ms
+// Parse DD/MM/YYYY or YYYY-MM-DD to timestamp in ms (dùng 12:00 trưa để tránh lệch múi giờ UTC)
 const parseDateToTime = (dateStr) => {
   if (!dateStr) return null;
   if (dateStr instanceof Date) return dateStr.getTime();
@@ -69,7 +69,16 @@ const parseDateToTime = (dateStr) => {
       const d = parseInt(parts[0], 10);
       const m = parseInt(parts[1], 10) - 1;
       const y = parseInt(parts[2], 10);
-      return new Date(y, m, d).getTime();
+      return new Date(y, m, d, 12, 0, 0).getTime();
+    }
+  }
+  if (s.includes('-')) {
+    const parts = s.split('T')[0].split('-');
+    if (parts.length === 3) {
+      const y = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10) - 1;
+      const d = parseInt(parts[2], 10);
+      return new Date(y, m, d, 12, 0, 0).getTime();
     }
   }
   const t = new Date(s).getTime();
@@ -284,7 +293,11 @@ export default function ProjectProgressTab({
       const data = await res.json();
       if (data.success) {
         showToast(`Đã liên kết văn bản "${doc.name}"`);
-        fetchTasks();
+        setSelectedTaskForLink(prev => prev ? {
+          ...prev,
+          documents: [...(prev.documents || []), doc.name]
+        } : null);
+        await fetchTasks();
       } else {
         showToast(data.error || 'Lỗi liên kết', 'error');
       }
@@ -302,7 +315,11 @@ export default function ProjectProgressTab({
       const data = await res.json();
       if (data.success) {
         showToast('Đã gỡ liên kết văn bản.');
-        fetchTasks();
+        setSelectedTaskForLink(prev => prev ? {
+          ...prev,
+          documents: (prev.documents || []).filter(d => d !== docName)
+        } : null);
+        await fetchTasks();
       } else {
         showToast(data.error || 'Lỗi khi gỡ liên kết', 'error');
       }
@@ -1155,10 +1172,17 @@ export default function ProjectProgressTab({
 
                         const planWidth = (startPos !== null && endPos !== null) ? Math.max(1.5, endPos - startPos) : 0;
                         
-                        // Chiều rộng thực tế: nếu có VB thì đến ngày VB, nếu chưa có VB thì theo % tiến độ của kế hoạch
-                        const actualWidth = (startPos !== null && endPos !== null) 
-                          ? (docPos !== null ? Math.max(1.5, docPos - startPos) : (planWidth * ((task.progress_percent || 0) / 100))) 
-                          : 0;
+                        // Chiều rộng thực tế:
+                        // - Nếu có văn bản: Ngày bắt đầu KH -> Ngày phát hành VB mới nhất
+                        // - Nếu chưa có văn bản: Ngày bắt đầu KH -> % kế hoạch
+                        let actualWidth = 0;
+                        if (startPos !== null) {
+                          if (docPos !== null) {
+                            actualWidth = Math.max(1.5, docPos - startPos);
+                          } else if (planWidth > 0 && (task.progress_percent || 0) > 0) {
+                            actualWidth = Math.max(1.5, planWidth * ((task.progress_percent || 0) / 100));
+                          }
+                        }
 
                         const isLate = task.statusColor === 'red';
 
@@ -1242,10 +1266,12 @@ export default function ProjectProgressTab({
                                         left: `${startPos}%`,
                                         width: `${actualWidth}%`
                                       }}
-                                      title={`Thực tế: ${task.progress_percent}% (Văn bản mới nhất: ${formatDateVN(task.latestDocDate)})`}
+                                      title={`Thực tế: ${task.latestDocDate ? `Từ ${formatDateVN(task.start_date)} đến ${formatDateVN(task.latestDocDate)}` : `${task.progress_percent}%`}`}
                                     >
                                       <span className="text-[9px] font-mono text-white font-bold truncate drop-shadow">
-                                        TT: {task.progress_percent}% {task.latestDocDate ? `(VB: ${formatDateVN(task.latestDocDate)})` : ''}
+                                        {task.latestDocDate 
+                                          ? `TT: Đến ${formatDateVN(task.latestDocDate)} (${task.linkedDocs?.[0]?.so_vb || task.documents?.[0] || 'Văn bản'})` 
+                                          : `TT: ${task.progress_percent}%`}
                                       </span>
                                     </div>
                                   ) : (
@@ -1463,32 +1489,50 @@ export default function ProjectProgressTab({
                   const term = linkDocSearch.toLowerCase();
                   return (doc.name && doc.name.toLowerCase().includes(term)) ||
                          (doc.documentNumber && doc.documentNumber.toLowerCase().includes(term)) ||
-                         (doc.summary && doc.summary.toLowerCase().includes(term));
+                         (doc.so_vb && doc.so_vb.toLowerCase().includes(term)) ||
+                         (doc.documentDate && doc.documentDate.toLowerCase().includes(term)) ||
+                         (doc.ngay_phat_hanh && doc.ngay_phat_hanh.toLowerCase().includes(term)) ||
+                         (doc.issuingAgency && doc.issuingAgency.toLowerCase().includes(term)) ||
+                         (doc.noi_phat_hanh && doc.noi_phat_hanh.toLowerCase().includes(term)) ||
+                         (doc.summary && doc.summary.toLowerCase().includes(term)) ||
+                         (doc.trich_yeu && doc.trich_yeu.toLowerCase().includes(term));
                 })
-                .slice(0, 50)
+                .slice(0, 100)
                 .map(doc => {
-                  const isLinked = selectedTaskForLink.documents?.includes(doc.name);
+                  const docFileName = doc.name || doc.file_name;
+                  const isLinked = selectedTaskForLink.documents?.includes(docFileName);
 
                   return (
-                    <div key={doc.id} className="py-2.5 flex items-center justify-between gap-3 hover:bg-slate-800/30 px-2 rounded-lg">
+                    <div key={doc.id || doc.driveFileId || doc.name} className="py-2.5 flex items-center justify-between gap-3 hover:bg-slate-800/30 px-2 rounded-lg">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <FileText size={14} className="text-cyan-400 shrink-0" />
-                          <span className="font-semibold text-slate-200 truncate" title={doc.name}>
-                            {doc.name}
+                          <span className="font-semibold text-slate-200 truncate" title={docFileName}>
+                            {docFileName}
                           </span>
                         </div>
-                        <div className="flex items-center gap-3 text-[10px] text-slate-400 mt-1">
-                          {doc.documentDate && <span>Ngày PH: <strong className="text-slate-300 font-mono">{formatDateVN(doc.documentDate)}</strong></span>}
-                          {doc.issuingAgency && <span>Nơi PH: {doc.issuingAgency}</span>}
-                          {doc.so_vb && <span>Số: {doc.so_vb}</span>}
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-400 mt-1">
+                          {(doc.documentDate || doc.ngay_phat_hanh) && (
+                            <span>Ngày PH: <strong className="text-cyan-300 font-mono">{formatDateVN(doc.documentDate || doc.ngay_phat_hanh)}</strong></span>
+                          )}
+                          {(doc.documentNumber || doc.so_vb) && (
+                            <span>Số: <strong className="text-slate-300">{doc.documentNumber || doc.so_vb}</strong></span>
+                          )}
+                          {(doc.issuingAgency || doc.noi_phat_hanh) && (
+                            <span>Nơi PH: {doc.issuingAgency || doc.noi_phat_hanh}</span>
+                          )}
+                          {(doc.summary || doc.trich_yeu) && (
+                            <span className="truncate max-w-[300px] text-slate-500" title={doc.summary || doc.trich_yeu}>
+                              V/v: {doc.summary || doc.trich_yeu}
+                            </span>
+                          )}
                         </div>
                       </div>
 
                       <div>
                         {isLinked ? (
                           <button
-                            onClick={() => handleUnlinkDoc(selectedTaskForLink.id, doc.name)}
+                            onClick={() => handleUnlinkDoc(selectedTaskForLink.id, docFileName)}
                             className="px-3 py-1 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-lg font-semibold hover:bg-rose-500/30 text-xs flex items-center gap-1"
                           >
                             <X size={12} /> Đã gắn (Gỡ)
