@@ -344,20 +344,64 @@ export default function Home() {
       return matchSearch && matchCategory && matchProject;
     });
 
-    // Sắp xếp theo ngày phát hành
+    // Helper kiểm tra xem văn bản có phải là loại phụ/đính kèm/phụ lục hay không
+    const isAttachmentDoc = (doc) => {
+      const loaiVb = (doc.documentType || doc.loai_vb || doc.category || '').toLowerCase().trim();
+      const name = (doc.name || doc.file_name || '').toLowerCase();
+      const trichYeu = (doc.summary || doc.trich_yeu || '').toLowerCase();
+
+      const attachmentKeywords = ['đính kèm', 'dinh kem', 'phụ lục', 'phu luc', 'bản vẽ', 'ban ve', 'dự thảo', 'du thao', 'phiếu trình', 'phieu trinh'];
+      if (attachmentKeywords.some(k => loaiVb.includes(k))) return true;
+      if (loaiVb === 'khác' || !loaiVb) {
+        if (attachmentKeywords.some(k => name.includes(k) || trichYeu.includes(k))) return true;
+      }
+      return false;
+    };
+
+    // Sắp xếp theo ngày phát hành & ưu tiên VB chính đứng trước Đính kèm
     filtered.sort((a, b) => {
       const getValidDate = (dateStr) => {
-        if (!dateStr) return new Date(0);
-        if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return new Date(dateStr.split('/').reverse().join('-'));
-        if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) return new Date(dateStr.split('T')[0]);
-        const d = new Date(dateStr);
-        return isNaN(d.getTime()) ? new Date(0) : d;
+        if (!dateStr || dateStr === 'Chưa xác định') return 0;
+        const s = String(dateStr).trim();
+        if (s.includes('/')) {
+          const parts = s.split('/');
+          if (parts.length === 3) return new Date(parts[2], parseInt(parts[1], 10) - 1, parts[0], 12, 0, 0).getTime();
+        }
+        if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+          const parts = s.split('T')[0].split('-');
+          return new Date(parts[0], parseInt(parts[1], 10) - 1, parts[2], 12, 0, 0).getTime();
+        }
+        const t = new Date(s).getTime();
+        return isNaN(t) ? 0 : t;
       };
 
-      const dateA = getValidDate(a.issuedDate || a.documentDate);
-      const dateB = getValidDate(b.issuedDate || b.documentDate);
+      const timeA = getValidDate(a.documentDate || a.ngay_phat_hanh || a.issuedDate);
+      const timeB = getValidDate(b.documentDate || b.ngay_phat_hanh || b.issuedDate);
       
-      return sortDateOrder === 'desc' ? dateB - dateA : dateA - dateB;
+      // 1. Sắp xếp theo ngày phát hành
+      if (timeA !== timeB) {
+        return sortDateOrder === 'desc' ? timeB - timeA : timeA - timeB;
+      }
+
+      // 2. Nhóm các văn bản cùng Số hiệu VB lại với nhau
+      const soVbA = (a.documentNumber || a.so_vb || '').trim();
+      const soVbB = (b.documentNumber || b.so_vb || '').trim();
+      if (soVbA && soVbB && soVbA !== soVbB) {
+        const cmpSoVb = soVbA.localeCompare(soVbB, 'vi', { numeric: true });
+        if (cmpSoVb !== 0) return cmpSoVb;
+      }
+
+      // 3. Ưu tiên: VB Chính đứng TRƯỚC (0), "Đính kèm / Phụ lục" luôn đứng SAU (1)
+      const isAttachA = isAttachmentDoc(a) ? 1 : 0;
+      const isAttachB = isAttachmentDoc(b) ? 1 : 0;
+      if (isAttachA !== isAttachB) {
+        return isAttachA - isAttachB;
+      }
+
+      // 4. Sắp xếp theo tên file
+      const nameA = a.name || a.file_name || '';
+      const nameB = b.name || b.file_name || '';
+      return nameA.localeCompare(nameB, 'vi', { numeric: true });
     });
 
     return filtered;
