@@ -1091,43 +1091,61 @@ export default function ProjectProgressTab({
             </div>
 
             {/* Khung cuộn Timeline */}
-            <div className="flex-1 overflow-auto">
-              <div className="min-w-[900px] p-4 relative">
+            <div className="flex-1 overflow-auto relative">
+              <div className={`p-4 relative ${
+                ganttScale === 'week' ? 'min-w-[2800px]' : (ganttScale === 'month' ? 'min-w-[1500px]' : 'min-w-[1100px]')
+              }`}>
                 
-                {/* Trục mốc thời gian */}
-                <div className="relative h-8 border-b border-slate-800 mb-4">
-                  {timelineTicks.map((tick, tIdx) => (
-                    <div
-                      key={tIdx}
-                      className="absolute top-0 transform -translate-x-1/2 flex flex-col items-center"
-                      style={{ left: `${tick.percent}%` }}
-                    >
-                      <span className="text-[10px] font-mono text-slate-400 font-bold whitespace-nowrap">
-                        {tick.label}
-                      </span>
-                      <div className="w-px h-2 bg-slate-700 mt-1"></div>
-                    </div>
-                  ))}
+                {/* Trục mốc thời gian CỐ ĐỊNH (Sticky Header) */}
+                <div className="sticky top-0 bg-slate-950/95 backdrop-blur-md pt-2 pb-3 border-b border-slate-800 z-30 mb-4 shadow-lg shadow-black/40">
+                  <div className="relative h-7">
+                    {timelineTicks.map((tick, tIdx) => (
+                      <div
+                        key={tIdx}
+                        className="absolute top-0 transform -translate-x-1/2 flex flex-col items-center select-none"
+                        style={{ left: `${tick.percent}%` }}
+                      >
+                        <span className="text-[10px] font-mono text-slate-300 font-bold whitespace-nowrap bg-slate-900/90 px-1.5 py-0.5 rounded border border-slate-800/80">
+                          {tick.label}
+                        </span>
+                        <div className="w-px h-2 bg-slate-600 mt-1"></div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
-                {/* Đường vạch Hôm nay */}
+                {/* Đường vạch Hôm nay xuyên suốt bảng */}
                 {todayPosition !== null && todayPosition >= 0 && todayPosition <= 100 && (
                   <div
-                    className="absolute top-8 bottom-0 w-px border-l-2 border-dashed border-rose-500 z-20 pointer-events-none"
-                    style={{ left: `calc(${todayPosition}% + 16px)` }}
+                    className="absolute top-12 bottom-0 w-px border-l-2 border-dashed border-rose-500 z-20 pointer-events-none"
+                    style={{ left: `${todayPosition}%` }}
                   >
-                    <span className="absolute -top-3 -translate-x-1/2 bg-rose-600 text-white text-[9px] px-1.5 py-0.2 rounded font-bold">
+                    <span className="sticky top-10 -translate-x-1/2 bg-rose-600 text-white text-[9px] px-1.5 py-0.5 rounded font-bold shadow-md shadow-rose-600/30 whitespace-nowrap block w-fit">
                       Hôm nay
                     </span>
                   </div>
                 )}
 
+                {/* Vertical Grid Lines mờ làm thước gióng */}
+                <div className="absolute top-14 bottom-0 left-4 right-4 pointer-events-none z-0">
+                  {timelineTicks.map((tick, tIdx) => (
+                    <div
+                      key={tIdx}
+                      className="absolute top-0 bottom-0 w-px border-l border-slate-800/40"
+                      style={{ left: `${tick.percent}%` }}
+                    ></div>
+                  ))}
+                </div>
+
                 {/* Danh sách các thanh Gantt */}
-                <div className="space-y-4">
+                <div className="space-y-4 relative z-10">
                   {Object.entries(groupedTasks).map(([groupName, groupTaskList]) => (
-                    <div key={groupName} className="space-y-2">
-                      <div className="text-xs font-bold text-emerald-400 bg-slate-950/60 p-1.5 px-3 rounded-lg border border-slate-800/80">
-                        {groupName}
+                    <div key={groupName} className="space-y-2.5">
+                      <div className="text-xs font-bold text-emerald-400 bg-slate-950/80 p-2 px-3 rounded-lg border border-slate-800 flex items-center justify-between sticky top-12 z-20 shadow-md">
+                        <span>{groupName}</span>
+                        <span className="text-[10px] font-normal text-slate-400">
+                          {groupTaskList.length} nhiệm vụ
+                        </span>
                       </div>
 
                       {groupTaskList.map((task) => {
@@ -1135,63 +1153,107 @@ export default function ProjectProgressTab({
                         const endPos = getGanttPosition(task.end_date);
                         const docPos = getGanttPosition(task.latestDocDate);
 
-                        const planWidth = (startPos !== null && endPos !== null) ? Math.max(1, endPos - startPos) : 0;
+                        const planWidth = (startPos !== null && endPos !== null) ? Math.max(1.5, endPos - startPos) : 0;
+                        
+                        // Chiều rộng thực tế: nếu có VB thì đến ngày VB, nếu chưa có VB thì theo % tiến độ của kế hoạch
                         const actualWidth = (startPos !== null && endPos !== null) 
-                          ? (docPos !== null ? Math.max(1, docPos - startPos) : (planWidth * ((task.progress_percent || 0) / 100))) 
+                          ? (docPos !== null ? Math.max(1.5, docPos - startPos) : (planWidth * ((task.progress_percent || 0) / 100))) 
                           : 0;
 
                         const isLate = task.statusColor === 'red';
 
                         return (
-                          <div key={task.id} className="group hover:bg-slate-900/40 p-2 rounded-lg transition-colors">
-                            <div className="flex justify-between items-center text-xs mb-1.5">
-                              <div className="flex items-center gap-2 max-w-[60%]">
-                                <span className="font-mono text-slate-500 font-bold">{task.stt}</span>
-                                <span className="font-semibold text-slate-200 truncate" title={task.title}>
+                          <div key={task.id} className="group hover:bg-slate-900/50 p-2.5 rounded-xl border border-slate-800/60 bg-slate-950/40 transition-colors">
+                            {/* Thông tin task header */}
+                            <div className="flex justify-between items-center text-xs mb-2">
+                              <div className="flex items-center gap-2 max-w-[65%]">
+                                <span className="font-mono text-slate-400 font-bold bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">
+                                  {task.stt || '—'}
+                                </span>
+                                <span className="font-bold text-slate-100 truncate" title={task.title}>
                                   {task.title}
                                 </span>
+                                {task.assigned_to && (
+                                  <span className="text-[10px] text-slate-400 truncate hidden md:inline">
+                                    ({task.assigned_to})
+                                  </span>
+                                )}
                               </div>
                               <div className="flex items-center gap-3 text-[10px] text-slate-400 font-mono">
-                                <span>{formatDateVN(task.start_date)} → {formatDateVN(task.end_date)}</span>
-                                <span className="font-bold text-slate-200">{task.progress_percent || 0}%</span>
-                                <span className={`px-1.5 py-0.2 rounded font-bold ${
-                                  isLate ? 'text-rose-400 bg-rose-500/10' : 'text-emerald-400 bg-emerald-500/10'
+                                <span>KH: <strong className="text-slate-300">{formatDateVN(task.start_date)}</strong> → <strong className="text-slate-300">{formatDateVN(task.end_date)}</strong></span>
+                                {task.latestDocDate && (
+                                  <span>VB mới nhất: <strong className="text-cyan-300">{formatDateVN(task.latestDocDate)}</strong></span>
+                                )}
+                                <span className="font-bold text-slate-200 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">
+                                  {task.progress_percent || 0}%
+                                </span>
+                                <span className={`px-2 py-0.5 rounded-full font-bold text-[9px] border ${
+                                  isLate ? 'text-rose-300 bg-rose-500/20 border-rose-500/30' : 'text-emerald-300 bg-emerald-500/20 border-emerald-500/30'
                                 }`}>
                                   {task.statusText}
                                 </span>
                               </div>
                             </div>
 
-                            {/* Gantt Bar Area */}
-                            <div className="relative h-6 bg-slate-950/80 rounded-md border border-slate-800 overflow-hidden">
+                            {/* Gantt Bars: TÁCH RIÊNG BIỆT 2 THANH (KẾ HOẠCH & THỰC TẾ) */}
+                            <div className="space-y-1.5 bg-slate-950 p-2 rounded-lg border border-slate-800/80">
                               
-                              {/* Thanh Kế hoạch (Plan Bar - Màu Xanh dương) */}
-                              {startPos !== null && planWidth > 0 && (
-                                <div
-                                  className="absolute top-1 h-2 rounded bg-blue-500/70 border border-blue-400"
-                                  style={{
-                                    left: `${startPos}%`,
-                                    width: `${planWidth}%`
-                                  }}
-                                  title={`Kế hoạch: ${formatDateVN(task.start_date)} đến ${formatDateVN(task.end_date)}`}
-                                ></div>
-                              )}
+                              {/* 1. HÀNG KẾ HOẠCH (XANH DƯƠNG) */}
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 shrink-0 text-[9px] font-bold text-blue-400 uppercase font-mono tracking-wider">
+                                  [K.Hoạch]
+                                </div>
+                                <div className="flex-1 relative h-4 bg-slate-900/80 rounded overflow-hidden border border-slate-800/50">
+                                  {startPos !== null && planWidth > 0 ? (
+                                    <div
+                                      className="absolute top-0 bottom-0 rounded bg-gradient-to-r from-blue-600 to-blue-500 border border-blue-400 shadow-sm shadow-blue-500/30 flex items-center px-1.5 transition-all"
+                                      style={{
+                                        left: `${startPos}%`,
+                                        width: `${planWidth}%`
+                                      }}
+                                      title={`Kế hoạch: ${formatDateVN(task.start_date)} đến ${formatDateVN(task.end_date)} (${task.duration_days || ''} ngày)`}
+                                    >
+                                      <span className="text-[9px] font-mono text-white font-bold truncate drop-shadow">
+                                        KH: {formatDateVN(task.start_date)} - {formatDateVN(task.end_date)}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span className="text-[9px] text-slate-600 italic px-2">Chưa xác định ngày KH</span>
+                                  )}
+                                </div>
+                              </div>
 
-                              {/* Thanh Thực tế (Actual Bar - Màu Xanh lá / Đỏ) */}
-                              {startPos !== null && actualWidth > 0 && (
-                                <div
-                                  className={`absolute bottom-1 h-2.5 rounded transition-all ${
-                                    isLate 
-                                      ? 'bg-rose-500 border border-rose-400 shadow-sm shadow-rose-500/50' 
-                                      : 'bg-emerald-500 border border-emerald-400 shadow-sm shadow-emerald-500/50'
-                                  }`}
-                                  style={{
-                                    left: `${startPos}%`,
-                                    width: `${actualWidth}%`
-                                  }}
-                                  title={`Tiến độ thực tế: ${task.progress_percent}% (Ngày VB trễ nhất: ${formatDateVN(task.latestDocDate)})`}
-                                ></div>
-                              )}
+                              {/* 2. HÀNG TIẾN ĐỘ THỰC TẾ (XANH LÁ HOẶC ĐỎ) */}
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 shrink-0 text-[9px] font-bold font-mono tracking-wider">
+                                  <span className={isLate ? 'text-rose-400' : 'text-emerald-400'}>
+                                    [T.Tế]
+                                  </span>
+                                </div>
+                                <div className="flex-1 relative h-4 bg-slate-900/80 rounded overflow-hidden border border-slate-800/50">
+                                  {startPos !== null && actualWidth > 0 ? (
+                                    <div
+                                      className={`absolute top-0 bottom-0 rounded flex items-center px-1.5 transition-all ${
+                                        isLate 
+                                          ? 'bg-gradient-to-r from-rose-600 to-rose-500 border border-rose-400 shadow-sm shadow-rose-500/40' 
+                                          : 'bg-gradient-to-r from-emerald-600 to-emerald-500 border border-emerald-400 shadow-sm shadow-emerald-500/40'
+                                      }`}
+                                      style={{
+                                        left: `${startPos}%`,
+                                        width: `${actualWidth}%`
+                                      }}
+                                      title={`Thực tế: ${task.progress_percent}% (Văn bản mới nhất: ${formatDateVN(task.latestDocDate)})`}
+                                    >
+                                      <span className="text-[9px] font-mono text-white font-bold truncate drop-shadow">
+                                        TT: {task.progress_percent}% {task.latestDocDate ? `(VB: ${formatDateVN(task.latestDocDate)})` : ''}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span className="text-[9px] text-slate-600 italic px-2">Chưa có tiến độ thực tế (0%)</span>
+                                  )}
+                                </div>
+                              </div>
+
                             </div>
                           </div>
                         );
