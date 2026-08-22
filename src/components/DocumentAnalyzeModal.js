@@ -46,7 +46,9 @@ export default function DocumentAnalyzeModal({
   allFolderFiles = [],
   agencies = [],
   documentTypes = [],
+  analysisResult: customAnalysisResult,
 }) {
+  const analysisResult = customAnalysisResult || doc?.analysisResult || doc;
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 

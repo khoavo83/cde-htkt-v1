@@ -385,22 +385,9 @@ export default function FolderTree({ projectId, allDocuments = [], onDocumentUpd
       await handleSync();
       return;
     }
-    setLoadingFiles(true);
     setError(null);
-    try {
-      const res = await fetch(`/api/drive/files?folderId=${selectedFolder.id}&t=${Date.now()}`);
-      const json = await res.json();
-      if (json.files) {
-        setFolderFiles(json.files);
-        if (onDocumentUpdate) onDocumentUpdate();
-      } else {
-        setError(json.error || 'Lỗi đồng bộ thư mục');
-      }
-    } catch (e) {
-      setError('Lỗi khi đồng bộ thư mục');
-    } finally {
-      setLoadingFiles(false);
-    }
+    handleSelectFolder(selectedFolder);
+    if (onDocumentUpdate) onDocumentUpdate();
   };
 
   const handleExportExcel = async () => {
@@ -508,10 +495,13 @@ export default function FolderTree({ projectId, allDocuments = [], onDocumentUpd
     setFolderFiles([]);
     setIsGlobalSearchActive(false);
 
-    fetch(`/api/drive/files?folderId=${folder.id}&folderName=${encodeURIComponent(folder.name)}`)
+    fetch(`/api/drive/files?folderId=${folder.id}&folderName=${encodeURIComponent(folder.name)}&t=${Date.now()}`)
       .then(r => r.json())
       .then(json => {
-        if (!json.success || !json.data) return;
+        if (!json.success || !json.data) {
+          if (json.error) setError(json.error);
+          return;
+        }
 
         // Không lọc PDF nữa, lấy hết file do API trả về (đã lọc PDF và Word trong route)
         const allAllowedFiles = json.data;

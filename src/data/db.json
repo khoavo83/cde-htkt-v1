@@ -208,7 +208,7 @@
       "stage": "Giai đoạn chuẩn bị",
       "group_name": "I. Giai đoạn chuẩn bị",
       "assigned_to": "Sở Quy hoạch - Kiến trúc",
-      "progress_percent": 70,
+      "progress_percent": 100,
       "start_date": "2025-12-15",
       "end_date": "2026-02-13",
       "duration_days": "60",
@@ -218,7 +218,9 @@
       "documents": [
         "2026-04-22_2695_TTr-SQHKT_trình chấp thuận phê duyệt phương án tuyến công trình, vị trí công trình theo tuyến của Dự án tuyến đường sắt BT - CG.pdf",
         "2026-05-14_3239_TTr-SQHKT_trình chấp thuận phê duyệt phương án tuyến, vị trí công trình theo tuyến dự án BT-CG.pdf"
-      ]
+      ],
+      "parent_id": null,
+      "status": "completed"
     },
     {
       "id": "task-btcg-04",
@@ -228,7 +230,7 @@
       "stage": "Giai đoạn chuẩn bị",
       "group_name": "I. Giai đoạn chuẩn bị",
       "assigned_to": "Ủy ban nhân dân Thành phố",
-      "progress_percent": 0,
+      "progress_percent": 95,
       "start_date": "2026-02-13",
       "end_date": "2026-02-23",
       "duration_days": "10",
@@ -237,7 +239,9 @@
       "order_index": 4,
       "documents": [
         "2026-05-19_2909_QĐ-UBND_phê duyệt hồ sơ phương án tuyến, vị trí công trình theo tuyến dự án BT-CG.pdf"
-      ]
+      ],
+      "parent_id": null,
+      "status": "processing"
     },
     {
       "id": "task-btcg-05",
@@ -281,14 +285,16 @@
       "stage": "Giai đoạn chuẩn bị",
       "group_name": "I. Giai đoạn chuẩn bị",
       "assigned_to": "Công ty Vinspeed",
-      "progress_percent": 0,
+      "progress_percent": 100,
       "start_date": "2026-01-01",
       "end_date": "2026-03-02",
       "duration_days": "60",
       "legal_basis": "",
       "notes": "",
       "order_index": 7,
-      "documents": []
+      "documents": [],
+      "parent_id": null,
+      "status": "completed"
     },
     {
       "id": "task-btcg-08",
