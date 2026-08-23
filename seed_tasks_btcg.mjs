@@ -1,9 +1,10 @@
 import { Client } from 'pg';
-import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 
-dotenv.config({ path: '.env.local' });
+if (typeof process.loadEnvFile === 'function') {
+  try { process.loadEnvFile('.env.local'); } catch (_) {}
+}
 
 const BTCG_PROJECT_ID = '1ZjUVuusk_wD8GnsXXhBthpj8BvyG3fz2';
 
