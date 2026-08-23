@@ -1,0 +1,20 @@
+name: Supabase Keep Alive Ping
+
+on:
+  schedule:
+    # Chạy tự động lúc 01:00 UTC (08:00 sáng giờ VN) hàng ngày
+    - cron: '0 1 * * *'
+  workflow_dispatch: # Cho phép nhấn nút chạy thủ công bất cứ lúc nào
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase Database to prevent project pause
+        run: |
+          echo "Sending Keep-Alive request to Supabase API..."
+          curl -s -X GET "https://yeoerybkosutceirmaxp.supabase.co/rest/v1/tasks?select=id&limit=1" \
+            -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inllb2VyeWJrb3N1dGNlaXJtYXhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzNjMwOTQsImV4cCI6MjA5OTkzOTA5NH0.oLy_-4WqAHKE-bbQ83F2hRcE8t_y2N2Dg_PuMuCeDXs" \
+            -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inllb2VyeWJrb3N1dGNlaXJtYXhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzNjMwOTQsImV4cCI6MjA5OTkzOTA5NH0.oLy_-4WqAHKE-bbQ83F2hRcE8t_y2N2Dg_PuMuCeDXs"
+          echo ""
+          echo "Keep-Alive ping completed successfully!"
