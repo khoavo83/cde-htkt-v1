@@ -7,17 +7,34 @@ const CREDENTIALS_PATH = path.join(process.cwd(), 'credentials.json');
 const TOKEN_PATH = path.join(process.cwd(), 'token.json');
 
 /**
- * Reads previously authorized credentials from the save file.
+ * Reads previously authorized credentials from save file or environment variable.
  */
 async function loadSavedCredentialsIfExist() {
   try {
-    const tokenContent = fs.readFileSync(TOKEN_PATH, 'utf8');
-    const tokenData = JSON.parse(tokenContent);
+    let tokenData = null;
+
+    // 1. Ưu tiên đọc từ file token.json trên ổ đĩa cục bộ
+    if (fs.existsSync(TOKEN_PATH)) {
+      const tokenContent = fs.readFileSync(TOKEN_PATH, 'utf8');
+      tokenData = JSON.parse(tokenContent);
+    } 
+    // 2. Nếu không có file (môi trường Cloud/Netlify), đọc từ biến môi trường GOOGLE_TOKEN_JSON
+    else if (process.env.GOOGLE_TOKEN_JSON) {
+      try {
+        tokenData = JSON.parse(process.env.GOOGLE_TOKEN_JSON);
+      } catch (e) {
+        console.error('Error parsing GOOGLE_TOKEN_JSON env variable:', e.message);
+      }
+    }
+
+    if (!tokenData) {
+      return null;
+    }
     
     let clientId = tokenData.client_id;
     let clientSecret = tokenData.client_secret;
 
-    // Fallback: read from credentials.json if token.json doesn't have them
+    // Fallback: read from credentials.json or env if token.json doesn't have them
     if (!clientId || !clientSecret) {
       if (fs.existsSync(CREDENTIALS_PATH)) {
         const credsContent = fs.readFileSync(CREDENTIALS_PATH, 'utf8');
@@ -27,6 +44,15 @@ async function loadSavedCredentialsIfExist() {
           clientId = clientId || keys.client_id;
           clientSecret = clientSecret || keys.client_secret;
         }
+      } else if (process.env.GOOGLE_CREDENTIALS_JSON) {
+        try {
+          const creds = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
+          const keys = creds.installed || creds.web;
+          if (keys) {
+            clientId = clientId || keys.client_id;
+            clientSecret = clientSecret || keys.client_secret;
+          }
+        } catch (_) {}
       }
     }
     
@@ -43,7 +69,7 @@ async function loadSavedCredentialsIfExist() {
     
     return oAuth2Client;
   } catch (err) {
-    console.error('Error reading token.json:', err.message);
+    console.error('Error loading Google Drive credentials:', err.message);
     return null;
   }
 }
