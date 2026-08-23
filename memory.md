@@ -22,13 +22,27 @@ Việc duy trì file này giúp AI Agent trong các phiên làm việc tiếp th
 ## 4. Trạng thái & Tính năng hiện tại
 - Đã tích hợp Google Drive OAuth 2.0 (hiển thị cấu trúc cây thư mục).
 - Đã liên kết Tiến độ công việc (Tasks) với Tài liệu (Documents).
-- Tích hợp thành công **Theme Mode (Sáng/Tối)** thông qua `next-themes` và kỹ thuật **CSS Inversion** trong `globals.css` (bảo toàn 100% giao diện dark mode cũ, ghi đè màu sắc linh hoạt qua biến CSS khi sang light mode).
+- Tích hợp thành công **Theme Mode (Sáng/Tối)** thông qua `next-themes` và kỹ thuật **CSS Inversion** trong `globals.css`.
+- **Xác thực & Phân quyền Người dùng (Supabase Auth & Roles):** Đã xây dựng hoàn chỉnh với 3 cấp độ: `Admin` (Quản trị viên), `Editor` (Chuyên viên), `Viewer` (Người xem), kèm màn hình đăng nhập modal, quản lý user trong Cài đặt, và kiểm soát quyền ở mọi thao tác.
+- **Phân hệ Quản Lý Dự Án Toàn Diện (7 Tab Ngang Hàng):**
+  1. *Thông tin dự án* (`ProjectOverviewTab`)
+  2. *Tổng mức đầu tư* (`InvestmentTab`)
+  3. *Kế hoạch vốn* (`CapitalPlanTab` - Ma trận vốn 2026-2030)
+  4. *Gói thầu & HĐ* (`ContractManagementTab` - Quản lý Gói thầu, Hợp đồng & Phụ lục HĐ)
+  5. *Tiến độ* (`ProjectProgressTab`)
+  6. *Giải ngân* (`DisbursementTab` - So khớp 3 chiều, Tạm ứng, Nhật ký chi)
+  7. *Pháp lý* (`FolderTree`)
 
-## 5. Các công việc/Giải pháp đề xuất tiếp theo (Next Steps - Cập nhật 21/07/2026)
+## 5. Quy Chuẩn Bắt Buộc Vĩnh Viễn: Format Chuẩn Việt Nam (CRITICAL)
+- **Ngày tháng:** Luôn hiển thị theo định dạng **`DD/MM/YYYY`** (ví dụ: `26/06/2026`, `01/01/2026`). TUYỆT ĐỐI KHÔNG hiển thị dạng `YYYY-MM-DD` hoặc chuỗi ISO `2026-06-26T00:00:00Z` trên giao diện người dùng. Bắt buộc dùng `formatDateVN()`.
+- **Tiền tệ:** Dùng dấu chấm `.` phân cách hàng nghìn, dấu phẩy `,` cho thập phân, đơn vị `đ` hoặc `VNĐ` (ví dụ: `9.813.320.703.412 đ`, `5.574.573.235 đ`). Bắt buộc dùng `formatMoneyVN()`.
+- **Số lượng & Diện tích:** Bắt buộc dùng `formatNumberVN()`.
+- **Liên kết Pháp lý:** Mọi thực thể nghiệp vụ (TMĐT, Vốn, Gói thầu, Hợp đồng, Giải ngân) đều có khả năng chọn văn bản từ tab "Pháp lý" và có nút xem/mở file scan trực tiếp.
+
+## 6. Các công việc/Giải pháp đề xuất tiếp theo (Next Steps)
 
 ### 5.1. Hoàn thiện Module Quản trị (Cài đặt)
-1. **Người dùng & Phân quyền (Role-based Access)**: Tích hợp Supabase Auth vào tab "Người dùng" trong Cài đặt để quản lý tài khoản, giới hạn quyền (Admin, Chuyên viên, Người xem) và gán (Assign) văn bản cho người phụ trách.
-2. **Nhật ký hoạt động (Audit Logs) & Cấu hình**: Phát triển tab "Hệ thống" để lưu vết ai đã tạo/sửa/xóa văn bản nào, đồng thời cung cấp giao diện quản lý ID thư mục Google Drive thay vì phải sửa trực tiếp trong code.
+1. **Nhật ký hoạt động (Audit Logs) & Cấu hình**: Phát triển tab "Hệ thống" để lưu vết ai đã tạo/sửa/xóa văn bản nào, đồng thời cung cấp giao diện quản lý ID thư mục Google Drive thay vì phải sửa trực tiếp trong code.
 
 ### 5.2. Nâng cấp Trải nghiệm Quản lý Văn bản (Core Features)
 3. **Bộ lọc nâng cao (Advanced Filters)**: Bổ sung bộ lọc tại màn hình chính theo khoảng thời gian, trạng thái (còn hiệu lực, dự thảo), loại văn bản, và nơi phát hành.

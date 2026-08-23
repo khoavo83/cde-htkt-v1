@@ -9,6 +9,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import DocumentAnalyzeModal from './DocumentAnalyzeModal';
+import { formatDateVN } from '@/lib/formatters';
 
 // =========================================================
 // Helpers
@@ -145,9 +146,17 @@ const EditableCell = ({ value, onSave, multiline = false, className = '' }) => {
 
 const parseDateString = (dateStr) => {
   if (!dateStr || dateStr === 'Chưa xác định') return 0;
-  const parts = dateStr.split('/');
-  if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]).getTime();
-  return 0;
+  const s = String(dateStr).trim();
+  if (s.includes('/')) {
+    const parts = s.split('/');
+    if (parts.length === 3) return new Date(parts[2], parseInt(parts[1], 10) - 1, parts[0], 12, 0, 0).getTime();
+  }
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+    const parts = s.split('T')[0].split('-');
+    return new Date(parts[0], parseInt(parts[1], 10) - 1, parts[2], 12, 0, 0).getTime();
+  }
+  const t = new Date(s).getTime();
+  return isNaN(t) ? 0 : t;
 };
 
 // =========================================================
@@ -259,7 +268,9 @@ const DocRow = ({ file, idx, onUpdate, onAnalyze, onAttachClick, onAttachPhieuTr
       <td className={cellClass + " font-mono min-w-[120px] whitespace-normal break-words"} onClick={onAnalyze}>
         {file.so_vb || '—'}
       </td>
-      <td className={cellClass} onClick={onAnalyze}>{file.ngay_phat_hanh || '—'}</td>
+      <td className={cellClass + " font-mono"} onClick={onAnalyze}>
+        {formatDateVN(file.ngay_phat_hanh)}
+      </td>
       <td className={cellClass} onClick={onAnalyze} title={file.noi_phat_hanh}>{getAbbreviation(file.noi_phat_hanh) || '—'}</td>
       <td className={notesClass} onClick={onAnalyze}>
         <div className="whitespace-normal break-words leading-relaxed" title={file.trich_yeu || file.name || file.file_name}>

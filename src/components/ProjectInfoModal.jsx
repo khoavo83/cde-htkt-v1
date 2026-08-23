@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Save, ChevronDown, ChevronRight, Loader2, Plus, Trash2, X } from 'lucide-react';
+import { formatMoneyVN } from '@/lib/formatters';
+import DatePickerVN from './common/DatePickerVN';
 import StaffCombobox from './StaffCombobox';
 
 export default function ProjectInfoModal({ isOpen, onClose, projectId, onSaveSuccess }) {
@@ -296,11 +298,17 @@ export default function ProjectInfoModal({ isOpen, onClose, projectId, onSaveSuc
                     <div className="flex gap-2">
                       <div className="flex-1">
                         <label className="block text-xs font-medium text-slate-400 mb-1">Ngày bắt đầu</label>
-                        <input type="date" value={basicInfo.startDate} onChange={e => handleBasicChange('startDate', e.target.value)} className="w-full px-3 py-1.5 border border-slate-700/50 rounded-lg bg-slate-900 focus:ring-1 focus:ring-emerald-500 outline-none" />
+                        <DatePickerVN
+                          value={basicInfo.startDate}
+                          onChange={val => handleBasicChange('startDate', val)}
+                        />
                       </div>
                       <div className="flex-1">
                         <label className="block text-xs font-medium text-slate-400 mb-1">Ngày kết thúc</label>
-                        <input type="date" value={basicInfo.endDate} onChange={e => handleBasicChange('endDate', e.target.value)} className="w-full px-3 py-1.5 border border-slate-700/50 rounded-lg bg-slate-900 focus:ring-1 focus:ring-emerald-500 outline-none" />
+                        <DatePickerVN
+                          value={basicInfo.endDate}
+                          onChange={val => handleBasicChange('endDate', val)}
+                        />
                       </div>
                     </div>
                     <div className="col-span-1 md:col-span-2">
@@ -525,8 +533,8 @@ export default function ProjectInfoModal({ isOpen, onClose, projectId, onSaveSuc
 
                     <div className="flex items-center justify-between p-4 bg-emerald-900/20 border border-emerald-800/50 rounded-xl mt-4">
                       <span className="font-bold text-emerald-400">Tổng mức đầu tư</span>
-                      <span className="text-lg font-black text-emerald-400 bg-emerald-950/50 px-3 py-1 rounded-lg border border-emerald-500/20 shadow-inner">
-                        {new Intl.NumberFormat('vi-VN').format(totalInvestment)} VNĐ
+                      <span className="text-lg font-black text-emerald-400 bg-emerald-950/50 px-3 py-1 rounded-lg border border-emerald-500/20 shadow-inner font-mono">
+                        {formatMoneyVN(totalInvestment)}
                       </span>
                     </div>
                   </div>

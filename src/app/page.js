@@ -7,6 +7,14 @@ import DocumentAnalyzeModal from '@/components/DocumentAnalyzeModal';
 import SettingsTab from '@/components/SettingsTab';
 import KPITab from '@/components/KPITab';
 import ProjectProgressTab from '@/components/ProjectProgressTab';
+import ProjectOverviewTab from '@/components/project/ProjectOverviewTab';
+import InvestmentTab from '@/components/investment/InvestmentTab';
+import CapitalPlanTab from '@/components/investment/CapitalPlanTab';
+import DisbursementTab from '@/components/investment/DisbursementTab';
+import ContractManagementTab from '@/components/procurement/ContractManagementTab';
+import LoginScreen from '@/components/LoginScreen';
+import { useAuth } from '@/context/AuthContext';
+import { formatDateVN, formatMoneyVN } from '@/lib/formatters';
 import { 
   FileText, 
   Layers, 
@@ -17,36 +25,49 @@ import {
   Search, 
   Filter, 
   RefreshCw, 
-  Database,
-  Link as LinkIcon,
-  Zap,
-  Briefcase,
-  AlertTriangle,
-  FolderOpen,
-  Eye,
-  ExternalLink,
-  ChevronLeft,
-  ChevronRight,
-  Brain,
-  Image,
-  Film,
-  Table,
-  Presentation,
-  FileSpreadsheet,
-  FileImage,
-  FileArchive,
-  File,
-  MapPin,
-  LayoutGrid,
-  Settings,
-  Sun,
-  Moon,
-  Edit2,
-  Target
+  Database, 
+  Link as LinkIcon, 
+  Zap, 
+  Briefcase, 
+  AlertTriangle, 
+  FolderOpen, 
+  Eye, 
+  ExternalLink, 
+  ChevronLeft, 
+  ChevronRight, 
+  Brain, 
+  Image, 
+  Film, 
+  Table, 
+  Presentation, 
+  FileSpreadsheet, 
+  FileImage, 
+  FileArchive, 
+  File, 
+  MapPin, 
+  LayoutGrid, 
+  Settings, 
+  Sun, 
+  Moon, 
+  Edit2, 
+  Target, 
+  LogIn, 
+  LogOut, 
+  Crown, 
+  ShieldCheck, 
+  KeyRound, 
+  UserCheck,
+  DollarSign,
+  Receipt,
+  Building2,
+  Info,
+  Package 
 } from 'lucide-react';
 
 export default function Home() {
   const { theme, setTheme } = useTheme();
+  const { user, profile, role, isAdmin, isEditor, isAuthenticated, loading: authLoading, openAuthModal, signOut } = useAuth();
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -68,7 +89,8 @@ export default function Home() {
   const [activeDmsTab, setActiveDmsTab] = useState('all'); // 'all', 'linked'
   const [analyzingDoc, setAnalyzingDoc] = useState(null);
   const [activeMainTab, setActiveMainTab] = useState('projects'); // 'documents', 'projects', 'gis'
-  const [projectSubTab, setProjectSubTab] = useState('folders'); // 'progress', 'folders'
+  const [projectSubTab, setProjectSubTab] = useState('info'); // 'info', 'investment', 'capital', 'progress', 'folders', 'disbursement'
+  const [settingsSubTab, setSettingsSubTab] = useState('document_types');
   
   // Trạng thái dự án
   const [projects, setProjects] = useState([]);
@@ -153,6 +175,8 @@ export default function Home() {
   };
 
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     fetchData();
 
     // Kết nối Realtime SSE (Đồng bộ các cập nhật tiến độ công việc giữa các trình duyệt)
@@ -182,10 +206,16 @@ export default function Home() {
     return () => {
       eventSource.close();
     };
-  }, []);
+  }, [isAuthenticated]);
 
   // Cập nhật tiến độ công việc (Task)
   const handleUpdateTaskProgress = async (taskId, progressVal) => {
+    if (!isEditor) {
+      alert("Chỉ Chuyên viên (Editor) hoặc Quản trị viên (Admin) mới có quyền cập nhật tiến độ công việc! Vui lòng đăng nhập.");
+      openAuthModal('login');
+      return;
+    }
+
     setUpdatingTaskId(taskId);
     let status = 'pending';
     if (progressVal === 100) status = 'completed';
@@ -218,6 +248,12 @@ export default function Home() {
 
   // Đồng bộ hóa Google Drive sang Supabase
   const handleSyncDrive = async () => {
+    if (!isEditor) {
+      alert("Chức năng đồng bộ dữ liệu Google Drive yêu cầu quyền Chuyên viên hoặc Quản trị viên! Vui lòng đăng nhập.");
+      openAuthModal('login');
+      return;
+    }
+
     try {
       setSyncing(true);
       setSyncResult(null);
@@ -236,6 +272,12 @@ export default function Home() {
 
   // Liên kết một văn bản với công việc đang chọn
   const handleLinkDocumentToTask = async (docPath, docName) => {
+    if (!isEditor) {
+      alert("Chỉ Chuyên viên hoặc Quản trị viên mới có quyền liên kết tài liệu vào công việc! Vui lòng đăng nhập.");
+      openAuthModal('login');
+      return;
+    }
+
     if (!selectedTaskId) {
       alert("Vui lòng chọn một công việc ở cột bên trái trước khi liên kết!");
       return;
@@ -276,12 +318,13 @@ export default function Home() {
 
   // Mở tệp tin (hỗ trợ cả đường dẫn cục bộ và link Google Drive)
   const handleOpenDocument = async (doc) => {
-    if (doc.path) {
+    if (!doc) return;
+    if (typeof doc === 'string') {
       try {
         const res = await fetch('/api/documents/open', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filePath: doc.path })
+          body: JSON.stringify({ filePath: doc })
         });
         const result = await res.json();
         if (!result.success) {
@@ -291,8 +334,27 @@ export default function Home() {
         console.error("Lỗi khi mở file:", err);
         alert("Không thể kết nối đến API mở file.");
       }
-    } else if (doc.driveWebLink || doc.webViewLink || doc.web_view_link) {
-      const link = doc.driveWebLink || doc.webViewLink || doc.web_view_link;
+      return;
+    }
+
+    const path = doc.path || doc.filePath;
+    const link = doc.driveWebLink || doc.webViewLink || doc.web_view_link;
+    if (path) {
+      try {
+        const res = await fetch('/api/documents/open', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filePath: path })
+        });
+        const result = await res.json();
+        if (!result.success) {
+          alert(result.error);
+        }
+      } catch (err) {
+        console.error("Lỗi khi mở file:", err);
+        alert("Không thể kết nối đến API mở file.");
+      }
+    } else if (link) {
       window.open(link, '_blank');
     } else {
       alert("Không có đường dẫn cục bộ hoặc liên kết Google Drive để mở file này.");
@@ -452,7 +514,10 @@ export default function Home() {
 
   // Hàm trả về icon và màu sắc theo loại file
   const getFileIcon = (fileName) => {
-    const ext = fileName.split('.').pop().toLowerCase();
+    if (!fileName || typeof fileName !== 'string') {
+      return { icon: File, color: 'text-slate-400', bg: 'border-slate-600/30', label: 'FILE' };
+    }
+    const ext = fileName.includes('.') ? fileName.split('.').pop().toLowerCase() : '';
     switch (ext) {
       case 'pdf':
         return { icon: FileText, color: 'text-red-400', bg: 'border-red-500/30', label: 'PDF' };
@@ -475,14 +540,34 @@ export default function Home() {
       case 'html': case 'htm':
         return { icon: FileText, color: 'text-cyan-400', bg: 'border-cyan-500/30', label: 'HTML' };
       default:
-        return { icon: File, color: 'text-slate-400', bg: 'border-slate-600/30', label: ext.toUpperCase() || 'FILE' };
+        return { icon: File, color: 'text-slate-400', bg: 'border-slate-600/30', label: ext ? ext.toUpperCase() : 'FILE' };
     }
   };
+
+  // Nếu đang kiểm tra phiên làm việc
+  if (authLoading || !mounted) {
+    return (
+      <div className="h-screen w-screen bg-slate-950 flex flex-col items-center justify-center text-slate-400">
+        <div className="relative flex items-center justify-center mb-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 animate-pulse flex items-center justify-center text-white shadow-xl shadow-emerald-500/25">
+            <Layers className="w-7 h-7 animate-spin" />
+          </div>
+        </div>
+        <div className="text-xs font-bold text-white tracking-widest uppercase mb-1">Hệ Thống CDE-HTKT</div>
+        <div className="text-[11px] text-slate-500">Đang khởi tạo phiên làm việc...</div>
+      </div>
+    );
+  }
+
+  // Bắt buộc đăng nhập trước khi truy cập ứng dụng
+  if (!isAuthenticated) {
+    return <LoginScreen />;
+  }
 
   return (
     <div className="h-full w-full flex flex-col overflow-hidden font-sans text-sm">
       {/* Header - thu gọn */}
-      <header className="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-3 sm:px-6 py-2 sm:py-3 flex flex-wrap justify-between items-center gap-2 shrink-0 shadow-lg shadow-black/20">
+      <header className="relative z-50 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-3 sm:px-6 py-2 sm:py-3 flex flex-wrap justify-between items-center gap-2 shrink-0 shadow-lg shadow-black/20">
         <div className="flex items-center gap-2">
           <div className="p-2 bg-gradient-to-tr from-emerald-600 to-cyan-500 rounded-xl shadow-md shadow-emerald-500/20">
             <Layers className="w-5 h-5 text-white" />
@@ -557,6 +642,127 @@ export default function Home() {
           >
             {mounted && theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
           </button>
+
+          {/* Người dùng & Đăng nhập */}
+          <div className="relative ml-1">
+            {isAuthenticated ? (
+              <div className="relative">
+                <button
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="flex items-center gap-2 p-1 pl-2 pr-2.5 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-emerald-500/40 transition-all text-left group cursor-pointer"
+                >
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white text-[10px] font-bold shadow-sm shrink-0">
+                    {profile?.full_name ? profile.full_name.charAt(0) : user?.email?.charAt(0) || 'U'}
+                  </div>
+                  <div className="hidden sm:block text-[11px] leading-tight">
+                    <div className="font-semibold text-white group-hover:text-emerald-400 transition-colors max-w-[100px] truncate">
+                      {profile?.full_name || user?.email?.split('@')[0]}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {role === 'admin' ? (
+                        <span className="text-[9px] font-bold text-amber-400">👑 Admin</span>
+                      ) : role === 'editor' ? (
+                        <span className="text-[9px] font-bold text-emerald-400">✏️ Chuyên viên</span>
+                      ) : (
+                        <span className="text-[9px] font-bold text-slate-400">👁️ Người xem</span>
+                      )}
+                    </div>
+                  </div>
+                </button>
+
+                {/* Dropdown Menu */}
+                {isUserMenuOpen && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-[90]" 
+                      onClick={() => setIsUserMenuOpen(false)}
+                    />
+                    <div className="absolute right-0 top-full mt-2 w-64 bg-slate-900/98 border border-slate-700/90 rounded-2xl shadow-2xl z-[100] p-2.5 backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150">
+                      <div className="p-3 border-b border-slate-800 mb-1.5 bg-slate-950/60 rounded-xl">
+                        <div className="font-bold text-xs text-white truncate">{profile?.full_name || 'Người dùng'}</div>
+                        <div className="text-[10px] text-slate-400 font-mono truncate mt-0.5">{user?.email}</div>
+                        <div className="mt-2 flex items-center gap-1">
+                          {role === 'admin' ? (
+                            <span className="text-[9px] px-2.5 py-0.5 rounded-full font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                              👑 Quản trị viên (Admin)
+                            </span>
+                          ) : role === 'editor' ? (
+                            <span className="text-[9px] px-2.5 py-0.5 rounded-full font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                              ✏️ Chuyên viên (Editor)
+                            </span>
+                          ) : (
+                            <span className="text-[9px] px-2.5 py-0.5 rounded-full font-bold bg-slate-800 text-slate-400 border border-slate-700">
+                              👁️ Người xem (Read-only)
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          setIsUserMenuOpen(false);
+                          openAuthModal('change_password');
+                        }}
+                        className="w-full px-3 py-2 text-left text-xs text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-xl flex items-center gap-2.5 transition-colors cursor-pointer"
+                      >
+                        <KeyRound className="w-4 h-4 text-slate-400" />
+                        <span>Đổi mật khẩu</span>
+                      </button>
+
+                      {isAdmin && (
+                        <>
+                          <button
+                            onClick={() => {
+                              setIsUserMenuOpen(false);
+                              setActiveMainTab('settings');
+                              setSettingsSubTab('staffs');
+                            }}
+                            className="w-full px-3 py-2 text-left text-xs text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-xl flex items-center gap-2.5 transition-colors cursor-pointer"
+                          >
+                            <Users className="w-4 h-4 text-emerald-400" />
+                            <span>Quản lý Nhân sự</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setIsUserMenuOpen(false);
+                              setActiveMainTab('settings');
+                              setSettingsSubTab('permissions');
+                            }}
+                            className="w-full px-3 py-2 text-left text-xs text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-xl flex items-center gap-2.5 transition-colors cursor-pointer"
+                          >
+                            <ShieldCheck className="w-4 h-4 text-amber-400" />
+                            <span>Quản lý Phân quyền</span>
+                          </button>
+                        </>
+                      )}
+
+                      <div className="h-px bg-slate-800 my-1.5" />
+
+                      <button
+                        onClick={() => {
+                          setIsUserMenuOpen(false);
+                          signOut();
+                        }}
+                        className="w-full px-3 py-2.5 text-left text-xs font-semibold text-red-400 hover:text-white hover:bg-red-600/20 border border-transparent hover:border-red-500/30 rounded-xl flex items-center gap-2.5 transition-all cursor-pointer"
+                      >
+                        <LogOut className="w-4 h-4 text-red-400" />
+                        <span>Đăng xuất tài khoản</span>
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              <button
+                onClick={() => openAuthModal('login')}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 transition-all cursor-pointer whitespace-nowrap"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Đăng nhập</span>
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -760,15 +966,16 @@ export default function Home() {
                     </tr>
                   ) : (
                     paginatedDocs.map((doc, idx) => {
-                      const isLinkedToSelected = selectedTask && selectedTask.documents && selectedTask.documents.includes(doc.name);
-                      const fileInfo = getFileIcon(doc.name);
-                      const IconComp = fileInfo.icon;
+                      const docName = doc.name || doc.file_name || doc.fileName || '';
+                      const isLinkedToSelected = selectedTask && selectedTask.documents && docName && selectedTask.documents.includes(docName);
+                      const fileInfo = getFileIcon(docName);
+                      const IconComp = fileInfo.icon || File;
                       const actualIndex = (currentPage - 1) * itemsPerPage + idx + 1;
-                      const ext = (doc.name || '').split('.').pop().toLowerCase();
+                      const ext = docName.includes('.') ? docName.split('.').pop().toLowerCase() : '';
                       const isDocOrExcel = ['doc', 'docx', 'xls', 'xlsx'].includes(ext);
                       
                       return (
-                        <tr key={doc.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors group">
+                        <tr key={doc.id || idx} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors group">
                           <td className="py-2 px-3 align-top">
                             <div className="flex items-center gap-2">
                               <span className="text-slate-500 font-mono w-5">{actualIndex}</span>
@@ -788,40 +995,25 @@ export default function Home() {
                             </div>
                           </td>
                           <td className="py-2 px-3 align-top">
-                            <span className="font-semibold text-emerald-400 hover:underline cursor-pointer" onClick={() => handleOpenDocument(doc)} title={doc.documentNumber || doc.name}>
-                              {doc.documentNumber || doc.name.substring(0, 15) + '...'}
+                            <span className="font-semibold text-emerald-400 hover:underline cursor-pointer" onClick={() => handleOpenDocument(doc)} title={doc.documentNumber || docName}>
+                              {doc.documentNumber || (docName ? (docName.length > 15 ? docName.substring(0, 15) + '...' : docName) : '---')}
                             </span>
                           </td>
-                          <td className="py-2 px-3 align-top text-slate-400 whitespace-nowrap">
-                            {(() => {
-                              const rawDate = doc.issuedDate || doc.documentDate;
-                              if (!rawDate) return '---';
-                              if (/^\d{2}\/\d{2}\/\d{4}$/.test(rawDate)) return rawDate;
-                              if (/^\d{4}-\d{2}-\d{2}/.test(rawDate)) {
-                                const parts = rawDate.split('T')[0].split('-');
-                                return `${parts[2]}/${parts[1]}/${parts[0]}`;
-                              }
-                              const d = new Date(rawDate);
-                              if (!isNaN(d.getTime())) {
-                                const dd = String(d.getDate()).padStart(2, '0');
-                                const mm = String(d.getMonth() + 1).padStart(2, '0');
-                                return `${dd}/${mm}/${d.getFullYear()}`;
-                              }
-                              return rawDate;
-                            })()}
+                          <td className="py-2 px-3 align-top text-slate-400 whitespace-nowrap font-mono">
+                            {formatDateVN(doc.issuedDate || doc.documentDate || doc.ngay_phat_hanh)}
                           </td>
                           <td className="py-2 px-3 align-top text-slate-300">
-                            <span className="line-clamp-2" title={doc.issuer || doc.issuingAgency}>
+                            <span className="line-clamp-2" title={doc.issuer || doc.issuingAgency || doc.noi_ban_hanh}>
                               {(() => {
-                                const name = doc.issuer || doc.issuingAgency || 'Đang cập nhật';
+                                const name = doc.issuer || doc.issuingAgency || doc.noi_ban_hanh || 'Đang cập nhật';
                                 const agency = agencies.find(a => a.name === name);
                                 return agency?.abbreviation ? agency.abbreviation : name;
                               })()}
                             </span>
                           </td>
                           <td className="py-2 px-3 align-top">
-                            <p className="text-slate-300 line-clamp-2" title={isDocOrExcel ? doc.name : (doc.summary || doc.name)}>
-                              {isDocOrExcel ? doc.name : (doc.summary || doc.name)}
+                            <p className="text-slate-300 line-clamp-2" title={isDocOrExcel ? (docName || '') : (doc.summary || docName || '')}>
+                              {isDocOrExcel ? (docName || '---') : (doc.summary || docName || '---')}
                             </p>
                           </td>
                           <td className="py-2 px-3 align-top text-slate-300 whitespace-nowrap">
@@ -850,7 +1042,7 @@ export default function Home() {
                                   <CheckCircle2 className="w-3.5 h-3.5" />
                                 </span>
                               ) : (
-                                <button onClick={() => handleLinkDocumentToTask(doc.path || doc.name, doc.name)}
+                                <button onClick={() => handleLinkDocumentToTask(doc.path || doc.filePath || docName, docName || doc.documentNumber || '')}
                                   className="p-1.5 hover:bg-emerald-500/20 text-slate-400 hover:text-emerald-400 rounded transition-colors"
                                   title={`Liên kết: ${selectedTask?.title}`}>
                                   <LinkIcon className="w-3.5 h-3.5" />
@@ -870,51 +1062,156 @@ export default function Home() {
 
         {/* ──── TAB: QUẢN LÝ DỰ ÁN ──── */}
         {activeMainTab === 'projects' && (
-          <div className="h-full flex flex-col overflow-hidden p-3 sm:p-4">
-            <div className="flex justify-between items-center mb-3 shrink-0">
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => setProjectSubTab('progress')}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${projectSubTab === 'progress' ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 border border-transparent'}`}
-                >
-                  <div className="flex items-center gap-1.5">
-                    <Briefcase className="w-3.5 h-3.5" /> Tiến độ
-                  </div>
-                </button>
-                <button 
-                  onClick={() => setProjectSubTab('folders')}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${projectSubTab === 'folders' ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 border border-transparent'}`}
-                >
-                  <div className="flex items-center gap-1.5">
-                    <FolderOpen className="w-3.5 h-3.5" /> Dữ liệu
-                  </div>
-                </button>
-              </div>
-            </div>
+           <div className="h-full flex flex-col overflow-hidden p-3 sm:p-4">
+             <div className="flex justify-between items-center mb-3 shrink-0">
+               <div className="flex flex-wrap items-center gap-1.5 bg-slate-950/60 p-1 rounded-xl border border-slate-800">
+                 {/* 1. Thông tin dự án */}
+                 <button 
+                   onClick={() => setProjectSubTab('info')}
+                   className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${projectSubTab === 'info' ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-slate-200 border border-transparent'}`}
+                 >
+                   <div className="flex items-center gap-1.5">
+                     <Info className="w-3.5 h-3.5 text-emerald-400" /> Thông tin dự án
+                   </div>
+                 </button>
 
-            <div className="flex-1 min-h-0 overflow-hidden">
-              {projectSubTab === 'folders' && (
-                <div className="h-full w-full overflow-y-auto">
-                  <FolderTree 
-                    projectId={currentProjectId} 
-                    allDocuments={documents} 
-                    onDocumentUpdate={fetchData}
-                  />
-                </div>
-              )}
-              
-              {projectSubTab === 'progress' && (
-                <div className="h-full w-full">
-                  <ProjectProgressTab 
-                    projectId={currentProjectId}
-                    projectName={projects.find(p => p.id === currentProjectId)?.basic_info?.shortName || projects.find(p => p.id === currentProjectId)?.name}
-                    allDocuments={documents}
-                    onOpenDocument={handleOpenDocument}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
+                 {/* 2. Tổng mức đầu tư */}
+                 <button 
+                   onClick={() => setProjectSubTab('investment')}
+                   className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${projectSubTab === 'investment' ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-slate-200 border border-transparent'}`}
+                 >
+                   <div className="flex items-center gap-1.5">
+                     <DollarSign className="w-3.5 h-3.5 text-emerald-400" /> Tổng mức đầu tư
+                   </div>
+                 </button>
+
+                 {/* 3. Kế hoạch vốn */}
+                 <button 
+                   onClick={() => setProjectSubTab('capital')}
+                   className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${projectSubTab === 'capital' ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-slate-200 border border-transparent'}`}
+                 >
+                   <div className="flex items-center gap-1.5">
+                     <Calendar className="w-3.5 h-3.5 text-blue-400" /> Kế hoạch vốn
+                   </div>
+                 </button>
+
+                 {/* 4. Gói thầu & HĐ */}
+                 <button 
+                   onClick={() => setProjectSubTab('procurement')}
+                   className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${projectSubTab === 'procurement' ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-slate-200 border border-transparent'}`}
+                 >
+                   <div className="flex items-center gap-1.5">
+                     <Package className="w-3.5 h-3.5 text-purple-400" /> Gói thầu & HĐ
+                   </div>
+                 </button>
+
+                 {/* 5. Tiến độ */}
+                 <button 
+                   onClick={() => setProjectSubTab('progress')}
+                   className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${projectSubTab === 'progress' ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-slate-200 border border-transparent'}`}
+                 >
+                   <div className="flex items-center gap-1.5">
+                     <Briefcase className="w-3.5 h-3.5 text-amber-400" /> Tiến độ
+                   </div>
+                 </button>
+
+                 {/* 6. Giải ngân */}
+                 <button 
+                   onClick={() => setProjectSubTab('disbursement')}
+                   className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${projectSubTab === 'disbursement' ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-slate-200 border border-transparent'}`}
+                 >
+                   <div className="flex items-center gap-1.5">
+                     <Receipt className="w-3.5 h-3.5 text-amber-400" /> Giải ngân
+                   </div>
+                 </button>
+
+                 {/* 7. Pháp lý */}
+                 <button 
+                   onClick={() => setProjectSubTab('folders')}
+                   className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${projectSubTab === 'folders' ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-slate-200 border border-transparent'}`}
+                 >
+                   <div className="flex items-center gap-1.5">
+                     <FolderOpen className="w-3.5 h-3.5 text-purple-400" /> Pháp lý
+                   </div>
+                 </button>
+               </div>
+             </div>
+
+             <div className="flex-1 min-h-0 overflow-hidden">
+               {/* 1. Tab Thông tin DA */}
+               {projectSubTab === 'info' && (
+                 <div className="h-full w-full">
+                   <ProjectOverviewTab 
+                     projectId={currentProjectId}
+                     onUpdate={fetchData}
+                   />
+                 </div>
+               )}
+
+               {/* 2. Tab TMĐT */}
+               {projectSubTab === 'investment' && (
+                 <div className="h-full w-full">
+                   <InvestmentTab 
+                     projectId={currentProjectId}
+                     projectName={projects.find(p => p.id === currentProjectId)?.basic_info?.shortName || projects.find(p => p.id === currentProjectId)?.name}
+                   />
+                 </div>
+               )}
+
+               {/* 3. Tab Kế hoạch vốn */}
+               {projectSubTab === 'capital' && (
+                 <div className="h-full w-full">
+                   <CapitalPlanTab 
+                     projectId={currentProjectId}
+                     projectName={projects.find(p => p.id === currentProjectId)?.basic_info?.shortName || projects.find(p => p.id === currentProjectId)?.name}
+                   />
+                 </div>
+               )}
+
+               {/* 4. Tab Gói thầu & HĐ */}
+               {projectSubTab === 'procurement' && (
+                 <div className="h-full w-full">
+                   <ContractManagementTab 
+                     projectId={currentProjectId}
+                     projectName={projects.find(p => p.id === currentProjectId)?.basic_info?.shortName || projects.find(p => p.id === currentProjectId)?.name}
+                   />
+                 </div>
+               )}
+
+               {/* 5. Tab Tiến độ */}
+               {projectSubTab === 'progress' && (
+                 <div className="h-full w-full">
+                   <ProjectProgressTab 
+                     projectId={currentProjectId}
+                     projectName={projects.find(p => p.id === currentProjectId)?.basic_info?.shortName || projects.find(p => p.id === currentProjectId)?.name}
+                     allDocuments={documents}
+                     onOpenDocument={handleOpenDocument}
+                   />
+                 </div>
+               )}
+
+               {/* 5. Tab Dữ liệu */}
+               {projectSubTab === 'folders' && (
+                 <div className="h-full w-full overflow-y-auto">
+                   <FolderTree 
+                     projectId={currentProjectId} 
+                     allDocuments={documents} 
+                     onDocumentUpdate={fetchData}
+                   />
+                 </div>
+               )}
+
+               {/* 6. Tab Giải ngân */}
+               {projectSubTab === 'disbursement' && (
+                 <div className="h-full w-full">
+                   <DisbursementTab 
+                     projectId={currentProjectId}
+                     projectName={projects.find(p => p.id === currentProjectId)?.basic_info?.shortName || projects.find(p => p.id === currentProjectId)?.name}
+                   />
+                 </div>
+               )}
+             </div>
+           </div>
         )}
 
         {/* ──── TAB: BẢN ĐỒ GIS ──── */}
@@ -936,7 +1233,7 @@ export default function Home() {
           />
         )}
 
-        {activeMainTab === 'settings' && (<SettingsTab currentProjectId={currentProjectId} />)}
+        {activeMainTab === 'settings' && (<SettingsTab currentProjectId={currentProjectId} initialSubTab={settingsSubTab} />)}
 
         </main>
       

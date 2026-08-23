@@ -18,6 +18,8 @@ export const metadata = {
 
 
 import ThemeProvider from "@/components/ThemeProvider";
+import { AuthProvider } from "@/context/AuthContext";
+import AuthModal from "@/components/AuthModal";
 
 export default function RootLayout({ children }) {
   return (
@@ -28,7 +30,10 @@ export default function RootLayout({ children }) {
     >
       <body className="h-[100dvh] w-screen overflow-hidden flex flex-col bg-slate-950" suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-          {children}
+          <AuthProvider>
+            {children}
+            <AuthModal />
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

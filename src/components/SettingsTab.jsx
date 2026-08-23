@@ -17,13 +17,25 @@ import {
   AlertCircle,
   CheckCircle2,
   Wand2,
-  ArrowRight
+  ArrowRight,
+  Users,
+  ShieldCheck,
+  Crown
 } from 'lucide-react';
 import ProjectListTab from './ProjectListTab';
 import StaffListTab from './StaffListTab';
+import PermissionsTab from './PermissionsTab';
+import { useAuth } from '@/context/AuthContext';
 
-export default function SettingsTab({ currentProjectId }) {
-  const [activeSubTab, setActiveSubTab] = useState('document_types');
+export default function SettingsTab({ currentProjectId, initialSubTab = 'document_types' }) {
+  const { isAdmin, role, isAuthenticated, openAuthModal } = useAuth();
+  const [activeSubTab, setActiveSubTab] = useState(initialSubTab);
+
+  useEffect(() => {
+    if (initialSubTab) {
+      setActiveSubTab(initialSubTab);
+    }
+  }, [initialSubTab]);
   const [agencies, setAgencies] = useState([]);
   const [documentTypes, setDocumentTypes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -322,7 +334,19 @@ export default function SettingsTab({ currentProjectId }) {
             activeSubTab === 'staffs' ? 'border-emerald-400 text-emerald-400' : 'border-transparent text-slate-400 hover:text-slate-200'
           }`}
         >
-          <UserCircle className="w-4 h-4" /> Nhân sự
+          <Users className="w-4 h-4" /> Nhân sự
+        </button>
+
+        <button 
+          onClick={() => setActiveSubTab('permissions')}
+          className={`pb-2.5 font-semibold flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
+            activeSubTab === 'permissions' ? 'border-amber-400 text-amber-400' : 'border-transparent text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <ShieldCheck className="w-4 h-4 text-amber-400" /> Phân quyền
+          <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30">
+            3 Nhóm
+          </span>
         </button>
 
         <button 
@@ -337,15 +361,24 @@ export default function SettingsTab({ currentProjectId }) {
 
       {/* Nội dung Sub-tabs */}
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-        {activeSubTab === 'projects' && (
-          <div className="flex-1 h-full min-h-0 overflow-hidden flex flex-col">
-            <ProjectListTab />
-          </div>
-        )}
-        
+        {/* ── TAB NHÂN SỰ ── */}
         {activeSubTab === 'staffs' && (
           <div className="flex-1 h-full min-h-0 overflow-hidden flex flex-col">
             <StaffListTab />
+          </div>
+        )}
+
+        {/* ── TAB PHÂN QUYỀN ── */}
+        {activeSubTab === 'permissions' && (
+          <div className="flex-1 h-full min-h-0 overflow-hidden flex flex-col">
+            <PermissionsTab />
+          </div>
+        )}
+
+        {/* ── TAB DỰ ÁN ── */}
+        {activeSubTab === 'projects' && (
+          <div className="flex-1 h-full min-h-0 overflow-hidden flex flex-col">
+            <ProjectListTab />
           </div>
         )}
         

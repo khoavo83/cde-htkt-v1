@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import * as XLSX from 'xlsx';
+import { useAuth } from '@/context/AuthContext';
 import { 
   Briefcase, 
   Calendar, 
@@ -32,7 +33,9 @@ import {
   Sliders,
   Sparkles,
   Info,
-  CalendarDays
+  CalendarDays,
+  ShieldAlert,
+  Shield
 } from 'lucide-react';
 
 // Format helper: YYYY-MM-DD to DD/MM/YYYY
@@ -91,6 +94,7 @@ export default function ProjectProgressTab({
   allDocuments = [],
   onOpenDocument
 }) {
+  const { isEditor, openAuthModal } = useAuth();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('table'); // 'table' or 'gantt'
@@ -184,6 +188,12 @@ export default function ProjectProgressTab({
 
   // ── 3. Task Updates (Inline & Progress) ──────────────────────────────────────
   const handleUpdateProgress = async (taskId, newProgress) => {
+    if (!isEditor) {
+      showToast('Chỉ Chuyên viên hoặc Quản trị viên mới có quyền cập nhật tiến độ!', 'error');
+      openAuthModal('login');
+      return;
+    }
+
     setSavingTaskId(taskId);
     try {
       const task = tasks.find(t => t.id === taskId);
@@ -219,6 +229,12 @@ export default function ProjectProgressTab({
   // ── 4. Save Task (Modal) ────────────────────────────────────────────────────
   const handleSaveTaskForm = async (e) => {
     e.preventDefault();
+    if (!isEditor) {
+      showToast('Chỉ Chuyên viên hoặc Quản trị viên mới có quyền tạo/sửa nhiệm vụ!', 'error');
+      openAuthModal('login');
+      return;
+    }
+
     const formData = new FormData(e.target);
     const taskPayload = {
       id: editingTask?.id || `task-${Date.now()}`,
@@ -261,6 +277,12 @@ export default function ProjectProgressTab({
 
   // ── 5. Delete Task ──────────────────────────────────────────────────────────
   const handleDeleteTask = async (taskId) => {
+    if (!isEditor) {
+      showToast('Chỉ Chuyên viên hoặc Quản trị viên mới có quyền xóa nhiệm vụ!', 'error');
+      openAuthModal('login');
+      return;
+    }
+
     if (!confirm('Bạn có chắc chắn muốn xóa nhiệm vụ này?')) return;
     try {
       const res = await fetch(`/api/tasks?id=${encodeURIComponent(taskId)}`, {

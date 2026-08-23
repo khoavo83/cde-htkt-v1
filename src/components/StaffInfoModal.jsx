@@ -1,7 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Save, User, Phone, Mail, Calendar, MapPin, Upload, Building2, Plus, Trash2 } from 'lucide-react';
+import { 
+  X, 
+  Save, 
+  User, 
+  Phone, 
+  Mail, 
+  Calendar, 
+  Building2, 
+  Trash2 
+} from 'lucide-react';
 
 export default function StaffInfoModal({ staff, onClose }) {
   const [loading, setLoading] = useState(false);
@@ -27,7 +36,7 @@ export default function StaffInfoModal({ staff, onClose }) {
     
     if (staff) {
       setForm({
-        id: staff.id,
+        id: staff.id || '',
         full_name: staff.full_name || '',
         short_name: staff.short_name || '',
         position: staff.position || 'Chuyên viên',
@@ -37,7 +46,7 @@ export default function StaffInfoModal({ staff, onClose }) {
         email: staff.email || '',
         avatar_url: staff.avatar_url || '',
         notes: staff.notes || '',
-        departments: staff.departments || [] // [{ id, name, role }]
+        departments: staff.departments || []
       });
     }
   }, [staff]);
@@ -51,8 +60,8 @@ export default function StaffInfoModal({ staff, onClose }) {
       const dataDept = await resDept.json();
       const dataAgency = await resAgency.json();
       
-      if (dataDept.success) setDepartments(dataDept.data);
-      if (dataAgency.success) setAgencies(dataAgency.data);
+      if (dataDept.success) setDepartments(dataDept.data || []);
+      if (dataAgency.success) setAgencies(dataAgency.data || []);
     } catch (e) {
       console.error(e);
     }
@@ -68,7 +77,7 @@ export default function StaffInfoModal({ staff, onClose }) {
     const dept = departments.find(d => d.id === deptId);
     if (!dept) return;
     
-    // Check if already exists
+    // Kiểm tra nếu đã tồn tại
     if (form.departments.some(d => d.id === deptId)) return;
     
     setForm(prev => ({
@@ -95,7 +104,7 @@ export default function StaffInfoModal({ staff, onClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.full_name.trim()) return alert('Vui lòng nhập tên nhân sự!');
+    if (!form.full_name.trim()) return alert('Vui lòng nhập họ và tên nhân sự!');
     
     setLoading(true);
     try {
@@ -106,13 +115,13 @@ export default function StaffInfoModal({ staff, onClose }) {
       });
       const data = await res.json();
       if (data.success) {
-        onClose(true); // Close and refresh
+        onClose(true); // Đóng và tải lại danh sách
       } else {
-        alert(data.error || 'Lỗi khi lưu');
+        alert(data.error || 'Lỗi khi lưu thông tin nhân sự');
       }
     } catch (error) {
       console.error(error);
-      alert('Lỗi kết nối');
+      alert('Lỗi kết nối máy chủ');
     } finally {
       setLoading(false);
     }
@@ -124,18 +133,18 @@ export default function StaffInfoModal({ staff, onClose }) {
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
       <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-3xl flex flex-col max-h-[90vh] shadow-2xl shadow-emerald-900/20">
         
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-slate-800 shrink-0">
-          <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+          <h2 className="text-lg sm:text-xl font-bold text-slate-100 flex items-center gap-2">
             <User className="w-5 h-5 text-emerald-400" />
-            {staff ? 'Chỉnh sửa Nhân sự' : 'Thêm Nhân sự Mới'}
+            {staff ? `Chỉnh sửa Hồ sơ: ${staff.full_name}` : 'Thêm Nhân sự Mới'}
           </h2>
           <button 
             onClick={() => onClose(false)}
-            className="text-slate-400 hover:text-slate-200 transition-colors p-1"
+            className="text-slate-400 hover:text-slate-200 transition-colors p-1 cursor-pointer"
           >
             <X className="w-6 h-6" />
           </button>
@@ -148,36 +157,41 @@ export default function StaffInfoModal({ staff, onClose }) {
             {/* Hàng 1: Avatar và Thông tin cơ bản */}
             <div className="flex flex-col md:flex-row gap-6">
               {/* Cột trái: Avatar URL */}
-              <div className="w-full md:w-1/3 flex flex-col items-center gap-4">
-                <div className="relative group w-32 h-32 rounded-full border-2 border-dashed border-slate-600 flex items-center justify-center overflow-hidden bg-slate-800/50">
+              <div className="w-full md:w-1/3 flex flex-col items-center">
+                <div className="w-32 h-32 rounded-2xl bg-slate-950 border-2 border-dashed border-slate-700 overflow-hidden relative flex items-center justify-center mb-3 group shadow-inner">
                   {form.avatar_url ? (
-                    <img src={form.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                    <img 
+                      src={form.avatar_url} 
+                      alt="Avatar" 
+                      className="w-full h-full object-cover"
+                      onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80'; }}
+                    />
                   ) : (
-                    <User className="w-12 h-12 text-slate-600" />
+                    <div className="text-center p-2 text-slate-500">
+                      <User className="w-12 h-12 mx-auto mb-1 opacity-50" />
+                      <span className="text-xs">Chưa có ảnh</span>
+                    </div>
                   )}
-                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Upload className="w-6 h-6 text-slate-300" />
-                  </div>
                 </div>
                 <div className="w-full">
-                  <label className="block text-xs font-medium text-slate-400 mb-1 text-center">URL Ảnh đại diện</label>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">URL Ảnh đại diện</label>
                   <input
                     type="text"
                     name="avatar_url"
                     value={form.avatar_url}
                     onChange={handleChange}
                     placeholder="https://..."
-                    className="w-full bg-slate-950/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none text-center"
+                    className="w-full bg-slate-950/50 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:border-emerald-500 focus:outline-none truncate font-mono"
                   />
                 </div>
               </div>
 
-              {/* Cột phải: Form info */}
+              {/* Cột phải: Họ tên, Tên viết tắt, Chức vụ, Nơi phát hành */}
               <div className="w-full md:w-2/3 space-y-4">
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="col-span-2">
-                    <label className="block text-sm font-medium text-slate-400 mb-1">
-                      Họ và Tên <span className="text-red-500">*</span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Họ và Tên <span className="text-red-400">*</span>
                     </label>
                     <input
                       type="text"
@@ -185,68 +199,69 @@ export default function StaffInfoModal({ staff, onClose }) {
                       value={form.full_name}
                       onChange={handleChange}
                       required
+                      placeholder="Nguyễn Văn A"
                       className="w-full bg-slate-950/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none"
-                      placeholder="VD: Nguyễn Văn A"
                     />
                   </div>
-                  <div className="col-span-1">
-                    <label className="block text-sm font-medium text-slate-400 mb-1">
-                      Tên viết tắt
-                    </label>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 mb-1">Tên viết tắt</label>
                     <input
                       type="text"
                       name="short_name"
                       value={form.short_name}
                       onChange={handleChange}
-                      className="w-full bg-slate-950/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none uppercase"
-                      placeholder="VD: NVA"
+                      placeholder="A_NV"
+                      className="w-full bg-slate-950/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none"
                     />
                   </div>
                 </div>
-                
-                <div className="grid grid-cols-4 gap-4">
-                  <div className="col-span-2">
-                    <label className="block text-sm font-medium text-slate-400 mb-1">Chức vụ</label>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Chức vụ</label>
                     <input
                       type="text"
                       name="position"
                       value={form.position}
                       onChange={handleChange}
+                      placeholder="Chuyên viên, Giám đốc..."
                       className="w-full bg-slate-950/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none"
                     />
                   </div>
-                  <div className="col-span-2">
-                    <label className="block text-sm font-medium text-slate-400 mb-1">
-                      Ngày sinh
-                    </label>
-                    <input
-                      type="text"
-                      name="dob"
-                      value={form.dob}
-                      onChange={handleChange}
-                      placeholder="DD/MM/YYYY"
-                      className="w-full bg-slate-950/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <label className="block text-sm font-medium text-slate-400 mb-1">Phòng ban</label>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Nơi công tác (Cơ quan)</label>
                     <select
                       name="agency_id"
                       value={form.agency_id}
                       onChange={handleChange}
                       className="w-full bg-slate-950/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none"
                     >
-                      <option value="">-- Chọn Phòng ban --</option>
+                      <option value="">-- Chọn Đơn vị / Cơ quan --</option>
                       {agencies.map(a => (
-                        <option key={a.id} value={a.id}>{a.name}</option>
+                        <option key={a.id} value={a.id}>
+                          {a.abbreviation ? `[${a.abbreviation}] ${a.name}` : a.name}
+                        </option>
                       ))}
                     </select>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-slate-400 mb-1">Số điện thoại</label>
+                    <label className="block text-xs font-semibold text-slate-400 mb-1">Ngày sinh</label>
+                    <div className="relative">
+                      <Calendar className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="date"
+                        name="dob"
+                        value={form.dob}
+                        onChange={handleChange}
+                        className="w-full bg-slate-950/50 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 mb-1">Số điện thoại</label>
                     <div className="relative">
                       <Phone className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                       <input
@@ -254,12 +269,15 @@ export default function StaffInfoModal({ staff, onClose }) {
                         name="phone"
                         value={form.phone}
                         onChange={handleChange}
+                        placeholder="090..."
                         className="w-full bg-slate-950/50 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none"
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-400 mb-1">Email</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Email
+                    </label>
                     <div className="relative">
                       <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                       <input
@@ -267,7 +285,8 @@ export default function StaffInfoModal({ staff, onClose }) {
                         name="email"
                         value={form.email}
                         onChange={handleChange}
-                        className="w-full bg-slate-950/50 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none"
+                        placeholder="ten@cde-htkt.vn"
+                        className="w-full bg-slate-950/50 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none font-mono"
                       />
                     </div>
                   </div>
@@ -278,17 +297,17 @@ export default function StaffInfoModal({ staff, onClose }) {
             {/* Hàng 2: Phân công Tổ / Nhóm */}
             <div className="pt-4 border-t border-slate-800">
               <div className="flex justify-between items-center mb-3">
-                <label className="block text-sm font-bold text-emerald-500 flex items-center gap-2">
-                  <Building2 className="w-4 h-4" /> Phân công Tổ/Nhóm
+                <label className="block text-xs font-bold text-emerald-400 flex items-center gap-2 uppercase tracking-wider">
+                  <Building2 className="w-4 h-4" /> Phân công Tổ / Nhóm Chuyên môn
                 </label>
                 
                 {/* Nút thêm Tổ chuyên môn / Nhóm chuyên môn riêng */}
                 <div className="flex gap-2">
                   <select 
-                    className="bg-slate-950 border border-slate-700 rounded text-sm text-slate-300 p-1 focus:outline-none focus:border-emerald-500 w-36 md:w-40"
+                    className="bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-300 p-1.5 focus:outline-none focus:border-emerald-500 w-36 md:w-40"
                     onChange={(e) => {
                       handleAddDepartment(e.target.value);
-                      e.target.value = ''; // reset
+                      e.target.value = '';
                     }}
                     defaultValue=""
                   >
@@ -299,10 +318,10 @@ export default function StaffInfoModal({ staff, onClose }) {
                   </select>
 
                   <select 
-                    className="bg-slate-950 border border-slate-700 rounded text-sm text-slate-300 p-1 focus:outline-none focus:border-emerald-500 w-36 md:w-40"
+                    className="bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-300 p-1.5 focus:outline-none focus:border-emerald-500 w-36 md:w-40"
                     onChange={(e) => {
                       handleAddDepartment(e.target.value);
-                      e.target.value = ''; // reset
+                      e.target.value = '';
                     }}
                     defaultValue=""
                   >
@@ -315,33 +334,33 @@ export default function StaffInfoModal({ staff, onClose }) {
               </div>
 
               {form.departments.length === 0 ? (
-                <div className="text-sm text-slate-500 italic p-4 text-center border border-dashed border-slate-700 rounded-lg bg-slate-900/50">
+                <div className="text-xs text-slate-500 italic p-3 text-center border border-dashed border-slate-800 rounded-xl bg-slate-950/40">
                   Nhân sự này chưa thuộc Tổ/Nhóm nào.
                 </div>
               ) : (
-                <div className="border border-slate-700 rounded-lg overflow-hidden">
-                  <table className="w-full text-left text-sm text-slate-300">
-                    <thead className="bg-slate-800 text-slate-400 border-b border-slate-700">
+                <div className="border border-slate-800 rounded-xl overflow-hidden">
+                  <table className="w-full text-left text-xs text-slate-300">
+                    <thead className="bg-slate-800/80 text-slate-400 border-b border-slate-800">
                       <tr>
-                        <th className="px-4 py-2 font-medium">Tổ/Nhóm</th>
-                        <th className="px-4 py-2 font-medium w-1/3">Vai trò</th>
-                        <th className="px-4 py-2 font-medium w-16 text-center">Xóa</th>
+                        <th className="px-3 py-2 font-medium">Tổ / Nhóm</th>
+                        <th className="px-3 py-2 font-medium w-1/3">Vai trò</th>
+                        <th className="px-3 py-2 font-medium w-16 text-center">Xóa</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60 bg-slate-900/50">
+                    <tbody className="divide-y divide-slate-800/60 bg-slate-950/40">
                       {form.departments.map(d => (
                         <tr key={d.id}>
-                          <td className="px-4 py-2 flex items-center gap-2">
-                            <span className="px-2 py-0.5 rounded text-xs border border-slate-600 bg-slate-800 text-slate-300">
+                          <td className="px-3 py-2 flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded text-[10px] border border-slate-700 bg-slate-800 text-slate-300 font-semibold">
                               {d.type}
                             </span>
-                            {d.name}
+                            <span className="font-medium text-white">{d.name}</span>
                           </td>
-                          <td className="px-4 py-2">
+                          <td className="px-3 py-2">
                             <select
                               value={d.role}
                               onChange={(e) => handleUpdateRole(d.id, e.target.value)}
-                              className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 focus:outline-none focus:border-emerald-500"
+                              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 text-slate-200"
                             >
                               <option value="Thành viên">Thành viên</option>
                               <option value="Tổ trưởng">Tổ trưởng</option>
@@ -350,13 +369,13 @@ export default function StaffInfoModal({ staff, onClose }) {
                               <option value="Nhóm phó">Nhóm phó</option>
                             </select>
                           </td>
-                          <td className="px-4 py-2 text-center">
+                          <td className="px-3 py-2 text-center">
                             <button
                               type="button"
                               onClick={() => handleRemoveDepartment(d.id)}
-                              className="text-slate-500 hover:text-red-400 transition-colors"
+                              className="text-slate-500 hover:text-red-400 transition-colors p-1 cursor-pointer"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </td>
                         </tr>
@@ -369,13 +388,14 @@ export default function StaffInfoModal({ staff, onClose }) {
 
             {/* Hàng 3: Ghi chú */}
             <div className="pt-4 border-t border-slate-800">
-              <label className="block text-sm font-medium text-slate-400 mb-1">Ghi chú thêm</label>
+              <label className="block text-xs font-semibold text-slate-400 mb-1">Ghi chú thêm</label>
               <textarea
                 name="notes"
                 value={form.notes}
                 onChange={handleChange}
                 rows={2}
-                className="w-full bg-slate-950/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none resize-none"
+                placeholder="Ghi chú về chuyên môn, nhiệm vụ được giao..."
+                className="w-full bg-slate-950/50 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:border-emerald-500 focus:outline-none resize-none"
               ></textarea>
             </div>
 
@@ -387,7 +407,7 @@ export default function StaffInfoModal({ staff, onClose }) {
           <button
             type="button"
             onClick={() => onClose(false)}
-            className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+            className="px-4 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
             disabled={loading}
           >
             Hủy bỏ
@@ -396,10 +416,10 @@ export default function StaffInfoModal({ staff, onClose }) {
             type="submit"
             form="staff-form"
             disabled={loading}
-            className="flex items-center gap-2 px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 shadow-lg shadow-emerald-900/20"
+            className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white text-xs font-bold rounded-xl transition-all disabled:opacity-50 shadow-lg shadow-emerald-600/20 cursor-pointer"
           >
             <Save className="w-4 h-4" />
-            {loading ? 'Đang lưu...' : 'Lưu Thay đổi'}
+            {loading ? 'Đang lưu...' : 'Lưu Hồ sơ'}
           </button>
         </div>
       </div>

@@ -4,10 +4,11 @@ import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import AgencyCombobox from './AgencyCombobox';
 import StaffCombobox from './StaffCombobox';
+import { useAuth } from '@/context/AuthContext';
 import { 
   X, Save, Bot, CheckCircle2, AlertTriangle, 
   FileText, Sparkles, Loader2, Shield,
-  Calendar, User, Tag, Hash, FolderOpen, Send, Copy, Type, XCircle, ScanEye, Link2, Plus, ExternalLink, Download, FileCheck, Unlink2, Trash2
+  Calendar, User, Tag, Hash, FolderOpen, Send, Copy, Type, XCircle, ScanEye, Link2, Plus, ExternalLink, Download, FileCheck, Unlink2, Trash2, ShieldAlert
 } from 'lucide-react';
 
 
@@ -48,6 +49,7 @@ export default function DocumentAnalyzeModal({
   documentTypes = [],
   analysisResult: customAnalysisResult,
 }) {
+  const { isEditor, openAuthModal } = useAuth();
   const analysisResult = customAnalysisResult || doc?.analysisResult || doc;
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -720,21 +722,43 @@ export default function DocumentAnalyzeModal({
                 
                 {/* Nút hành động */}
                 <div className="col-span-12 pt-4 mt-2 border-t border-slate-800/80">
-                  <div className="flex items-center justify-end gap-3 w-full">
-                    <button
-                      onClick={handleClose}
-                      className="px-5 py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
-                    >
-                      <XCircle className="w-4 h-4" />
-                      Hủy
-                    </button>
-                    <button
-                      onClick={() => setShowConfirm(true)}
-                      className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/20"
-                    >
-                      <Save className="w-4 h-4" />
-                      Lưu thông tin
-                    </button>
+                  <div className="flex items-center justify-between gap-3 w-full">
+                    {!isEditor ? (
+                      <div className="text-xs text-amber-400/90 flex items-center gap-1.5 bg-amber-500/10 px-3 py-1.5 rounded-xl border border-amber-500/20">
+                        <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
+                        <span>Chế độ Người xem (Read-only). Cần quyền Chuyên viên để chỉnh sửa.</span>
+                      </div>
+                    ) : (
+                      <div />
+                    )}
+
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={handleClose}
+                        className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer"
+                      >
+                        <XCircle className="w-4 h-4" />
+                        Đóng
+                      </button>
+
+                      {isEditor ? (
+                        <button
+                          onClick={() => setShowConfirm(true)}
+                          className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer"
+                        >
+                          <Save className="w-4 h-4" />
+                          Lưu thông tin
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => openAuthModal('login')}
+                          className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer"
+                        >
+                          <Shield className="w-4 h-4" />
+                          Đăng nhập để sửa
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
 

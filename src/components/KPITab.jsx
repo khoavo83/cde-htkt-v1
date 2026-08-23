@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Target, Calendar, FileText, X, ExternalLink, Download, RefreshCw } from 'lucide-react';
+import { formatDateVN } from '@/lib/formatters';
 
 export default function KPITab({ documents = [], onOpenDocument, onRefresh }) {
   const [filterType, setFilterType] = useState('year'); // 'year' hoặc 'range'
@@ -360,7 +361,7 @@ export default function KPITab({ documents = [], onOpenDocument, onRefresh }) {
                       </span>
                       {(doc.documentDate || doc.ngay_phat_hanh) && (
                         <span className="text-[11px] text-slate-400 font-mono">
-                          • Ngày: {doc.documentDate || doc.ngay_phat_hanh}
+                          • Ngày: {formatDateVN(doc.documentDate || doc.ngay_phat_hanh)}
                         </span>
                       )}
                     </div>

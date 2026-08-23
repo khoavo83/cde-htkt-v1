@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { X, Calendar, User, Tag, Folder, FileText, Link2, Trash2, Edit3, ExternalLink, Plus, CheckCircle, Info } from 'lucide-react';
+import { formatDateTimeVN } from '@/lib/formatters';
 
 export default function DocumentDetailModal({ 
   document: doc, 
@@ -137,7 +138,7 @@ export default function DocumentDetailModal({
 
               <div className="flex items-center justify-between text-[11px] text-slate-400 bg-slate-950/40 p-3 rounded-xl border border-slate-850">
                 <span>Dung lượng: <strong className="text-slate-200">{doc.size || "1.5 MB"}</strong></span>
-                <span>Cập nhật lần cuối: <strong className="text-slate-200">{new Date(doc.updatedAt).toLocaleString('vi-VN')}</strong></span>
+                <span>Cập nhật lần cuối: <strong className="text-slate-200 font-mono">{formatDateTimeVN(doc.updatedAt)}</strong></span>
               </div>
             </div>
 
