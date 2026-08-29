@@ -184,6 +184,10 @@ export async function GET(request) {
         parent_id: existing?.parent_id || null,
         draftFiles: existing?.draft_files || [],
         assignedStaff: existing?.target_nguoi_xu_ly || existing?.nguoi_xu_ly || '',
+        content_md: existing?.content_md || null,
+        is_md_generated: existing?.is_md_generated || false,
+        md_char_count: existing?.md_char_count || null,
+        md_generated_at: existing?.md_generated_at || null,
       };
 
       updatedFiles.push(mergedFile);

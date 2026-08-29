@@ -8,8 +8,11 @@ import { useAuth } from '@/context/AuthContext';
 import { 
   X, Save, Bot, CheckCircle2, AlertTriangle, 
   FileText, Sparkles, Loader2, Shield,
-  Calendar, User, Tag, Hash, FolderOpen, Send, Copy, Type, XCircle, ScanEye, Link2, Plus, ExternalLink, Download, FileCheck, Unlink2, Trash2, ShieldAlert
+  Calendar, User, Tag, Hash, FolderOpen, Send, Copy, Type, XCircle, ScanEye, Link2, Plus, ExternalLink, Download, FileCheck, Unlink2, Trash2, ShieldAlert,
+  FileCode, RotateCw, Check, BookOpen
 } from 'lucide-react';
+import MarkdownPreview from '@/components/common/MarkdownPreview';
+import { formatDateVN, formatDateTimeVN } from '@/lib/formatters';
 
 
 const STATUS_OPTIONS = [
@@ -78,6 +81,17 @@ export default function DocumentAnalyzeModal({
   const [showConfirm, setShowConfirm] = useState(false);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
 
+  // ─── States cho Kho tri thức Markdown (.md) ───
+  const [activeTab, setActiveTab] = useState('metadata'); // 'metadata' | 'markdown'
+  const [markdownContent, setMarkdownContent] = useState('');
+  const [mdCharCount, setMdCharCount] = useState(0);
+  const [mdGeneratedAt, setMdGeneratedAt] = useState(null);
+  const [isGeneratingMd, setIsGeneratingMd] = useState(false);
+  const [useAIForMd, setUseAIForMd] = useState(false);
+  const [mdViewMode, setMdViewMode] = useState('preview'); // 'preview' | 'raw'
+  const [copySuccess, setCopySuccess] = useState(false);
+  const [mdSuccessMsg, setMdSuccessMsg] = useState('');
+
   const phapLyString = useMemo(() => {
     let str = formData.category ? `${formData.category}` : '';
     if (formData.documentNumber) {
@@ -144,6 +158,7 @@ export default function DocumentAnalyzeModal({
       fetchStaffs();
       setWarning('');
       setError('');
+      setMdSuccessMsg('');
       setShowConfirm(false);
       setShowCloseConfirm(false);
       setFormData({
@@ -163,8 +178,97 @@ export default function DocumentAnalyzeModal({
         ])),
       });
       setSelectedDraftFile('');
+
+      // Khởi tạo nội dung Markdown nếu có sẵn
+      if (doc.content_md) {
+        setMarkdownContent(doc.content_md);
+        setMdCharCount(doc.md_char_count || doc.content_md.length);
+        setMdGeneratedAt(doc.md_generated_at);
+      } else {
+        setMarkdownContent('');
+        setMdCharCount(0);
+        setMdGeneratedAt(null);
+        // Tự động kiểm tra xem trong database đã có MD chưa
+        const targetId = doc.id || doc.fileId || doc.driveFileId;
+        if (targetId) {
+          fetch(`/api/documents/generate-md?fileId=${targetId}`)
+            .then(r => r.json())
+            .then(data => {
+              if (data.success && data.has_md && data.content_md) {
+                setMarkdownContent(data.content_md);
+                setMdCharCount(data.md_char_count || data.content_md.length);
+                setMdGeneratedAt(data.md_generated_at);
+              }
+            })
+            .catch(() => {});
+        }
+      }
     }
   }, [isOpen, doc]);
+
+  // Xử lý tạo nội dung Markdown
+  const handleGenerateMd = async (forceWithAI = false) => {
+    const targetFileId = doc.id || doc.fileId || doc.driveFileId;
+    if (!targetFileId && !doc.name && !doc.file_name) return;
+
+    setIsGeneratingMd(true);
+    setError('');
+    setMdSuccessMsg('');
+    try {
+      const res = await fetch('/api/documents/generate-md', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileId: targetFileId,
+          fileName: doc.name || doc.file_name,
+          useAI: forceWithAI || useAIForMd,
+          force: true
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.content_md) {
+        setMarkdownContent(data.content_md);
+        setMdCharCount(data.md_char_count || data.content_md.length);
+        setMdGeneratedAt(data.md_generated_at || new Date().toISOString());
+        setMdSuccessMsg(`Đã tạo và lưu thành công ${data.md_char_count || data.content_md.length} ký tự vào Supabase!`);
+        if (onSave) {
+          onSave({
+            ...doc,
+            content_md: data.content_md,
+            is_md_generated: true,
+            md_char_count: data.md_char_count || data.content_md.length,
+            md_generated_at: data.md_generated_at || new Date().toISOString()
+          });
+        }
+      } else {
+        setError(data.error || 'Không thể tạo nội dung Markdown');
+      }
+    } catch (err) {
+      setError('Lỗi khi gọi API tạo Markdown: ' + err.message);
+    } finally {
+      setIsGeneratingMd(false);
+    }
+  };
+
+  const handleCopyMarkdown = () => {
+    if (!markdownContent) return;
+    navigator.clipboard.writeText(markdownContent);
+    setCopySuccess(true);
+    setTimeout(() => setCopySuccess(false), 2000);
+  };
+
+  const handleDownloadMarkdown = () => {
+    if (!markdownContent) return;
+    const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const safeName = (formData.documentNumber || doc.name || 'document')
+      .replace(/[/\\?%*:|"<>]/g, '_');
+    a.download = `${safeName}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   // Xử lý phím tắt
   useEffect(() => {
@@ -409,11 +513,73 @@ export default function DocumentAnalyzeModal({
             )}
           </div>
 
-          {/* Right Column: Data Form */}
+          {/* Right Column: Data Form & Markdown Knowledge Base */}
           <div className="flex-1 lg:w-[40%] flex flex-col h-full max-h-full bg-slate-900 relative min-h-0">
-            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-5 custom-scrollbar min-h-0">
-              
+            {/* Tab Switcher Header */}
+            <div className="flex items-center justify-between border-b border-slate-800 bg-slate-950/80 px-4 py-2.5 shrink-0">
+              <div className="flex items-center gap-1.5 p-1 bg-slate-900 rounded-xl border border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('metadata')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                    activeTab === 'metadata'
+                      ? 'bg-emerald-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                  }`}
+                >
+                  <Tag className="w-3.5 h-3.5" />
+                  <span>Thuộc tính</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('markdown')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                    activeTab === 'markdown'
+                      ? 'bg-cyan-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                  }`}
+                >
+                  <FileCode className="w-3.5 h-3.5" />
+                  <span>Kho tri thức (.md)</span>
+                  {markdownContent ? (
+                    <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                  ) : (
+                    <span className="text-[9px] bg-slate-800 text-cyan-400 px-1 py-0.5 rounded border border-cyan-500/30">Mới</span>
+                  )}
+                </button>
+              </div>
 
+              {/* Quick info / Actions on Top Right */}
+              {activeTab === 'markdown' && markdownContent && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] font-mono text-cyan-400 bg-cyan-950/60 border border-cyan-800/60 px-2 py-0.5 rounded-md hidden sm:inline">
+                    {Math.round(mdCharCount / 1024 * 10) / 10} KB
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleCopyMarkdown}
+                    className="p-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-lg text-xs flex items-center gap-1 transition-colors cursor-pointer"
+                    title="Sao chép toàn bộ Markdown"
+                  >
+                    {copySuccess ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span className="hidden sm:inline">{copySuccess ? 'Đã chép' : 'Chép'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDownloadMarkdown}
+                    className="p-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-lg text-xs flex items-center gap-1 transition-colors cursor-pointer"
+                    title="Tải file .md về máy"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Tải .md</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* TAB 1: METADATA FORM */}
+            {activeTab === 'metadata' && (
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-5 custom-scrollbar min-h-0">
               {/* Messages */}
               {warning && (
                 <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-[11px] text-amber-400 flex items-start gap-2">
@@ -767,6 +933,160 @@ export default function DocumentAnalyzeModal({
               {/* Spacing for footer */}
               <div className="h-6"></div>
             </div>
+            )}
+
+            {/* TAB 2: MARKDOWN KNOWLEDGE BASE */}
+            {activeTab === 'markdown' && (
+              <div className="flex-1 flex flex-col overflow-hidden min-h-0 bg-slate-900">
+                {/* Action Control Bar */}
+                <div className="p-3 bg-slate-950/60 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2.5 shrink-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* Status Badge */}
+                    {markdownContent ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        Đã có .md ({Math.round(mdCharCount / 1024 * 10) / 10} KB)
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                        Chưa tạo .md
+                      </span>
+                    )}
+
+                    {/* Checkbox Dùng AI OCR */}
+                    <label className="inline-flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer bg-slate-800/80 hover:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700 select-none transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={useAIForMd}
+                        onChange={(e) => setUseAIForMd(e.target.checked)}
+                        className="w-3.5 h-3.5 rounded text-cyan-500 bg-slate-900 border-slate-600 cursor-pointer"
+                      />
+                      <Sparkles className="w-3 h-3 text-cyan-400" />
+                      <span>Dùng AI OCR (file scan)</span>
+                    </label>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {/* Mode Switcher */}
+                    {markdownContent && (
+                      <div className="flex items-center bg-slate-800 p-0.5 rounded-lg border border-slate-700">
+                        <button
+                          type="button"
+                          onClick={() => setMdViewMode('preview')}
+                          className={`px-2.5 py-1 text-xs rounded-md font-medium transition-all cursor-pointer ${
+                            mdViewMode === 'preview' ? 'bg-cyan-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+                          }`}
+                        >
+                          Xem trước
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setMdViewMode('raw')}
+                          className={`px-2.5 py-1 text-xs rounded-md font-medium transition-all cursor-pointer ${
+                            mdViewMode === 'raw' ? 'bg-cyan-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+                          }`}
+                        >
+                          Mã thô
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Generate / Re-generate Button */}
+                    <button
+                      type="button"
+                      onClick={() => handleGenerateMd(useAIForMd)}
+                      disabled={isGeneratingMd}
+                      className="px-3 py-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-md shadow-cyan-600/20 cursor-pointer"
+                    >
+                      {isGeneratingMd ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Đang trích xuất...</span>
+                        </>
+                      ) : markdownContent ? (
+                        <>
+                          <RotateCw className="w-3.5 h-3.5" />
+                          <span>Trích xuất lại .md</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>⚡ Tạo .md tự động</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Messages */}
+                {mdSuccessMsg && (
+                  <div className="mx-4 mt-3 p-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs text-emerald-400 flex items-center gap-2 shrink-0">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <span>{mdSuccessMsg}</span>
+                  </div>
+                )}
+                {error && activeTab === 'markdown' && (
+                  <div className="mx-4 mt-3 p-2.5 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-400 flex items-center gap-2 shrink-0">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                )}
+
+                {/* Content Display Area */}
+                <div className="flex-1 overflow-y-auto p-4 sm:p-5 custom-scrollbar min-h-0">
+                  {isGeneratingMd ? (
+                    <div className="h-full flex flex-col items-center justify-center py-16 text-center space-y-4">
+                      <div className="relative">
+                        <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center animate-pulse">
+                          <Sparkles className="w-8 h-8 text-cyan-400" />
+                        </div>
+                        <Loader2 className="w-6 h-6 text-cyan-400 animate-spin absolute -top-1 -right-1" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-slate-200">Đang số hóa nội dung tài liệu...</h4>
+                        <p className="text-xs text-slate-400 mt-1 max-w-sm">
+                          Hệ thống đang đọc dữ liệu từ Google Drive, bóc tách bảng biểu và cấu trúc thành văn bản Markdown chuẩn để lưu vào Supabase.
+                        </p>
+                      </div>
+                    </div>
+                  ) : markdownContent ? (
+                    mdViewMode === 'preview' ? (
+                      <div className="bg-slate-950/40 p-4 sm:p-5 rounded-2xl border border-slate-800/80">
+                        <MarkdownPreview content={markdownContent} />
+                      </div>
+                    ) : (
+                      <div className="h-full flex flex-col">
+                        <textarea
+                          value={markdownContent}
+                          onChange={(e) => setMarkdownContent(e.target.value)}
+                          className="w-full h-full min-h-[400px] bg-slate-950 p-4 font-mono text-xs text-slate-200 rounded-xl border border-slate-800 focus:outline-none focus:border-cyan-500 resize-none leading-relaxed"
+                          placeholder="Nội dung Markdown..."
+                        />
+                      </div>
+                    )
+                  ) : (
+                    <div className="h-full flex flex-col items-center justify-center py-12 px-4 text-center border-2 border-dashed border-slate-800 rounded-2xl">
+                      <div className="w-14 h-14 rounded-2xl bg-slate-800 flex items-center justify-center mb-3">
+                        <BookOpen className="w-7 h-7 text-cyan-400" />
+                      </div>
+                      <h4 className="text-sm font-bold text-slate-200">Chưa có nội dung số hóa (.md) cho văn bản này</h4>
+                      <p className="text-xs text-slate-400 mt-1.5 max-w-md leading-relaxed">
+                        Nhấn nút <strong className="text-cyan-400">"⚡ Tạo .md tự động"</strong> để hệ thống trích xuất toàn bộ chữ, bảng biểu, điều khoản từ file và lưu trực tiếp vào Kho tri thức Supabase.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => handleGenerateMd(false)}
+                        className="mt-5 px-5 py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-cyan-500/20 transition-all cursor-pointer"
+                      >
+                        <Sparkles className="w-4 h-4" />
+                        <span>⚡ Bắt đầu tạo nội dung .md ngay</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
             
             {/* Save Confirmation Overlay */}
             {showConfirm && (

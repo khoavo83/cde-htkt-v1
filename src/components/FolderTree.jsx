@@ -244,6 +244,14 @@ const DocRow = ({ file, idx, onUpdate, onAnalyze, onAttachClick, onAttachPhieuTr
                 +{childCount}
               </span>
             )}
+            {(file.is_md_generated || file.content_md) && (
+              <span 
+                className="ml-1.5 px-1 py-0.2 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[9px] font-bold tracking-tight"
+                title={`Đã số hóa sang Markdown (.md)${file.md_char_count ? ` - ${file.md_char_count} ký tự` : ''}`}
+              >
+                MD
+              </span>
+            )}
           </div>
           {file.mimeType !== 'application/pdf' && onAttachClick && (
             <button
@@ -680,9 +688,8 @@ export default function FolderTree({ projectId, allDocuments = [], onDocumentUpd
     if (isGlobalSearchActive) return true; // Đã lọc ở backend
     const q = search.toLowerCase();
     const name = (f.name || f.file_name || '').toLowerCase();
-    const trichYeu = (f.trich_yeu || '').toLowerCase();
-    const soVb = (f.so_vb || '').toLowerCase();
-    const matchSearch = name.includes(q) || trichYeu.includes(q) || soVb.includes(q);
+    const mdText = (f.content_md || '').toLowerCase();
+    const matchSearch = name.includes(q) || trichYeu.includes(q) || soVb.includes(q) || mdText.includes(q);
     
     // So sánh linh hoạt loại VB hoặc category
     const docType = f.loai_vb || f.category || '';

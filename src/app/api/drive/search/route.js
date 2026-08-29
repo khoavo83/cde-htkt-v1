@@ -59,6 +59,8 @@ export async function GET(request) {
         OR d2.so_vb ILIKE $${pIndex}
         OR d2.trich_yeu ILIKE $${pIndex}
         OR d1.noi_phat_hanh ILIKE $${pIndex}
+        OR d1.content_md ILIKE $${pIndex}
+        OR d2.content_md ILIKE $${pIndex}
         OR f.folder_name ILIKE $${pIndex}
       )`;
     }

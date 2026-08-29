@@ -17,6 +17,7 @@
     "googleapis": "^173.0.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.25.0",
+    "mammoth": "^1.12.2",
     "next": "16.2.10",
     "next-themes": "^0.4.6",
     "pdf-parse": "^2.4.5",
