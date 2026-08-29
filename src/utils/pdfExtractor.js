@@ -56,41 +56,102 @@ export function checkVietnameseTextQuality(text) {
   };
 }
 
-// ─── 2. Phục hồi nhanh một số mẫu phổ biến bằng Rule-based Regex ───
-export function heuristicRepairVietnamese(text) {
+// ─── 2. Bộ từ điển & Quy tắc Chuẩn hóa Tiếng Việt Scanner OCR (Offline & Nhanh 10ms) ───
+export function normalizeVietnameseOCRText(text) {
   if (!text) return text;
-  return text
-    .replace(/\bTuy6n\b/g, 'Tuyến')
-    .replace(/\bdudng\b/g, 'đường')
-    .replace(/\bB6n\b/g, 'Bến')
-    .replace(/\bCan Gia\b/g, 'Cần Giờ')
-    .replace(/\bGi6'i thi6u\b/g, 'Giới thiệu')
-    .replace(/\b(dw in|dlr in|dy in)\b/gi, 'dự án')
-    .replace(/\bB&i thueyng\b/g, 'Bồi thường')
-    .replace(/\bhg tr9\b/g, 'hỗ trợ')
-    .replace(/\btai djnh cu\b/g, 'tái định cư')
-    .replace(/\bph tlc vv dv an\b/g, 'phục vụ dự án')
-    .replace(/\bNh6m\b/g, 'Nhóm')
-    .replace(/\bc6ng trinh\b/g, 'công trình')
-    .replace(/\bnh6rn A\b/g, 'nhóm A')
-    .replace(/\bdBe biet\b/g, 'đặc biệt')
-    .replace(/\bChti dau tlr\b/g, 'Chủ đầu tư')
-    .replace(/\bDei di€n\b/g, 'Đại diện')
-    .replace(/\bchi dau tlr\b/g, 'chủ đầu tư')
-    .replace(/\bBan Quan IV\b/g, 'Ban Quản lý')
-    .replace(/\bDudng sat d6 thi\b/g, 'Đường sắt đô thị')
-    .replace(/\bTang mac aau tlr\b/g, 'Tổng mức đầu tư')
-    .replace(/\btP di\)ng\b/g, 'tỷ đồng')
-    .replace(/\bThai gian thl\.rc hien\b/g, 'Thời gian thực hiện')
-    .replace(/\bQuy6t djnh\b/g, 'Quyết định')
-    .replace(/\bchap thu an\b/g, 'chấp thuận')
-    .replace(/\bcha huang dhl tu\b/g, 'chủ trương đầu tư')
-    .replace(/\bchua xac djnh\b/g, 'chưa xác định')
-    .replace(/\bcaa U\)' ban nhan dan\b/g, 'của Ủy ban nhân dân')
-    .replace(/\bThanh ph6 H6 Chi Minh\b/g, 'Thành phố Hồ Chí Minh')
-    .replace(/\bDja di6m thlrc hien\b/g, 'Địa điểm thực hiện')
-    .replace(/\bNgu6n van\b/g, 'Nguồn vốn')
-    .replace(/\bngan sach\b/g, 'ngân sách');
+
+  let out = text;
+
+  // Tiêu đề cơ quan & quốc hiệu
+  out = out
+    .replace(/\b(OY|UY|Uy|oY)\s*BAN\s*NHAN\s*DAN\b/gi, 'ỦY BAN NHÂN DÂN')
+    .replace(/\bCONG\s*HOA\s*XA\s*HOI\s*CHU\s*NGH[iI1]A\s*VIET\s*NAM\b/gi, 'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM')
+    .replace(/\bD[Oo0]c\s*l[§a-z]P\s*-\s*T[Vu]\s*do\s*-\s*H[ae]nh\s*ph[iI1u]c\b/gi, 'Độc lập - Tự do - Hạnh phúc')
+    .replace(/\bBAN\s*QUAN\s*L[VY]\s*D[UƯu][’']?O[’']?NG\s*SAT\s*D[OÔo0]\s*TH[!I1]\b/gi, 'BAN QUẢN LÝ ĐƯỜNG SẮT ĐÔ THỊ')
+    .replace(/\bTHANH\s*PH[OÔo06]\s*H[OÔo06]\s*CH[IÍi1]\s*MINH\b/gi, 'THÀNH PHỐ HỒ CHÍ MINH')
+    .replace(/\bQUYET\s*DINH\b/gi, 'QUYẾT ĐỊNH')
+    .replace(/\bTHONG\s*BAO\b/gi, 'THÔNG BÁO')
+    .replace(/\bTO\s*TRINH\b/gi, 'TỜ TRÌNH')
+    .replace(/\bBAO\s*CAO\b/gi, 'BÁO CÁO')
+    .replace(/\bBIEN\s*BAN\b/gi, 'BIÊN BẢN');
+
+  // Các cụm từ nghiệp vụ xây dựng / hành chính bị lỗi font scanner
+  const phraseReplacements = [
+    [/\bTuy6n\s+dudng\s+sat\s+B6n\s+Thanh\s*-\s*Can\s+Gia\b/gi, 'Tuyến đường sắt Bến Thành - Cần Giờ'],
+    [/\bTuy6n\s+dudng\s+sat\b/gi, 'Tuyến đường sắt'],
+    [/\bB6n\s+Thanh\s*-\s*Can\s+Gia\b/gi, 'Bến Thành - Cần Giờ'],
+    [/\bCan\s+Gia\b/g, 'Cần Giờ'],
+    [/\bGi6'i\s+thi6u\s+(dlr\s+in|dw\s+in|du\s+in)\b/gi, 'Giới thiệu dự án'],
+    [/\bGi6'i\s+thi6u\b/gi, 'Giới thiệu'],
+    [/\bTen\s+(dw\s+in|dlr\s+in|du\s+in)\b/gi, 'Tên dự án'],
+    [/\bTen\s+dlr\s+in\s+thinh\s+phan\b/gi, 'Tên dự án thành phần'],
+    [/\bB&i\s+thueyng,\s*hg\s*tr9[.,]?\s*tai\s+djnh\s+cu\s+ph\s+tlc\s+vv\s+dv\s+an\b/gi, 'Bồi thường, hỗ trợ, tái định cư phục vụ dự án'],
+    [/\bB&i\s+thueyng\b/gi, 'Bồi thường'],
+    [/\bhg\s*tr9\b/gi, 'hỗ trợ'],
+    [/\btai\s+djnh\s+cu\b/gi, 'tái định cư'],
+    [/\bph\s+tlc\s+vv\s+dv\s+an\b/gi, 'phục vụ dự án'],
+    [/\bNh6m\s+(dy\s+in|du\s+in|dw\s+in)\b/gi, 'Nhóm dự án'],
+    [/\bnh6rn\s+A\b/gi, 'nhóm A'],
+    [/\bnh6rn\s+B\b/gi, 'nhóm B'],
+    [/\bc6ng\s+trinh\s+cap\s+dBe\s+biet\b/gi, 'công trình cấp đặc biệt'],
+    [/\bc6ng\s+trinh\b/gi, 'công trình'],
+    [/\bChti\s+dau\s+tlr\s+(dw\s+in|du\s+in)\b/gi, 'Chủ đầu tư dự án'],
+    [/\bChti\s+dau\s+tlr\b/gi, 'Chủ đầu tư'],
+    [/\bDei\s+di[€eê]n\s+chi\s+dau\s+tlr\b/gi, 'Đại diện chủ đầu tư'],
+    [/\bDei\s+di[€eê]n\b/gi, 'Đại diện'],
+    [/\bBan\s+Quan\s+(IV|LY|Ly|ly)\s+Dudng\s+sat\s+d6\s+thi\b/gi, 'Ban Quản lý Đường sắt đô thị'],
+    [/\bDudng\s+sat\s+d6\s+thi\b/gi, 'Đường sắt đô thị'],
+    [/\bd6\s+thi\b/gi, 'đô thị'],
+    [/\bTang\s+mac\s+aau\s+tlr\b/gi, 'Tổng mức đầu tư'],
+    [/\btP\s+di\)ng\b/gi, 'tỷ đồng'],
+    [/\bThai\s+gian\s+thl\.rc\s+hien\s+(dw\s+in|du\s+in)\b/gi, 'Thời gian thực hiện dự án'],
+    [/\bThai\s+gian\s+thl\.rc\s+hien\b/gi, 'Thời gian thực hiện'],
+    [/\bchuan\s+bi\s+\(iau\s+tu\s+va\s+thtrc\s+hien\b/gi, 'chuẩn bị đầu tư và thực hiện'],
+    [/\bQuy6t\s+djnh\s+chap\s+thu\s+an\s+cha\s+huang\s+dhl\s+tu\b/gi, 'Quyết định chấp thuận chủ trương đầu tư'],
+    [/\bQuy6t\s+djnh\b/gi, 'Quyết định'],
+    [/\bchap\s+thu\s+an\b/gi, 'chấp thuận'],
+    [/\bcha\s+huang\s+dhl\s+tu\b/gi, 'chủ trương đầu tư'],
+    [/\bdang\s+thai\s+chip\s+thugn\s+nha\s+au\s+tu\b/gi, 'đồng thời chấp thuận nhà đầu tư'],
+    [/\bcaa\s+U\)'\s+ban\s+nhan\s+dan\b/gi, 'của Ủy ban nhân dân'],
+    [/\bThanh\s+ph6\s+H6\s+Chi\s+Minh\b/gi, 'Thành phố Hồ Chí Minh'],
+    [/\bTP\.\s*He\s*Chi\s*Minh\b/gi, 'TP. Hồ Chí Minh'],
+    [/\bDja\s+di6m\s+thlrc\s+hien\b/gi, 'Địa điểm thực hiện'],
+    [/\bNgu6n\s+van:\s*van\s+ngan\s+sach\b/gi, 'Nguồn vốn: vốn ngân sách'],
+    [/\bNgu6n\s+van\b/gi, 'Nguồn vốn'],
+    [/\bvan\s+ngan\s+sach\b/gi, 'vốn ngân sách'],
+    [/\bngan\s+sach\s+Thanh\s+pha\b/gi, 'ngân sách Thành phố'],
+    [/\bHa\s+sa\s+nhi[€e]m\s+VIr\s+vi\s+dv\s+to[£a]n\b/gi, 'Hồ sơ nhiệm vụ và dự toán'],
+    [/\bHa\s+sa\s+nhi[€e]m\s+vu\b/gi, 'Hồ sơ nhiệm vụ'],
+    [/\bdv\s+to[£a]n\b/gi, 'dự toán'],
+    [/\bG6i\s+th[iI1]u\b/gi, 'Gói thầu'],
+    [/\bTw\s+vin\s+do\s+vd,\s*l[§a]p\s+ban\s+da\s+vi\s+tri\b/gi, 'Tư vấn đo vẽ, lập bản đồ vị trí'],
+    [/\bph\s+Irc\s+VII\s+c6ng\s+tic\s+thu\s+hai\s+d[£a]t\b/gi, 'phục vụ công tác thu hồi đất'],
+    [/\bgiao\s+ranh\s+c[aá]m\s+m[oó]c\s+giai\s+ph[oó]ng\s+m[aặ]t\s+b[aà]ng\b/gi, 'giao ranh cắm mốc giải phóng mặt bằng'],
+    [/\b(dw\s+in|dlr\s+in|dy\s+in)\b/gi, 'dự án'],
+    [/\bdudng\b/gi, 'đường'],
+    [/\bTuy6n\b/g, 'Tuyến'],
+    [/\bB6n\b/g, 'Bến'],
+    [/\bph6\b/g, 'phố'],
+    [/\bc6ng\b/g, 'công'],
+    [/\bnh6m\b/g, 'nhóm'],
+    [/\bThanh\s+pha\b/gi, 'Thành phố'],
+    [/\bnga\)\/[a-zA-Z0-9<>]+\s*tIlang\b/gi, 'ngày     tháng']
+  ];
+
+  for (const [pattern, replacement] of phraseReplacements) {
+    out = out.replace(pattern, replacement);
+  }
+
+  // Thay thế ký tự số bị nhầm thành nguyên âm có dấu trong ngữ cảnh từ
+  out = out
+    .replace(/(\b[a-zA-Z])6'([a-zA-Z]*\b)/g, '$1ới$2')
+    .replace(/([a-zA-Z])6([a-zA-Z]+)/g, '$1ê$2');
+
+  return out;
+}
+
+export function heuristicRepairVietnamese(text) {
+  return normalizeVietnameseOCRText(text);
 }
 
 // ─── 3. Phục hồi toàn văn chuyên sâu 100% bằng Gemini AI ───

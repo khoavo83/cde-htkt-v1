@@ -5,6 +5,7 @@ import { extractText, getDocumentProxy } from 'unpdf';
 import { 
   extractAllPdfPagesStructured, 
   checkVietnameseTextQuality, 
+  normalizeVietnameseOCRText,
   repairGarbledVietnameseWithAI 
 } from '@/utils/pdfExtractor';
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -194,38 +195,20 @@ async function extractDocumentToMarkdown({ buffer, fileName, docMetadata = {}, u
       pageCount = pdfData.totalPages || 1;
       textPages = pdfData.textPagesCount || 0;
 
-      if (textPages > 0 && !useAI) {
-        // Tài liệu PDF dạng số có lớp chữ -> Xuất toàn bộ 100% các trang
+      if (textPages > 0) {
+        // Tài liệu PDF có lớp chữ (kể cả hàng trăm trang) -> Xuất toàn bộ 100% các trang và chuẩn hóa tiếng Việt
         const formattedPages = pdfData.pages.map(p => {
           if (p.isEmpty) {
             return `### 📄 Trang ${p.pageNumber}/${pageCount}\n*(Trang không có nội dung chữ hoặc là ảnh scan đính kèm)*`;
           }
-          return `### 📄 Trang ${p.pageNumber}/${pageCount}\n\n${p.text}`;
+          const cleanText = normalizeVietnameseOCRText(p.text);
+          return `### 📄 Trang ${p.pageNumber}/${pageCount}\n\n${cleanText}`;
         });
 
         rawBody = formattedPages.join('\n\n---\n\n');
-
-        // Tự động kiểm tra chất lượng font tiếng Việt
-        const quality = checkVietnameseTextQuality(rawBody);
-        if (quality.isGarbled) {
-          console.log(`[Auto-Repair] Phát hiện văn bản PDF bị lỗi font/OCR máy quét (${quality.garbledCount} từ lỗi). Đang kích hoạt AI phục hồi...`);
-          try {
-            const repaired = await repairGarbledVietnameseWithAI(rawBody);
-            if (repaired && repaired.length > 50) {
-              rawBody = repaired;
-              extractionMethod = `unpdf_structured + AI_Vietnamese_Reconstruction (${textPages}/${pageCount} trang)`;
-            } else {
-              extractionMethod = `unpdf_structured (${textPages}/${pageCount} trang)`;
-            }
-          } catch (repErr) {
-            console.warn('[Auto-Repair] Lỗi phục hồi tiếng Việt:', repErr.message);
-            extractionMethod = `unpdf_structured (${textPages}/${pageCount} trang)`;
-          }
-        } else {
-          extractionMethod = `unpdf_structured (${textPages}/${pageCount} trang)`;
-        }
+        extractionMethod = `unpdf_structured + Vietnamese_OCR_Normalizer (${textPages}/${pageCount} trang)`;
       } else {
-        // Toàn bộ là trang scan hoặc người dùng ép OCR bằng AI
+        // Toàn bộ là trang scan ảnh thuần túy không có text layer
         const ocrResult = await ocrDocumentWithGemini(
           buffer.toString('base64'),
           ext === '.pdf' ? 'application/pdf' : 'image/jpeg'
@@ -235,14 +218,8 @@ async function extractDocumentToMarkdown({ buffer, fileName, docMetadata = {}, u
           rawBody = ocrResult.text;
           extractionMethod = `gemini_ocr_${ocrResult.model} (${pageCount} trang)`;
         } else {
-          // Fallback nếu OCR lỗi: vẫn giữ text đọc được từ PDF nếu có
-          if (textPages > 0) {
-            rawBody = pdfData.pages.filter(p => !p.isEmpty).map(p => `### 📄 Trang ${p.pageNumber}/${pageCount}\n\n${p.text}`).join('\n\n---\n\n');
-            extractionMethod = `pdf_text_partial (${textPages}/${pageCount} trang)`;
-          } else {
-            rawBody = `Không thể trích xuất nội dung văn bản scan (${pageCount} trang): ${ocrResult.error || 'Lỗi OCR'}`;
-            extractionMethod = 'ocr_failed';
-          }
+          rawBody = `Không thể trích xuất nội dung văn bản scan (${pageCount} trang): ${ocrResult.error || 'Lỗi OCR'}`;
+          extractionMethod = 'ocr_failed';
         }
       }
     } catch (pdfErr) {
