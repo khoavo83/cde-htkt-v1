@@ -56,14 +56,14 @@ export function checkVietnameseTextQuality(text) {
   };
 }
 
-// ─── 2. Bộ từ điển & Quy tắc Chuẩn hóa Tiếng Việt Scanner OCR (Offline & Nhanh 10ms) ───
-export function normalizeVietnameseOCRText(text) {
+// ─── 2. Bộ Giải Mã & Chuẩn Hóa Font Scanner/OCR Tiếng Việt Chuyên Sâu ───
+export function decodeVietnameseScannerOCR(text) {
   if (!text) return text;
 
-  let out = text;
+  let str = text;
 
-  // Tiêu đề cơ quan & quốc hiệu
-  out = out
+  // 1. Phục hồi các tiêu đề và quốc hiệu chuẩn
+  str = str
     .replace(/\b(OY|UY|Uy|oY)\s*BAN\s*NHAN\s*DAN\b/gi, 'ỦY BAN NHÂN DÂN')
     .replace(/\bCONG\s*HOA\s*XA\s*HOI\s*CHU\s*NGH[iI1]A\s*VIET\s*NAM\b/gi, 'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM')
     .replace(/\bD[Oo0]c\s*l[§a-z]P\s*-\s*T[Vu]\s*do\s*-\s*H[ae]nh\s*ph[iI1u]c\b/gi, 'Độc lập - Tự do - Hạnh phúc')
@@ -75,8 +75,58 @@ export function normalizeVietnameseOCRText(text) {
     .replace(/\bBAO\s*CAO\b/gi, 'BÁO CÁO')
     .replace(/\bBIEN\s*BAN\b/gi, 'BIÊN BẢN');
 
-  // Các cụm từ nghiệp vụ xây dựng / hành chính bị lỗi font scanner
-  const phraseReplacements = [
+  // 2. Thay thế các từ vựng pháp lý & hành chính thường xuyên gặp lỗi glyph
+  const directDict = [
+    // Căn cứ pháp lý
+    [/\bCan\s*ca\b/gi, 'Căn cứ'],
+    [/\bCim\s*ca\b/gi, 'Căn cứ'],
+    [/\bNgh\{\s*djnh\s*sa\b/gi, 'Nghị định số'],
+    [/\bNgh[iị]\{\s*d[iị]nh\s*s[oốa]\b/gi, 'Nghị định số'],
+    [/\bNgh[iị]\s*d[iị]nh\s*s[oốa]\b/gi, 'Nghị định số'],
+    [/\bTh[êêe][nêe]ng\s*tu\s*sa\b/gi, 'Thông tư số'],
+    [/\bTttang\s*tu\s*sa\b/gi, 'Thông tư số'],
+    [/\bTh[oô]ng\s*tu\s*sa\b/gi, 'Thông tư số'],
+    [/\bQuy[6eé]t\s*djnh\s*sa\b/gi, 'Quyết định số'],
+    [/\bQuy[6eé]t\s*djnh\b/gi, 'Quyết định'],
+    [/\bcaa\s*Chinh\s*ph\(?I\)?\b/gi, 'của Chính phủ'],
+    [/\bChinh\s*ph\(?I\)?\b/gi, 'Chính phủ'],
+    [/\bcaa\s*U\)'\s*ban\s*nhan\s*dan\b/gi, 'của Ủy ban nhân dân'],
+    [/\bU\)'\s*ban\s*nhan\s*dan\b/gi, 'Ủy ban nhân dân'],
+    [/\bcaa\s*Ba\s*Xay\s*dtmg\b/gi, 'của Bộ Xây dựng'],
+    [/\bcaa\s*BQ\s*Xa\);\s*d\\mg\b/gi, 'của Bộ Xây dựng'],
+    [/\bBa\s*Xay\s*dtmg\b/gi, 'Bộ Xây dựng'],
+    [/\bB§\s*N§i\s*VV\b/gi, 'Bộ Nội vụ'],
+    [/\bBQ\s*X[aâ]y\s*d[uự]ng\b/gi, 'Bộ Xây dựng'],
+    
+    // Ngày tháng năm
+    [/\bngdy\b/gi, 'ngày'],
+    [/\bngay\b/gi, 'ngày'],
+    [/\bnga\)\/[a-zA-Z0-9<>]+\b/gi, 'ngày'],
+    [/\bthdng\b/gi, 'tháng'],
+    [/\bttlang\b/gi, 'tháng'],
+    [/\btIlang\b/gi, 'tháng'],
+    [/\btlang\b/gi, 'tháng'],
+    [/\bnam\s*(\d{4})\b/gi, 'năm $1'],
+    
+    // Thuật ngữ xây dựng & đầu tư
+    [/\bv&\s*quan\s*l[jif]\s*chi\s*phi\b/gi, 'về quản lý chi phí'],
+    [/\bquan\s*l[jif]\s*chi\s*phi\b/gi, 'quản lý chi phí'],
+    [/\b(daII\s*tu|aau\s*M|aau\s*tlr|dau\s*tu)\s*(xay\s*dLmg|xay\s*dtmg|xay\s*dImg|xay\s*dung)\b/gi, 'đầu tư xây dựng'],
+    [/\b(daII\s*tu|aau\s*M|aau\s*tlr)\b/gi, 'đầu tư'],
+    [/\b(xay\s*dLmg|xay\s*dtmg|xay\s*dImg)\b/gi, 'xây dựng'],
+    [/\bhbr[êe]bg\s*dan\b/gi, 'hướng dẫn'],
+    [/\bmet\s*s[6o]\b/gi, 'một số'],
+    [/\bnOi\s*dung\b/gi, 'nội dung'],
+    [/\bxdc\s*djnh\b/gi, 'xác định'],
+    [/\bduQC\b/gi, 'được'],
+    [/\b(saa\s*d[eê]i|saa\s*dai),\s*(b[68]\s*sung|bo\s*sung)\b/gi, 'sửa đổi, bổ sung'],
+    [/\btqi\s*cdc\s*tll[eê]ng\s*tbc\b/gi, 'tại các thông tư'],
+    [/\bgaIn:\b/gi, 'gồm:'],
+    [/\bguy\s*djnh\b/gi, 'quy định'],
+    [/\bquy\s*djnh\b/gi, 'quy định'],
+    [/\bmac\s*IU\b/gi, 'mức lương'],
+    
+    // Dự án & Tuyến Bến Thành - Cần Giờ
     [/\bTuy6n\s+dudng\s+sat\s+B6n\s+Thanh\s*-\s*Can\s+Gia\b/gi, 'Tuyến đường sắt Bến Thành - Cần Giờ'],
     [/\bTuy6n\s+dudng\s+sat\b/gi, 'Tuyến đường sắt'],
     [/\bB6n\s+Thanh\s*-\s*Can\s+Gia\b/gi, 'Bến Thành - Cần Giờ'],
@@ -99,7 +149,8 @@ export function normalizeVietnameseOCRText(text) {
     [/\bChti\s+dau\s+tlr\b/gi, 'Chủ đầu tư'],
     [/\bDei\s+di[€eê]n\s+chi\s+dau\s+tlr\b/gi, 'Đại diện chủ đầu tư'],
     [/\bDei\s+di[€eê]n\b/gi, 'Đại diện'],
-    [/\bBan\s+Quan\s+(IV|LY|Ly|ly)\s+Dudng\s+sat\s+d6\s+thi\b/gi, 'Ban Quản lý Đường sắt đô thị'],
+    [/\bBan\s+Quan\s+(IV|LY|Ly|ly|Lt)\s+Dudng\s+sat\s+d6\s+thi\b/gi, 'Ban Quản lý Đường sắt đô thị'],
+    [/\bTRU’aNG\s+BAN\s+QUAN\s+L[tT]\s+DU['’]6['’]NG\s+SAT\s+d[oô]s?\s+th[iị]\b/gi, 'TRƯỞNG BAN QUẢN LÝ ĐƯỜNG SẮT ĐÔ THỊ'],
     [/\bDudng\s+sat\s+d6\s+thi\b/gi, 'Đường sắt đô thị'],
     [/\bd6\s+thi\b/gi, 'đô thị'],
     [/\bTang\s+mac\s+aau\s+tlr\b/gi, 'Tổng mức đầu tư'],
@@ -108,13 +159,11 @@ export function normalizeVietnameseOCRText(text) {
     [/\bThai\s+gian\s+thl\.rc\s+hien\b/gi, 'Thời gian thực hiện'],
     [/\bchuan\s+bi\s+\(iau\s+tu\s+va\s+thtrc\s+hien\b/gi, 'chuẩn bị đầu tư và thực hiện'],
     [/\bQuy6t\s+djnh\s+chap\s+thu\s+an\s+cha\s+huang\s+dhl\s+tu\b/gi, 'Quyết định chấp thuận chủ trương đầu tư'],
-    [/\bQuy6t\s+djnh\b/gi, 'Quyết định'],
     [/\bchap\s+thu\s+an\b/gi, 'chấp thuận'],
     [/\bcha\s+huang\s+dhl\s+tu\b/gi, 'chủ trương đầu tư'],
     [/\bdang\s+thai\s+chip\s+thugn\s+nha\s+au\s+tu\b/gi, 'đồng thời chấp thuận nhà đầu tư'],
-    [/\bcaa\s+U\)'\s+ban\s+nhan\s+dan\b/gi, 'của Ủy ban nhân dân'],
     [/\bThanh\s+ph6\s+H6\s+Chi\s+Minh\b/gi, 'Thành phố Hồ Chí Minh'],
-    [/\bTP\.\s*He\s*Chi\s*Minh\b/gi, 'TP. Hồ Chí Minh'],
+    [/\bTP\.\s*He\s*Chi\s+Minh\b/gi, 'TP. Hồ Chí Minh'],
     [/\bDja\s+di6m\s+thlrc\s+hien\b/gi, 'Địa điểm thực hiện'],
     [/\bNgu6n\s+van:\s*van\s+ngan\s+sach\b/gi, 'Nguồn vốn: vốn ngân sách'],
     [/\bNgu6n\s+van\b/gi, 'Nguồn vốn'],
@@ -127,31 +176,39 @@ export function normalizeVietnameseOCRText(text) {
     [/\bTw\s+vin\s+do\s+vd,\s*l[§a]p\s+ban\s+da\s+vi\s+tri\b/gi, 'Tư vấn đo vẽ, lập bản đồ vị trí'],
     [/\bph\s+Irc\s+VII\s+c6ng\s+tic\s+thu\s+hai\s+d[£a]t\b/gi, 'phục vụ công tác thu hồi đất'],
     [/\bgiao\s+ranh\s+c[aá]m\s+m[oó]c\s+giai\s+ph[oó]ng\s+m[aặ]t\s+b[aà]ng\b/gi, 'giao ranh cắm mốc giải phóng mặt bằng'],
+    [/\bgiao\s+ranh\s+cim\s+mêc\s+gigi\s+phêng\s+mjt\s+bing\b/gi, 'giao ranh cắm mốc giải phóng mặt bằng'],
     [/\b(dw\s+in|dlr\s+in|dy\s+in)\b/gi, 'dự án'],
     [/\bdudng\b/gi, 'đường'],
     [/\bTuy6n\b/g, 'Tuyến'],
     [/\bB6n\b/g, 'Bến'],
-    [/\bph6\b/g, 'phố'],
     [/\bc6ng\b/g, 'công'],
     [/\bnh6m\b/g, 'nhóm'],
-    [/\bThanh\s+pha\b/gi, 'Thành phố'],
-    [/\bnga\)\/[a-zA-Z0-9<>]+\s*tIlang\b/gi, 'ngày     tháng']
+    [/\bThanh\s+pha\b/gi, 'Thành phố']
   ];
 
-  for (const [pattern, replacement] of phraseReplacements) {
-    out = out.replace(pattern, replacement);
+  for (const [pat, rep] of directDict) {
+    str = str.replace(pat, rep);
   }
 
-  // Thay thế ký tự số bị nhầm thành nguyên âm có dấu trong ngữ cảnh từ
-  out = out
-    .replace(/(\b[a-zA-Z])6'([a-zA-Z]*\b)/g, '$1ới$2')
+  // 3. Quy tắc từ đơn & phụ âm/nguyên âm phổ biến
+  str = str
+    .replace(/\bcaa\b/g, 'của')
+    .replace(/\bv&\b/g, 'và')
+    .replace(/\bvi\b(?=\s+[a-zà-ỹ])/g, 'và')
+    .replace(/\bsa\s+(\d+)/g, 'số $1')
+    .replace(/\bs6:\b/g, 'Số:')
+    .replace(/\b(\b[a-zA-Z])6'([a-zA-Z]*\b)/g, '$1ới$2')
     .replace(/([a-zA-Z])6([a-zA-Z]+)/g, '$1ê$2');
 
-  return out;
+  return str;
+}
+
+export function normalizeVietnameseOCRText(text) {
+  return decodeVietnameseScannerOCR(text);
 }
 
 export function heuristicRepairVietnamese(text) {
-  return normalizeVietnameseOCRText(text);
+  return decodeVietnameseScannerOCR(text);
 }
 
 // ─── 3. Phục hồi toàn văn chuyên sâu 100% bằng Gemini AI ───
