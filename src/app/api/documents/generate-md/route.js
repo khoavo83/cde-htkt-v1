@@ -17,19 +17,93 @@ const pool = process.env.DATABASE_URL
     })
   : null;
 
-// Lấy client Gemini AI nếu có cấu hình
-function getGeminiClient() {
-  let apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
-  if (!apiKey) {
+const GEMINI_MODELS = [
+  'gemini-2.5-flash',
+  'gemini-1.5-flash',
+  'gemini-flash-latest'
+];
+const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+
+// Lấy danh sách API keys (hỗ trợ nhiều key cách nhau bằng dấu phẩy)
+function getGeminiApiKeys() {
+  let rawKeys = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || '';
+  if (!rawKeys) {
     try {
       const configPath = path.join(process.cwd(), 'config.json');
       if (fs.existsSync(configPath)) {
         const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-        apiKey = config.gemini_api_key || config.google_ai_api_key;
+        rawKeys = config.gemini_api_keys || config.gemini_api_key || config.google_ai_api_key || '';
       }
     } catch (e) {}
   }
-  return apiKey ? new GoogleGenerativeAI(apiKey) : null;
+  return String(rawKeys).split(',').map(k => k.trim()).filter(Boolean);
+}
+
+// Gọi Gemini AI để OCR văn bản scan hoặc PDF phức tạp
+async function ocrDocumentWithGemini(base64Data, mimeType) {
+  const apiKeys = getGeminiApiKeys();
+  if (apiKeys.length === 0) {
+    return {
+      success: false,
+      error: 'Chưa cấu hình GEMINI_API_KEYS trong .env.local hoặc config.json.'
+    };
+  }
+
+  const prompt = `Bạn là trợ lý chuyên nghiệp bóc tách văn bản công trình và hồ sơ pháp lý Việt Nam.
+Nhiệm vụ: Trích xuất toàn bộ nội dung văn bản trong tài liệu đính kèm thành định dạng GitHub-Flavored Markdown chuẩn.
+
+Yêu cầu:
+1. Giữ nguyên đầy đủ nội dung, từng điều khoản, từng chương mục (Điều 1, Điều 2, Điều 3...).
+2. Nếu có bảng biểu số liệu (tổng mức đầu tư, danh mục gói thầu, khối lượng), định dạng chính xác thành bảng Markdown (\`| Cột 1 | Cột 2 |\`).
+3. Giữ nguyên font tiếng Việt có dấu, ngày tháng, số tiền.
+4. Chỉ trả về nội dung Markdown thuần túy, không thêm lời chào, không bọc trong code fence \`\`\`markdown.`;
+
+  for (const apiKey of apiKeys) {
+    for (const model of GEMINI_MODELS) {
+      try {
+        const url = `${GEMINI_BASE}/${model}:generateContent?key=${apiKey}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: prompt },
+                { inline_data: { mime_type: mimeType, data: base64Data } }
+              ]
+            }],
+            generationConfig: {
+              temperature: 0.1,
+              maxOutputTokens: 8192
+            }
+          })
+        });
+
+        if (!res.ok) {
+          const err = await res.text();
+          console.warn(`[Gemini OCR] Model ${model} failed (${res.status}):`, err.slice(0, 150));
+          continue;
+        }
+
+        const data = await res.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text && text.trim()) {
+          return {
+            success: true,
+            text: text.replace(/^```[\s\S]*?\n/i, '').replace(/\n```\s*$/i, '').trim(),
+            model
+          };
+        }
+      } catch (err) {
+        console.warn(`[Gemini OCR] Lỗi kết nối model ${model}:`, err.message);
+      }
+    }
+  }
+
+  return {
+    success: false,
+    error: 'Tất cả API keys và models Gemini đều không thể xử lý file này.'
+  };
 }
 
 // Chuyển đổi dữ liệu Sheet Excel sang bảng Markdown
@@ -79,7 +153,6 @@ async function extractDocumentToMarkdown({ buffer, fileName, docMetadata = {}, u
   } else if (ext === '.docx') {
     try {
       const res = await mammoth.convertToHtml({ buffer });
-      // Chuyển HTML cơ bản sang Markdown
       let html = res.value || '';
       rawBody = html
         .replace(/<h1>(.*?)<\/h1>/gi, '# $1\n\n')
@@ -93,7 +166,7 @@ async function extractDocumentToMarkdown({ buffer, fileName, docMetadata = {}, u
         .replace(/<br\s*[\/]?>/gi, '\n')
         .replace(/<ul>([\s\S]*?)<\/ul>/gi, '$1\n')
         .replace(/<li>(.*?)<\/li>/gi, '- $1\n')
-        .replace(/<[^>]+>/g, '') // Xóa tag còn lại
+        .replace(/<[^>]+>/g, '')
         .trim();
       extractionMethod = 'mammoth_docx';
     } catch (e) {
@@ -106,7 +179,7 @@ async function extractDocumentToMarkdown({ buffer, fileName, docMetadata = {}, u
       }
     }
   } else {
-    // Mặc định xử lý PDF (hoặc fallback)
+    // Xử lý file PDF (hoặc ảnh)
     let extractedPdfText = '';
     try {
       const uint8 = new Uint8Array(buffer);
@@ -127,49 +200,19 @@ async function extractDocumentToMarkdown({ buffer, fileName, docMetadata = {}, u
       console.warn('unpdf extract warning:', pdfErr.message);
     }
 
-    // Nếu văn bản dạng scan (ít hơn 120 ký tự) hoặc người dùng yêu cầu dùng AI
+    // Nếu văn bản dạng scan (ít hơn 120 ký tự) hoặc người dùng chọn dùng AI OCR
     if ((extractedPdfText.length < 120 || useAI) && buffer) {
-      const genAI = getGeminiClient();
-      if (genAI) {
-        try {
-          const model = genAI.getGenerativeModel({
-            model: 'gemini-flash-latest',
-            generationConfig: {
-              temperature: 0.1,
-              maxOutputTokens: 8192,
-            }
-          });
+      const ocrResult = await ocrDocumentWithGemini(
+        buffer.toString('base64'),
+        ext === '.pdf' ? 'application/pdf' : 'image/jpeg'
+      );
 
-          const inlineData = {
-            inlineData: {
-              data: buffer.toString('base64'),
-              mimeType: ext === '.pdf' ? 'application/pdf' : 'image/jpeg'
-            }
-          };
-
-          const prompt = `Bạn là trợ lý chuyên nghiệp bóc tách văn bản công trình và hồ sơ pháp lý Việt Nam.
-Nhiệm vụ: Trích xuất toàn bộ nội dung văn bản trong tài liệu đính kèm thành định dạng GitHub-Flavored Markdown chuẩn.
-
-Yêu cầu:
-1. Giữ nguyên đầy đủ nội dung, từng điều khoản, từng chương mục (Điều 1, Điều 2, Điều 3...).
-2. Nếu có bảng biểu số liệu (tổng mức đầu tư, danh mục gói thầu, khối lượng), định dạng chính xác thành bảng Markdown (\`| Cột 1 | Cột 2 |\`).
-3. Giữ nguyên font tiếng Việt có dấu, ngày tháng, số tiền.
-4. Chỉ trả về nội dung Markdown, không thêm lời chào, không bọc trong code fence \`\`\`markdown.`;
-
-          const result = await model.generateContent([prompt, inlineData]);
-          const aiText = result.response.text().trim();
-          if (aiText) {
-            rawBody = aiText.replace(/^```[\s\S]*?\n/i, '').replace(/\n```\s*$/i, '').trim();
-            extractionMethod = 'gemini_vision_ocr';
-          }
-        } catch (aiErr) {
-          console.error('Gemini OCR fallback error:', aiErr.message);
-          rawBody = extractedPdfText || 'Không thể trích xuất nội dung văn bản (File scan không có lớp chữ).';
-          extractionMethod = 'pdf_text_partial';
-        }
+      if (ocrResult.success && ocrResult.text) {
+        rawBody = ocrResult.text;
+        extractionMethod = `gemini_ocr_${ocrResult.model}`;
       } else {
-        rawBody = extractedPdfText || 'File PDF scan chưa có lớp chữ. Cần cấu hình Gemini API Key để tự động OCR.';
-        extractionMethod = 'pdf_text';
+        rawBody = extractedPdfText || `Không thể trích xuất nội dung văn bản scan: ${ocrResult.error || 'Lỗi OCR'}`;
+        extractionMethod = 'pdf_text_partial';
       }
     } else {
       rawBody = extractedPdfText;
