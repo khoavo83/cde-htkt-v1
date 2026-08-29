@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server';
 import { Pool } from 'pg';
 import { getDriveClient } from '@/lib/drive';
 import { extractText, getDocumentProxy } from 'unpdf';
-import { extractAllPdfPagesStructured } from '@/utils/pdfExtractor';
+import { 
+  extractAllPdfPagesStructured, 
+  checkVietnameseTextQuality, 
+  repairGarbledVietnameseWithAI 
+} from '@/utils/pdfExtractor';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as xlsx from 'xlsx';
 import mammoth from 'mammoth';
@@ -200,7 +204,26 @@ async function extractDocumentToMarkdown({ buffer, fileName, docMetadata = {}, u
         });
 
         rawBody = formattedPages.join('\n\n---\n\n');
-        extractionMethod = `unpdf_structured (${textPages}/${pageCount} trang)`;
+
+        // Tự động kiểm tra chất lượng font tiếng Việt
+        const quality = checkVietnameseTextQuality(rawBody);
+        if (quality.isGarbled) {
+          console.log(`[Auto-Repair] Phát hiện văn bản PDF bị lỗi font/OCR máy quét (${quality.garbledCount} từ lỗi). Đang kích hoạt AI phục hồi...`);
+          try {
+            const repaired = await repairGarbledVietnameseWithAI(rawBody);
+            if (repaired && repaired.length > 50) {
+              rawBody = repaired;
+              extractionMethod = `unpdf_structured + AI_Vietnamese_Reconstruction (${textPages}/${pageCount} trang)`;
+            } else {
+              extractionMethod = `unpdf_structured (${textPages}/${pageCount} trang)`;
+            }
+          } catch (repErr) {
+            console.warn('[Auto-Repair] Lỗi phục hồi tiếng Việt:', repErr.message);
+            extractionMethod = `unpdf_structured (${textPages}/${pageCount} trang)`;
+          }
+        } else {
+          extractionMethod = `unpdf_structured (${textPages}/${pageCount} trang)`;
+        }
       } else {
         // Toàn bộ là trang scan hoặc người dùng ép OCR bằng AI
         const ocrResult = await ocrDocumentWithGemini(
