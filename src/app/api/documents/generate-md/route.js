@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Pool } from 'pg';
 import { getDriveClient } from '@/lib/drive';
 import { extractText, getDocumentProxy } from 'unpdf';
+import { extractAllPdfPagesStructured } from '@/utils/pdfExtractor';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as xlsx from 'xlsx';
 import mammoth from 'mammoth';
@@ -179,44 +180,52 @@ async function extractDocumentToMarkdown({ buffer, fileName, docMetadata = {}, u
       }
     }
   } else {
-    // Xử lý file PDF (hoặc ảnh)
-    let extractedPdfText = '';
+    // Xử lý file PDF đa trang (đảm bảo 100% toàn vẹn tất cả các trang)
+    let pageCount = 1;
+    let textPages = 0;
+    let extractedDetails = '';
+
     try {
-      const uint8 = new Uint8Array(buffer);
-      const pdf = await getDocumentProxy(uint8);
-      const totalPages = pdf.numPages || 1;
-      
-      const pageTexts = [];
-      for (let i = 1; i <= totalPages; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        const pageStr = textContent.items.map(item => item.str).join(' ');
-        if (pageStr.trim()) {
-          pageTexts.push(`### Trang ${i}\n\n${pageStr.trim()}`);
+      const pdfData = await extractAllPdfPagesStructured(buffer);
+      pageCount = pdfData.totalPages || 1;
+      textPages = pdfData.textPagesCount || 0;
+
+      if (textPages > 0 && !useAI) {
+        // Tài liệu PDF dạng số có lớp chữ -> Xuất toàn bộ 100% các trang
+        const formattedPages = pdfData.pages.map(p => {
+          if (p.isEmpty) {
+            return `### 📄 Trang ${p.pageNumber}/${pageCount}\n*(Trang không có nội dung chữ hoặc là ảnh scan đính kèm)*`;
+          }
+          return `### 📄 Trang ${p.pageNumber}/${pageCount}\n\n${p.text}`;
+        });
+
+        rawBody = formattedPages.join('\n\n---\n\n');
+        extractionMethod = `unpdf_structured (${textPages}/${pageCount} trang)`;
+      } else {
+        // Toàn bộ là trang scan hoặc người dùng ép OCR bằng AI
+        const ocrResult = await ocrDocumentWithGemini(
+          buffer.toString('base64'),
+          ext === '.pdf' ? 'application/pdf' : 'image/jpeg'
+        );
+
+        if (ocrResult.success && ocrResult.text) {
+          rawBody = ocrResult.text;
+          extractionMethod = `gemini_ocr_${ocrResult.model} (${pageCount} trang)`;
+        } else {
+          // Fallback nếu OCR lỗi: vẫn giữ text đọc được từ PDF nếu có
+          if (textPages > 0) {
+            rawBody = pdfData.pages.filter(p => !p.isEmpty).map(p => `### 📄 Trang ${p.pageNumber}/${pageCount}\n\n${p.text}`).join('\n\n---\n\n');
+            extractionMethod = `pdf_text_partial (${textPages}/${pageCount} trang)`;
+          } else {
+            rawBody = `Không thể trích xuất nội dung văn bản scan (${pageCount} trang): ${ocrResult.error || 'Lỗi OCR'}`;
+            extractionMethod = 'ocr_failed';
+          }
         }
       }
-      extractedPdfText = pageTexts.join('\n\n---\n\n');
     } catch (pdfErr) {
-      console.warn('unpdf extract warning:', pdfErr.message);
-    }
-
-    // Nếu văn bản dạng scan (ít hơn 120 ký tự) hoặc người dùng chọn dùng AI OCR
-    if ((extractedPdfText.length < 120 || useAI) && buffer) {
-      const ocrResult = await ocrDocumentWithGemini(
-        buffer.toString('base64'),
-        ext === '.pdf' ? 'application/pdf' : 'image/jpeg'
-      );
-
-      if (ocrResult.success && ocrResult.text) {
-        rawBody = ocrResult.text;
-        extractionMethod = `gemini_ocr_${ocrResult.model}`;
-      } else {
-        rawBody = extractedPdfText || `Không thể trích xuất nội dung văn bản scan: ${ocrResult.error || 'Lỗi OCR'}`;
-        extractionMethod = 'pdf_text_partial';
-      }
-    } else {
-      rawBody = extractedPdfText;
-      extractionMethod = 'unpdf_native';
+      console.error('Lỗi phân tích PDF:', pdfErr);
+      rawBody = `Lỗi phân tích tệp PDF: ${pdfErr.message}`;
+      extractionMethod = 'error';
     }
   }
 

@@ -52,54 +52,27 @@ export async function POST(request) {
       }, { status: 400 });
     }
 
-    // Trích xuất text bằng unpdf - lấy từng trang riêng
-    const uint8 = new Uint8Array(pdfBuffer);
-    
-    // Dùng getDocumentProxy để kiểm soát chi tiết hơn
-    const pdf = await getDocumentProxy(uint8);
-    const totalPages = pdf.numPages;
-    
-    // Chỉ lấy trang đầu tiên
-    const page = await pdf.getPage(1);
-    const textContent = await page.getTextContent();
-    
-    // Ghép text thông minh theo tọa độ Y (giữ layout dòng)
-    let lines = [];
-    let currentLine = '';
-    let lastY = null;
-    
-    for (const item of textContent.items) {
-      if (item.str === undefined) continue;
-      
-      const y = item.transform ? item.transform[5] : null;
-      
-      // Nếu tọa độ Y thay đổi → dòng mới
-      if (lastY !== null && y !== null && Math.abs(y - lastY) > 2) {
-        if (currentLine.trim()) {
-          lines.push(currentLine.trim());
-        }
-        currentLine = item.str;
-      } else {
-        currentLine += item.str;
-      }
-      lastY = y;
-    }
-    if (currentLine.trim()) {
-      lines.push(currentLine.trim());
-    }
-    
-    const firstPageText = lines.join('\n');
+    // Trích xuất toàn bộ các trang PDF có cấu trúc
+    const { extractAllPdfPagesStructured } = await import('@/utils/pdfExtractor');
+    const result = await extractAllPdfPagesStructured(pdfBuffer);
 
-    if (!firstPageText || firstPageText.trim().length === 0) {
+    if (result.totalCharacters === 0) {
       return NextResponse.json({
-        error: 'Không trích xuất được chữ. File này có thể là bản scan (ảnh chụp), cần dùng OCR.'
+        error: `Không trích xuất được chữ (${result.totalPages} trang). File này có thể là bản scan (ảnh chụp), cần dùng AI OCR.`
       }, { status: 400 });
     }
 
+    const fullText = result.pages
+      .filter(p => !p.isEmpty)
+      .map(p => `--- Trang ${p.pageNumber}/${result.totalPages} ---\n${p.text}`)
+      .join('\n\n');
+
     return NextResponse.json({
       success: true,
-      text: firstPageText,
-      pageCount: totalPages,
+      text: fullText,
+      pageCount: result.totalPages,
+      textPagesCount: result.textPagesCount,
+      totalCharacters: result.totalCharacters
     });
 
   } catch (error) {
