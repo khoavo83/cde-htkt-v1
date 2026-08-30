@@ -6,7 +6,8 @@ import {
   extractAllPdfPagesStructured, 
   checkVietnameseTextQuality, 
   normalizeVietnameseOCRText,
-  repairGarbledVietnameseWithAI 
+  repairGarbledVietnameseWithAI,
+  ocrFullScannedPdfChunked
 } from '@/utils/pdfExtractor';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as xlsx from 'xlsx';
@@ -208,18 +209,33 @@ async function extractDocumentToMarkdown({ buffer, fileName, docMetadata = {}, u
         rawBody = formattedPages.join('\n\n---\n\n');
         extractionMethod = `unpdf_structured + Vietnamese_OCR_Normalizer (${textPages}/${pageCount} trang)`;
       } else {
-        // Toàn bộ là trang scan ảnh thuần túy không có text layer
-        const ocrResult = await ocrDocumentWithGemini(
-          buffer.toString('base64'),
-          ext === '.pdf' ? 'application/pdf' : 'image/jpeg'
-        );
-
-        if (ocrResult.success && ocrResult.text) {
-          rawBody = ocrResult.text;
-          extractionMethod = `gemini_ocr_${ocrResult.model} (${pageCount} trang)`;
+        // Toàn bộ là trang scan ảnh thuần túy không có text layer -> Dùng Chunked Multi-Page OCR
+        if (pageCount > 1) {
+          const chunkedRes = await ocrFullScannedPdfChunked(buffer, 2);
+          if (chunkedRes && chunkedRes.length > 50) {
+            rawBody = chunkedRes;
+            extractionMethod = `gemini_chunked_ocr (${pageCount}/${pageCount} trang scan)`;
+          } else {
+            const ocrResult = await ocrDocumentWithGemini(
+              buffer.toString('base64'),
+              ext === '.pdf' ? 'application/pdf' : 'image/jpeg'
+            );
+            rawBody = ocrResult.text || `Không thể trích xuất nội dung văn bản scan (${pageCount} trang)`;
+            extractionMethod = `gemini_ocr (${pageCount} trang)`;
+          }
         } else {
-          rawBody = `Không thể trích xuất nội dung văn bản scan (${pageCount} trang): ${ocrResult.error || 'Lỗi OCR'}`;
-          extractionMethod = 'ocr_failed';
+          const ocrResult = await ocrDocumentWithGemini(
+            buffer.toString('base64'),
+            ext === '.pdf' ? 'application/pdf' : 'image/jpeg'
+          );
+
+          if (ocrResult.success && ocrResult.text) {
+            rawBody = ocrResult.text;
+            extractionMethod = `gemini_ocr_${ocrResult.model} (1 trang)`;
+          } else {
+            rawBody = `Không thể trích xuất nội dung văn bản scan (1 trang): ${ocrResult.error || 'Lỗi OCR'}`;
+            extractionMethod = 'ocr_failed';
+          }
         }
       }
     } catch (pdfErr) {

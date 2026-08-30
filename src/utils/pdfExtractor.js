@@ -1,10 +1,11 @@
 import { getDocumentProxy } from 'unpdf';
+import { PDFDocument } from 'pdf-lib';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import fs from 'fs';
 import path from 'path';
 
 const GEMINI_MODELS = [
   'gemini-2.5-flash',
-  'gemini-1.5-flash',
   'gemini-flash-latest'
 ];
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
@@ -453,4 +454,102 @@ export async function extractAllPdfPagesStructured(buffer) {
     totalCharacters,
     pages: pagesData
   };
+}
+
+// ─── 5. OCR đa trang cho tệp PDF scan ảnh thuần túy bằng pdf-lib và Gemini ───
+export async function ocrFullScannedPdfChunked(pdfBuffer, pagesPerChunk = 2) {
+  const apiKeys = getGeminiApiKeys();
+  let totalPages = 1;
+  let srcDoc = null;
+
+  try {
+    srcDoc = await PDFDocument.load(pdfBuffer, { ignoreEncryption: true });
+    totalPages = srcDoc.getPageCount();
+  } catch (loadErr) {
+    console.warn('Lỗi đọc cấu trúc PDF scan bằng pdf-lib:', loadErr.message);
+    return null;
+  }
+
+  if (apiKeys.length === 0) {
+    return `*(Chưa cấu hình GEMINI_API_KEYS để thực hiện OCR cho tài liệu scan ${totalPages} trang)*`;
+  }
+
+  const chunkResults = [];
+
+  for (let i = 0; i < totalPages; i += pagesPerChunk) {
+    const startPage = i + 1;
+    const endPage = Math.min(i + pagesPerChunk, totalPages);
+    const label = `Trang ${startPage}-${endPage}/${totalPages}`;
+
+    try {
+      const subDoc = await PDFDocument.create();
+      const pageIndices = [];
+      for (let p = i; p < endPage; p++) {
+        pageIndices.push(p);
+      }
+
+      const copiedPages = await subDoc.copyPages(srcDoc, pageIndices);
+      for (const cp of copiedPages) {
+        subDoc.addPage(cp);
+      }
+
+      const subPdfBytes = await subDoc.save();
+      const subPdfBase64 = Buffer.from(subPdfBytes).toString('base64');
+
+      const prompt = `Bạn là chuyên gia OCR tài liệu hồ sơ hành chính, công trình và pháp lý Việt Nam.
+Tài liệu đính kèm là ảnh scan các trang từ ${startPage} đến ${endPage} (trong tổng số ${totalPages} trang).
+
+NHIỆM VỤ:
+1. Nhận diện CHÍNH XÁC 100% toàn văn tiếng Việt có dấu thanh đầy đủ từ ảnh scan.
+2. Với mỗi trang, đánh dấu tiêu đề rõ ràng:
+### 📄 Trang X/${totalPages}
+(với X là số trang thực tế từ ${startPage} đến ${endPage}).
+3. Giữ nguyên số hiệu, ngày tháng, các bảng biểu số liệu, chữ ký, nơi nhận.
+4. Chỉ trả về nội dung Markdown thuần túy, KHÔNG thêm lời chào, KHÔNG bọc trong \`\`\`markdown.`;
+
+      let chunkText = null;
+      for (let k = 0; k < apiKeys.length && !chunkText; k++) {
+        const key = apiKeys[(Math.floor(i / pagesPerChunk) + k) % apiKeys.length];
+        const genAI = new GoogleGenerativeAI(key);
+
+        for (const modelName of GEMINI_MODELS) {
+          try {
+            const model = genAI.getGenerativeModel({
+              model: modelName,
+              generationConfig: { temperature: 0.1, maxOutputTokens: 8192 }
+            });
+
+            const result = await model.generateContent([
+              prompt,
+              {
+                inlineData: {
+                  data: subPdfBase64,
+                  mimeType: 'application/pdf'
+                }
+              }
+            ]);
+
+            const resText = result.response.text();
+            if (resText && resText.trim()) {
+              chunkText = resText.replace(/^```[\s\S]*?\n/i, '').replace(/\n```\s*$/i, '').trim();
+              break;
+            }
+          } catch (err) {
+            console.warn(`[OCR ${label}] Lỗi model ${modelName}:`, err.message?.slice(0, 80));
+          }
+        }
+      }
+
+      if (chunkText) {
+        chunkResults.push(chunkText);
+      } else {
+        chunkResults.push(`### 📄 Trang ${startPage}-${endPage}/${totalPages}\n*(Không thể trích xuất văn bản từ cụm trang này)*`);
+      }
+    } catch (chunkErr) {
+      console.warn(`[OCR ${label}] Lỗi xử lý chunk:`, chunkErr.message);
+      chunkResults.push(`### 📄 Trang ${startPage}-${endPage}/${totalPages}\n*(Lỗi xử lý: ${chunkErr.message})*`);
+    }
+  }
+
+  return chunkResults.join('\n\n---\n\n');
 }
