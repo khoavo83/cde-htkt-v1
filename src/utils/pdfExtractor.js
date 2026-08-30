@@ -536,6 +536,9 @@ NHIỆM VỤ:
             }
           } catch (err) {
             console.warn(`[OCR ${label}] Lỗi model ${modelName}:`, err.message?.slice(0, 80));
+            if (err.message?.includes('429') || err.message?.includes('Quota exceeded')) {
+              throw new Error(`Google Gemini API đã vượt quá hạn mức miễn phí trong ngày (Mã lỗi 429 - Quota Exceeded tại ${label}). Vui lòng thêm Google API Key mới hoặc thử lại sau.`);
+            }
           }
         }
       }
@@ -543,11 +546,11 @@ NHIỆM VỤ:
       if (chunkText) {
         chunkResults.push(chunkText);
       } else {
-        chunkResults.push(`### 📄 Trang ${startPage}-${endPage}/${totalPages}\n*(Không thể trích xuất văn bản từ cụm trang này)*`);
+        throw new Error(`Không thể trích xuất văn bản từ ${label} do lỗi kết nối AI.`);
       }
     } catch (chunkErr) {
-      console.warn(`[OCR ${label}] Lỗi xử lý chunk:`, chunkErr.message);
-      chunkResults.push(`### 📄 Trang ${startPage}-${endPage}/${totalPages}\n*(Lỗi xử lý: ${chunkErr.message})*`);
+      console.warn(`[OCR ${label}] Lỗi xử lý:`, chunkErr.message);
+      throw chunkErr;
     }
   }
 

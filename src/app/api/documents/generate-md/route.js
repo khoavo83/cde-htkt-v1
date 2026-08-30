@@ -240,8 +240,7 @@ async function extractDocumentToMarkdown({ buffer, fileName, docMetadata = {}, u
       }
     } catch (pdfErr) {
       console.error('Lỗi phân tích PDF:', pdfErr);
-      rawBody = `Lỗi phân tích tệp PDF: ${pdfErr.message}`;
-      extractionMethod = 'error';
+      throw pdfErr;
     }
   }
 
