@@ -258,14 +258,24 @@ export default function Home() {
     try {
       setSyncing(true);
       setSyncResult(null);
-      const res = await fetch('/api/documents/sync', { method: 'POST' });
+      
+      // Xác định dự án cần đồng bộ (nếu đang lọc theo 1 dự án cụ thể thì đồng bộ dự án đó, nếu "Tất cả" thì đồng bộ toàn bộ)
+      let targetProjParam = 'all';
+      if (docProjectFilter !== 'all') {
+        const found = projects.find(p => (p.basic_info?.shortName || p.name) === docProjectFilter);
+        if (found) targetProjParam = found.id;
+      } else if (currentProjectId) {
+        targetProjParam = 'all';
+      }
+
+      const res = await fetch(`/api/drive/sync?projectId=${targetProjParam}`, { method: 'POST' });
       const result = await res.json();
       setSyncResult(result);
       // Tải lại dữ liệu mới sau khi đồng bộ
       await fetchData();
     } catch (err) {
       console.error("Lỗi đồng bộ:", err);
-      setSyncResult({ success: false, error: "Không thể kết nối đến API đồng bộ." });
+      setSyncResult({ success: false, error: "Không thể kết nối đến API đồng bộ Google Drive." });
     } finally {
       setSyncing(false);
     }
@@ -906,10 +916,14 @@ export default function Home() {
                     <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
-                <button onClick={handleSyncDrive} disabled={syncing}
-                  className="flex items-center gap-1 px-2.5 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg hover:border-emerald-500/40 text-slate-300 hover:text-emerald-400 transition-colors disabled:opacity-40 text-[10px]">
-                  <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin text-emerald-400' : ''}`} />
-                  {syncing ? 'Đang đồng bộ...' : 'Đồng bộ ổ H:'}
+                <button 
+                  onClick={handleSyncDrive} 
+                  disabled={syncing}
+                  title="Đồng bộ tự động các văn bản từ thư mục Google Drive của dự án về hệ thống"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 rounded-lg text-emerald-400 hover:text-emerald-300 transition-colors disabled:opacity-40 text-[11px] font-semibold cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin text-emerald-400' : ''}`} />
+                  <span>{syncing ? 'Đang đồng bộ Google Drive...' : 'Đồng bộ Google Drive'}</span>
                 </button>
               </div>
             </div>
