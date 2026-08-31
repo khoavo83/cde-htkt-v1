@@ -57,6 +57,7 @@ import {
   ShieldCheck, 
   KeyRound, 
   UserCheck,
+  Users,
   DollarSign,
   Receipt,
   Building2,
