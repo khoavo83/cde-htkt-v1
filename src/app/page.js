@@ -620,25 +620,11 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Trạng thái */}
+        {/* Công cụ & Người dùng */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 bg-slate-950/60 px-2 py-1 rounded-lg border border-slate-800 text-[9px] font-semibold text-slate-300">
-            <Database className="w-3 h-3 text-cyan-400" />
-            {driveSource === 'live_supabase_db' ? (
-              <span className="text-emerald-400">Supabase</span>
-            ) : driveSource === 'local_db_file' ? (
-              <span className="text-cyan-400">Local</span>
-            ) : (
-              <span className="text-slate-500 animate-pulse">...</span>
-            )}
-          </div>
-          <div className={`flex items-center gap-1 bg-slate-950/60 px-2 py-1 rounded-lg border border-slate-800 text-[9px] font-semibold ${realtimeStatus === 'connected' ? 'text-emerald-400' : 'text-amber-400'}`}>
-            <Zap className={`w-3 h-3 ${realtimeStatus === 'connected' ? 'animate-pulse' : ''}`} />
-            <span>{realtimeStatus === 'connected' ? 'LIVE' : 'SYNC'}</span>
-          </div>
           <button 
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="p-1.5 rounded-lg bg-slate-950/60 border border-slate-800 text-slate-400 hover:text-emerald-400 hover:border-emerald-500/40 transition-colors ml-1 flex items-center justify-center"
+            className="p-1.5 rounded-lg bg-slate-950/60 border border-slate-800 text-slate-400 hover:text-emerald-400 hover:border-emerald-500/40 transition-colors ml-1 flex items-center justify-center cursor-pointer"
             title="Chuyển đổi Sáng/Tối"
           >
             {mounted && theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
@@ -1234,7 +1220,14 @@ export default function Home() {
           />
         )}
 
-        {activeMainTab === 'settings' && (<SettingsTab currentProjectId={currentProjectId} initialSubTab={settingsSubTab} />)}
+        {activeMainTab === 'settings' && (
+          <SettingsTab 
+            currentProjectId={currentProjectId} 
+            initialSubTab={settingsSubTab} 
+            driveSource={driveSource} 
+            realtimeStatus={realtimeStatus} 
+          />
+        )}
 
         </main>
       

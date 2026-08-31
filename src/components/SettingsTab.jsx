@@ -20,14 +20,23 @@ import {
   ArrowRight,
   Users,
   ShieldCheck,
-  Crown
+  Crown,
+  Database,
+  Zap,
+  FolderOpen,
+  Cloud
 } from 'lucide-react';
 import ProjectListTab from './ProjectListTab';
 import StaffListTab from './StaffListTab';
 import PermissionsTab from './PermissionsTab';
 import { useAuth } from '@/context/AuthContext';
 
-export default function SettingsTab({ currentProjectId, initialSubTab = 'document_types' }) {
+export default function SettingsTab({ 
+  currentProjectId, 
+  initialSubTab = 'document_types',
+  driveSource = 'live_supabase_db',
+  realtimeStatus = 'connected'
+}) {
   const { isAdmin, role, isAuthenticated, openAuthModal } = useAuth();
   const [activeSubTab, setActiveSubTab] = useState(initialSubTab);
 
@@ -698,32 +707,120 @@ export default function SettingsTab({ currentProjectId, initialSubTab = 'documen
 
         {/* ── TAB HỆ THỐNG ── */}
         {activeSubTab === 'system' && (
-          <div className="flex-1 overflow-y-auto space-y-4 text-xs">
-            <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-3">
-              <h3 className="font-bold text-emerald-400 flex items-center gap-2">
-                <Server className="w-4 h-4" /> Trạng thái Kết nối Cơ sở dữ liệu
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
-                  <span className="text-slate-400 block mb-1">Cơ sở dữ liệu chính:</span>
-                  <span className="text-emerald-400 font-bold flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4" /> Supabase PostgreSQL (Live)
-                  </span>
+          <div className="flex-1 overflow-y-auto space-y-4 text-xs pr-1">
+            {/* Thẻ Trạng thái Kết nối & Hạ tầng */}
+            <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4 shadow-lg">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 className="font-bold text-sm text-emerald-400 flex items-center gap-2">
+                  <Server className="w-4 h-4" /> Trạng thái Kết nối & Hạ tầng Kỹ thuật
+                </h3>
+                <span className="text-[10px] font-semibold text-slate-400 bg-slate-950 px-2.5 py-1 rounded-full border border-slate-800">
+                  Thời gian thực (Realtime Status)
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                {/* 1. Supabase Database */}
+                <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-slate-400 font-medium flex items-center gap-1.5">
+                        <Database className="w-3.5 h-3.5 text-cyan-400" /> Cơ sở dữ liệu
+                      </span>
+                      {driveSource === 'live_supabase_db' ? (
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                          <CheckCircle2 className="w-2.5 h-2.5" /> Live
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                          Local DB
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-white font-bold text-xs mb-1">
+                      {driveSource === 'live_supabase_db' ? 'Supabase PostgreSQL' : 'Cơ sở dữ liệu Cục bộ'}
+                    </div>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                      Lưu trữ metadata văn bản, tài khoản, phân quyền và kế hoạch đầu tư.
+                    </p>
+                  </div>
+                  <div className="mt-3 pt-2 border-t border-slate-900 text-[10px] text-slate-500 font-mono">
+                    Bảng: drive_file_metadata
+                  </div>
                 </div>
-                <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
-                  <span className="text-slate-400 block mb-1">Bảng Metadata chính:</span>
-                  <span className="text-cyan-400 font-bold font-mono">drive_file_metadata</span>
+
+                {/* 2. Realtime SSE Sync */}
+                <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-slate-400 font-medium flex items-center gap-1.5">
+                        <Zap className="w-3.5 h-3.5 text-emerald-400" /> Đồng bộ Realtime
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border flex items-center gap-1 ${
+                        realtimeStatus === 'connected' 
+                          ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' 
+                          : 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${realtimeStatus === 'connected' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+                        {realtimeStatus === 'connected' ? 'LIVE' : 'Đang kết nối lại'}
+                      </span>
+                    </div>
+                    <div className="text-white font-bold text-xs mb-1">
+                      Server-Sent Events (SSE)
+                    </div>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                      Tự động cập nhật tiến độ công việc giữa các máy trạm mà không cần tải lại trang.
+                    </p>
+                  </div>
+                  <div className="mt-3 pt-2 border-t border-slate-900 text-[10px] text-slate-500 font-mono">
+                    Luồng: /api/realtime
+                  </div>
+                </div>
+
+                {/* 3. Google Drive API */}
+                <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-slate-400 font-medium flex items-center gap-1.5">
+                        <FolderOpen className="w-3.5 h-3.5 text-amber-400" /> Lưu trữ Tệp lớn
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                        <CheckCircle2 className="w-2.5 h-2.5" /> Hoạt động
+                      </span>
+                    </div>
+                    <div className="text-white font-bold text-xs mb-1">
+                      Google Drive API v3
+                    </div>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                      Lưu trữ và đọc các tệp dữ liệu gốc (PDF, CAD DWG, Excel, Hình ảnh khảo sát).
+                    </p>
+                  </div>
+                  <div className="mt-3 pt-2 border-t border-slate-900 text-[10px] text-slate-500 font-mono">
+                    Thư mục: CDE-HTKT Workspace
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
-              <h3 className="font-bold text-slate-300">Thông tin Kiến trúc</h3>
-              <ul className="list-disc list-inside space-y-1 text-slate-400">
-                <li>Metadata văn bản được đồng bộ và lưu trữ tập trung tại bảng <code className="text-emerald-400">drive_file_metadata</code>.</li>
-                <li>File lớn và tài liệu gốc được lưu trữ trực tiếp trên <strong className="text-white">Google Drive</strong>.</li>
-                <li>Hệ thống quản lý tiến độ dự án độc lập với sơ đồ Gantt và liên kết văn bản pháp lý.</li>
-              </ul>
+            {/* Thông tin Kiến trúc & Cơ chế vận hành */}
+            <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 shadow-lg">
+              <h3 className="font-bold text-sm text-slate-200 flex items-center gap-2">
+                <Cloud className="w-4 h-4 text-cyan-400" /> Kiến trúc Phân tách Dữ liệu
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px] text-slate-300">
+                <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                  <div className="font-semibold text-emerald-400 mb-1">Quản lý Metadata & Nghiệp vụ</div>
+                  <p className="text-slate-400 leading-relaxed">
+                    Thông tin số hiệu văn bản, ngày phát hành, cơ quan, liên kết pháp lý, kế hoạch vốn, tổng mức đầu tư và gói thầu được truy vấn tốc độ cao qua Supabase PostgreSQL.
+                  </p>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                  <div className="font-semibold text-amber-400 mb-1">Lưu trữ Tệp tin & Xem trực tuyến</div>
+                  <p className="text-slate-400 leading-relaxed">
+                    Tài liệu dung lượng lớn được lưu an toàn trên Google Drive, hỗ trợ trích xuất văn bản tự động (OCR PDF) và mở trực tiếp tệp tin với quyền bảo mật.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         )}
