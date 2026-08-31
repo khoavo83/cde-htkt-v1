@@ -114,11 +114,11 @@ export async function POST(request) {
   let client = null;
   try {
     const { searchParams } = new URL(request.url);
-    const requestedProjectId = searchParams.get('projectId');
+    const requestedProjectId = searchParams.get('projectId') || 'all';
 
     const dbConfigured = process.env.DATABASE_URL && !process.env.DATABASE_URL.includes("[YOUR_PASSWORD]");
     if (!dbConfigured) {
-      return NextResponse.json({ error: 'Chưa cấu hình DATABASE_URL' }, { status: 500 });
+      return NextResponse.json({ success: false, error: 'Chưa cấu hình DATABASE_URL' }, { status: 500 });
     }
 
     pool = new Pool({
@@ -127,28 +127,7 @@ export async function POST(request) {
     });
     client = await pool.connect();
 
-    // Lấy danh sách các dự án cần đồng bộ
-    let projectsToSync = [];
-    if (requestedProjectId && requestedProjectId !== 'all') {
-      const projRes = await client.query('SELECT id, name, basic_info FROM projects WHERE id = $1', [requestedProjectId]);
-      if (projRes.rows.length > 0) {
-        projectsToSync = projRes.rows;
-      } else {
-        // Fallback dùng trực tiếp ID thư mục nếu không tìm thấy record
-        projectsToSync = [{ id: requestedProjectId, name: requestedProjectId }];
-      }
-    } else {
-      const projRes = await client.query('SELECT id, name, basic_info FROM projects ORDER BY created_at ASC');
-      projectsToSync = projRes.rows;
-    }
-
-    if (projectsToSync.length === 0) {
-      return NextResponse.json({ error: 'Không tìm thấy dự án nào để đồng bộ.' }, { status: 400 });
-    }
-
-    const drive = await getDriveClient();
-
-    // Đảm bảo các bảng cần thiết tồn tại
+    // 1. Đảm bảo cấu trúc các bảng Supabase cần thiết
     await client.query(`
       CREATE TABLE IF NOT EXISTS drive_folders_flat (
         folder_id VARCHAR(255) PRIMARY KEY,
@@ -158,9 +137,7 @@ export async function POST(request) {
         drive_modified_time TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
-    `);
 
-    await client.query(`
       CREATE TABLE IF NOT EXISTS drive_file_metadata (
         file_id        VARCHAR(255) PRIMARY KEY,
         file_name      TEXT,
@@ -174,6 +151,12 @@ export async function POST(request) {
         manually_edited BOOLEAN DEFAULT FALSE,
         extracted_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+
+      CREATE TABLE IF NOT EXISTS drive_sync_state (
+        project_id VARCHAR(255) PRIMARY KEY,
+        page_token TEXT NOT NULL,
+        last_synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
     `);
 
     await client.query(`
@@ -185,65 +168,79 @@ export async function POST(request) {
       ALTER TABLE drive_file_metadata ADD COLUMN IF NOT EXISTS target_drive_id VARCHAR(255) DEFAULT NULL;
     `).catch(() => {});
 
-    let totalProjectsSynced = 0;
-    let totalFoldersSynced = 0;
-    let totalFilesSynced = 0;
+    // 2. Lấy mapping toàn bộ folder sang project và folder_name
+    const foldersRes = await client.query('SELECT folder_id, folder_name, project_id FROM drive_folders_flat');
+    const folderMap = {};
+    for (const r of foldersRes.rows) {
+      folderMap[r.folder_id] = { name: r.folder_name, projectId: r.project_id };
+    }
 
-    for (const project of projectsToSync) {
-      const targetFolderId = project.id;
-      const targetProjectId = project.id;
-      const projLabel = project.basic_info?.shortName || project.name || targetFolderId;
+    const drive = await getDriveClient();
+    const syncStateKey = 'global_sync';
 
-      console.log(`[sync] Bắt đầu đồng bộ Google Drive cho dự án: ${projLabel} (${targetFolderId})`);
+    // 3. Lấy pageToken hiện tại
+    let pageToken = null;
+    const tokenRes = await client.query('SELECT page_token FROM drive_sync_state WHERE project_id = $1', [syncStateKey]);
+    if (tokenRes.rows.length > 0 && tokenRes.rows[0].page_token) {
+      pageToken = tokenRes.rows[0].page_token;
+    }
 
-      try {
-        // 1. Quét cây thư mục phẳng từ Google Drive
-        const flatFolders = await fetchDriveFoldersFlat(targetFolderId);
-        console.log(`[sync] Dự án ${projLabel}: Đã quét ${flatFolders.length} thư mục`);
+    const allowedMimes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.google-apps.shortcut'
+    ];
 
-        for (const folder of flatFolders) {
-          await client.query(`
-            INSERT INTO drive_folders_flat (folder_id, folder_name, parent_id, project_id, drive_modified_time, updated_at) 
-            VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
-            ON CONFLICT (folder_id) DO UPDATE SET 
-              folder_name = EXCLUDED.folder_name,
-              parent_id = EXCLUDED.parent_id,
-              project_id = EXCLUDED.project_id,
-              drive_modified_time = EXCLUDED.drive_modified_time,
-              updated_at = CURRENT_TIMESTAMP;
-          `, [folder.id, folder.name, folder.parent_id, targetProjectId, folder.modified_time ? new Date(folder.modified_time) : null]);
-        }
+    let resultLog = { added: 0, updated: 0, deleted: 0 };
+    let newStartPageToken = null;
 
-        // Xoá các thư mục không còn tồn tại trên Drive của dự án này
-        if (flatFolders.length > 0) {
-          const folderIds = flatFolders.map(f => f.id);
-          await client.query(`DELETE FROM drive_folders_flat WHERE project_id = $1 AND folder_id != ALL($2)`, [targetProjectId, folderIds]);
-        }
+    if (!pageToken) {
+      // Lần đầu tiên: lấy startPageToken
+      const startRes = await drive.changes.getStartPageToken();
+      newStartPageToken = startRes.data.startPageToken;
 
-        // Lưu cache cục bộ nếu có
+      await client.query(`
+        INSERT INTO drive_sync_state (project_id, page_token, last_synced_at)
+        VALUES ($1, $2, CURRENT_TIMESTAMP)
+        ON CONFLICT (project_id) DO UPDATE SET
+          page_token = EXCLUDED.page_token,
+          last_synced_at = CURRENT_TIMESTAMP
+      `, [syncStateKey, newStartPageToken]);
+
+      console.log(`[sync] Đã khởi tạo StartPageToken: ${newStartPageToken}`);
+    } else {
+      // Quét các thay đổi từ Google Drive kể từ token trước
+      let currentToken = pageToken;
+      let hasMore = true;
+      let iteration = 0;
+
+      while (hasMore && currentToken && iteration < 5) {
+        iteration++;
         try {
-          const cachePath = path.join(process.cwd(), 'data', `drive_cache_${targetProjectId}.json`);
-          const dataDir = path.dirname(cachePath);
-          if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-          fs.writeFileSync(cachePath, JSON.stringify(flatFolders, null, 2), 'utf8');
-        } catch (cacheErr) {
-          console.warn('[sync] Bỏ qua ghi cache tệp tin:', cacheErr.message);
-        }
+          const changeRes = await drive.changes.list({
+            pageToken: currentToken,
+            fields: 'nextPageToken, newStartPageToken, changes(fileId, removed, file(id, name, mimeType, webViewLink, modifiedTime, shortcutDetails, parents, trashed))',
+            pageSize: 100
+          });
 
-        // 2. Đồng bộ các file tài liệu trong các thư mục của dự án
-        let allFileIds = [];
-        const BATCH_SIZE = 5;
-        for (let i = 0; i < flatFolders.length; i += BATCH_SIZE) {
-          const batch = flatFolders.slice(i, i + BATCH_SIZE);
-          const batchResults = await Promise.allSettled(
-            batch.map(f => fetchFilesInFolder(drive, f.id, f.name))
-          );
+          const changes = changeRes.data.changes || [];
+          for (const change of changes) {
+            if (change.removed || (change.file && change.file.trashed)) {
+              await client.query('DELETE FROM drive_file_metadata WHERE file_id = $1', [change.fileId]);
+              resultLog.deleted++;
+            } else if (change.file) {
+              const file = change.file;
+              if (!allowedMimes.includes(file.mimeType)) continue;
 
-          for (const result of batchResults) {
-            if (result.status !== 'fulfilled') continue;
-            for (const file of result.value) {
-              allFileIds.push(file.id);
-              const { parsedNgay, parsedSoVb, parsedTrichYeu, parsedNoiPhatHanh, parsedNoiGui } = parseFileName(file.name, file.folderName);
+              let parentFolderId = null;
+              if (file.parents && file.parents.length > 0) {
+                parentFolderId = file.parents.find(id => folderMap[id]) || file.parents[0];
+              }
+
+              const folderInfo = parentFolderId ? folderMap[parentFolderId] : null;
+              const folderName = folderInfo ? folderInfo.name : "Tất cả";
+              const { parsedNgay, parsedSoVb, parsedTrichYeu, parsedNoiPhatHanh, parsedNoiGui } = parseFileName(file.name, folderName);
               const modifiedTime = file.modifiedTime ? new Date(file.modifiedTime) : new Date();
 
               let targetDriveId = null;
@@ -267,46 +264,57 @@ export async function POST(request) {
                   folder_id      = EXCLUDED.folder_id,
                   folder_name    = EXCLUDED.folder_name,
                   target_drive_id = EXCLUDED.target_drive_id
-              `, [file.id, file.name, file.webViewLink, modifiedTime, parsedNgay, parsedSoVb, parsedTrichYeu, parsedNoiPhatHanh, parsedNoiGui, file.folderId, file.folderName, targetDriveId]);
-              totalFilesSynced++;
+              `, [file.id, file.name, file.webViewLink, modifiedTime, parsedNgay, parsedSoVb, parsedTrichYeu, parsedNoiPhatHanh, parsedNoiGui, parentFolderId, folderName, targetDriveId]);
+
+              resultLog.updated++;
             }
           }
-        }
 
-        // Xoá các file không còn trên Drive của dự án
-        const projectFoldersRes = await client.query(`SELECT folder_id FROM drive_folders_flat WHERE project_id = $1`, [targetProjectId]);
-        const projectFolderIds = projectFoldersRes.rows.map(r => r.folder_id);
-        if (projectFolderIds.length > 0) {
-          if (allFileIds.length > 0) {
-            await client.query(`DELETE FROM drive_file_metadata WHERE folder_id = ANY($1) AND file_id != ALL($2)`, [projectFolderIds, allFileIds]);
+          if (changeRes.data.newStartPageToken) {
+            newStartPageToken = changeRes.data.newStartPageToken;
+            hasMore = false;
           } else {
-            await client.query(`DELETE FROM drive_file_metadata WHERE folder_id = ANY($1)`, [projectFolderIds]);
+            currentToken = changeRes.data.nextPageToken;
           }
+        } catch (changeErr) {
+          console.warn('[sync] Token cũ hoặc lỗi changes.list, reset token:', changeErr.message);
+          const startRes = await drive.changes.getStartPageToken();
+          newStartPageToken = startRes.data.startPageToken;
+          hasMore = false;
         }
+      }
 
-        totalProjectsSynced++;
-        totalFoldersSynced += flatFolders.length;
-      } catch (projErr) {
-        console.error(`[sync] Lỗi đồng bộ dự án ${projLabel}:`, projErr);
+      if (newStartPageToken) {
+        await client.query(`
+          INSERT INTO drive_sync_state (project_id, page_token, last_synced_at)
+          VALUES ($1, $2, CURRENT_TIMESTAMP)
+          ON CONFLICT (project_id) DO UPDATE SET
+            page_token = EXCLUDED.page_token,
+            last_synced_at = CURRENT_TIMESTAMP
+        `, [syncStateKey, newStartPageToken]);
       }
     }
 
-    // Đếm tổng số văn bản sau đồng bộ
-    const countRes = await client.query(`SELECT COUNT(DISTINCT file_id) as count FROM drive_file_metadata`);
+    // 4. Lấy tổng số văn bản hiện có
+    const countRes = await client.query('SELECT COUNT(DISTINCT file_id) as count FROM drive_file_metadata');
     const totalPdfCount = parseInt(countRes.rows[0].count, 10);
+
+    let message = `Đồng bộ Google Drive thành công! Hệ thống hiện có ${totalPdfCount} văn bản.`;
+    if (resultLog.updated > 0 || resultLog.deleted > 0) {
+      message = `Đã cập nhật ${resultLog.updated} văn bản và gỡ ${resultLog.deleted} văn bản từ Google Drive. Tổng số hiện có: ${totalPdfCount} văn bản.`;
+    }
 
     return NextResponse.json({
       success: true,
-      projectCount: totalProjectsSynced,
-      folderCount: totalFoldersSynced,
-      fileCount: totalFilesSynced,
+      updatedCount: resultLog.updated,
+      deletedCount: resultLog.deleted,
       totalPdfCount,
-      message: `Đồng bộ Google Drive hoàn tất thành công: ${totalProjectsSynced} dự án, ${totalFoldersSynced} thư mục, ${totalFilesSynced} lượt tệp tin. Tổng văn bản hiện có: ${totalPdfCount}.`
+      message
     });
 
   } catch (error) {
-    console.error('[sync] Lỗi nghiêm trọng:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error('[sync] Lỗi xử lý đồng bộ Google Drive:', error);
+    return NextResponse.json({ success: false, error: error.message || 'Lỗi xử lý đồng bộ Google Drive' }, { status: 500 });
   } finally {
     if (client) client.release();
     if (pool) await pool.end();

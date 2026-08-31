@@ -259,23 +259,22 @@ export default function Home() {
       setSyncing(true);
       setSyncResult(null);
       
-      // Xác định dự án cần đồng bộ (nếu đang lọc theo 1 dự án cụ thể thì đồng bộ dự án đó, nếu "Tất cả" thì đồng bộ toàn bộ)
-      let targetProjParam = 'all';
-      if (docProjectFilter !== 'all') {
-        const found = projects.find(p => (p.basic_info?.shortName || p.name) === docProjectFilter);
-        if (found) targetProjParam = found.id;
-      } else if (currentProjectId) {
-        targetProjParam = 'all';
-      }
-
-      const res = await fetch(`/api/drive/sync?projectId=${targetProjParam}`, { method: 'POST' });
+      const res = await fetch('/api/drive/sync', { method: 'POST' });
       const result = await res.json();
-      setSyncResult(result);
-      // Tải lại dữ liệu mới sau khi đồng bộ
-      await fetchData();
+      
+      if (!res.ok || !result.success) {
+        setSyncResult({
+          success: false,
+          error: result.error || "Không thể đồng bộ dữ liệu Google Drive."
+        });
+      } else {
+        setSyncResult(result);
+        // Tải lại dữ liệu mới sau khi đồng bộ
+        await fetchData();
+      }
     } catch (err) {
       console.error("Lỗi đồng bộ:", err);
-      setSyncResult({ success: false, error: "Không thể kết nối đến API đồng bộ Google Drive." });
+      setSyncResult({ success: false, error: err.message || "Không thể kết nối đến API đồng bộ Google Drive." });
     } finally {
       setSyncing(false);
     }
@@ -875,18 +874,17 @@ export default function Home() {
 
             {/* Đồng bộ kết quả */}
             {syncResult && (
-              <div className={`p-3 rounded-xl text-[10px] border flex flex-col gap-1 shrink-0 mb-3 ${syncResult.success ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
+              <div className={`p-3 rounded-xl text-xs border flex flex-col gap-1 shrink-0 mb-3 ${syncResult.success ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
                 <div className="font-bold flex justify-between items-center">
-                  <span>{syncResult.success ? '✓ Đồng bộ hoàn tất' : '✗ Đồng bộ thất bại'}</span>
-                  <button onClick={() => setSyncResult(null)} className="text-slate-400 hover:text-slate-200 text-xs">✕</button>
+                  <span>{syncResult.success ? '✓ Đồng bộ Google Drive hoàn tất' : '✗ Đồng bộ thất bại'}</span>
+                  <button onClick={() => setSyncResult(null)} className="text-slate-400 hover:text-slate-200 text-xs px-1">✕</button>
                 </div>
-                <p className="mt-0.5 text-slate-300">{syncResult.message || syncResult.error}</p>
-                {syncResult.success && (
-                  <div className="flex gap-3 text-slate-400 mt-1 pt-1 border-t border-slate-800/40">
-                    <span>Đã quét: <strong className="text-slate-200">{syncResult.scannedCount}</strong> tệp</span>
-                    <span>Supabase: <strong className={syncResult.syncedToSupabase ? "text-emerald-400" : "text-amber-400"}>
-                      {syncResult.syncedToSupabase ? `Đã lưu ${syncResult.syncedCount}` : "Offline"}
-                    </strong></span>
+                <p className="mt-0.5 text-slate-300 text-xs">{syncResult.message || syncResult.error}</p>
+                {syncResult.success && syncResult.totalPdfCount && (
+                  <div className="flex gap-3 text-slate-400 mt-1 pt-1 border-t border-slate-800/40 text-[11px]">
+                    <span>Tổng văn bản trên hệ thống: <strong className="text-slate-200">{syncResult.totalPdfCount}</strong></span>
+                    {syncResult.updatedCount > 0 && <span>Đã cập nhật mới: <strong className="text-emerald-400">+{syncResult.updatedCount}</strong></span>}
+                    {syncResult.deletedCount > 0 && <span>Đã gỡ: <strong className="text-amber-400">-{syncResult.deletedCount}</strong></span>}
                   </div>
                 )}
               </div>
