@@ -87,7 +87,6 @@ export default function DocumentAnalyzeModal({
   const [mdCharCount, setMdCharCount] = useState(0);
   const [mdGeneratedAt, setMdGeneratedAt] = useState(null);
   const [isGeneratingMd, setIsGeneratingMd] = useState(false);
-  const [useAIForMd, setUseAIForMd] = useState(false);
   const [mdViewMode, setMdViewMode] = useState('preview'); // 'preview' | 'raw'
   const [copySuccess, setCopySuccess] = useState(false);
   const [mdSuccessMsg, setMdSuccessMsg] = useState('');
@@ -150,51 +149,83 @@ export default function DocumentAnalyzeModal({
           setStaffList(data.data);
         }
       } catch (err) {
-        console.error('Error fetching staffs:', err);
+        console.error('Lỗi khi tải danh sách cán bộ:', err);
       }
     };
+    fetchStaffs();
+  }, []);
 
+  useEffect(() => {
     if (isOpen && doc) {
-      fetchStaffs();
-      setWarning('');
-      setError('');
-      setMdSuccessMsg('');
-      setShowConfirm(false);
-      setShowCloseConfirm(false);
-      setFormData({
-        documentNumber: doc.documentNumber || doc.so_vb || '',
-        issuedDate: doc.documentDate || doc.issuedDate || doc.ngay_phat_hanh || '',
-        issuer: doc.issuingAgency || doc.issuer || doc.noi_phat_hanh || '',
-        notes: doc.summary || doc.notes || doc.trich_yeu || '',
-        category: doc.category || doc.loai_vb || '',
-        status: doc.status || 'effective',
-        receiver: doc.receivingAgency || doc.noi_gui || doc.receiver || '',
-        is_outgoing: doc.is_outgoing || false,
-        assignedStaff: doc.assignedStaff || doc.nguoi_xu_ly || '',
-        // Kết hợp cả 2 nguồn: legacy array + file đính kèm mới qua parent_id
-        draftFiles: Array.from(new Set([
-          ...(doc.draftFiles || doc.draft_files || []),
-          ...allFolderFiles.filter(f => f.parent_id === doc.id).map(f => f.id)
-        ])),
-      });
-      setSelectedDraftFile('');
+      // 1. Số hiệu
+      const initialDocNumber = doc.documentNumber || doc.so_vb || analysisResult.documentNumber || analysisResult.so_vb || '';
+      
+      // 2. Ngày ban hành
+      let rawDate = doc.issuedDate || doc.ngay_phat_hanh || analysisResult.issuedDate || analysisResult.ngay_phat_hanh || '';
+      let initialDate = '';
+      if (rawDate) {
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(rawDate)) {
+          const [d, m, y] = rawDate.split('/');
+          initialDate = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+        } else if (/^\d{4}-\d{2}-\d{2}/.test(rawDate)) {
+          initialDate = rawDate.split('T')[0];
+        } else {
+          const parsed = new Date(rawDate);
+          if (!isNaN(parsed.getTime())) {
+            initialDate = parsed.toISOString().split('T')[0];
+          }
+        }
+      }
 
-      // Khởi tạo nội dung Markdown nếu có sẵn
+      // 3. Cơ quan ban hành
+      const initialIssuer = doc.issuer || doc.noi_phat_hanh || analysisResult.issuer || analysisResult.noi_phat_hanh || '';
+
+      // 4. Trích yếu / Nội dung
+      const initialNotes = doc.notes || doc.trich_yeu || analysisResult.notes || analysisResult.trich_yeu || '';
+
+      // 5. Loại văn bản
+      const initialCategory = doc.category || doc.loai_vb || analysisResult.category || analysisResult.loai_vb || '';
+
+      // 6. Trạng thái
+      const initialStatus = doc.status || analysisResult.status || 'effective';
+
+      // 7. Nơi nhận / Nơi gửi
+      const initialReceiver = doc.receiver || doc.noi_gui || analysisResult.receiver || analysisResult.noi_gui || '';
+
+      // 8. Cán bộ thụ lý
+      const initialStaff = doc.assignedStaff || doc.nguoi_xu_ly || analysisResult.assignedStaff || analysisResult.nguoi_xu_ly || '';
+
+      // 9. Công văn đi
+      const initialIsOutgoing = doc.is_outgoing !== undefined ? doc.is_outgoing : (analysisResult.is_outgoing || false);
+
+      // 10. File dự thảo / đính kèm
+      const initialDraftFiles = doc.draftFiles || doc.file_dinh_kem || analysisResult.draftFiles || analysisResult.file_dinh_kem || [];
+
+      setFormData({
+        documentNumber: initialDocNumber,
+        issuedDate: initialDate,
+        issuer: initialIssuer,
+        notes: initialNotes,
+        category: initialCategory,
+        status: initialStatus,
+        receiver: initialReceiver,
+        is_outgoing: initialIsOutgoing,
+        draftFiles: Array.isArray(initialDraftFiles) ? initialDraftFiles : [],
+        assignedStaff: initialStaff,
+      });
+
+      // 11. Load dữ liệu Markdown (.md) từ doc hoặc DB
       if (doc.content_md) {
         setMarkdownContent(doc.content_md);
         setMdCharCount(doc.md_char_count || doc.content_md.length);
-        setMdGeneratedAt(doc.md_generated_at);
+        setMdGeneratedAt(doc.md_generated_at || null);
       } else {
-        setMarkdownContent('');
-        setMdCharCount(0);
-        setMdGeneratedAt(null);
-        // Tự động kiểm tra xem trong database đã có MD chưa
-        const targetId = doc.id || doc.fileId || doc.driveFileId;
-        if (targetId) {
-          fetch(`/api/documents/generate-md?fileId=${targetId}`)
-            .then(r => r.json())
+        const fileId = doc.id || doc.fileId || doc.driveFileId;
+        if (fileId) {
+          fetch(`/api/documents/generate-md?fileId=${fileId}`)
+            .then(res => res.json())
             .then(data => {
-              if (data.success && data.has_md && data.content_md) {
+              if (data.has_md && data.content_md) {
                 setMarkdownContent(data.content_md);
                 setMdCharCount(data.md_char_count || data.content_md.length);
                 setMdGeneratedAt(data.md_generated_at);
@@ -206,8 +237,8 @@ export default function DocumentAnalyzeModal({
     }
   }, [isOpen, doc]);
 
-  // Xử lý tạo nội dung Markdown
-  const handleGenerateMd = async (forceWithAI = false) => {
+  // Xử lý tạo nội dung Markdown tự động nhận diện
+  const handleGenerateMd = async () => {
     const targetFileId = doc.id || doc.fileId || doc.driveFileId;
     if (!targetFileId && !doc.name && !doc.file_name) return;
 
@@ -221,7 +252,6 @@ export default function DocumentAnalyzeModal({
         body: JSON.stringify({
           fileId: targetFileId,
           fileName: doc.name || doc.file_name,
-          useAI: forceWithAI || useAIForMd,
           force: true
         })
       });
@@ -954,17 +984,11 @@ export default function DocumentAnalyzeModal({
                       </span>
                     )}
 
-                    {/* Checkbox Dùng AI OCR */}
-                    <label className="inline-flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer bg-slate-800/80 hover:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700 select-none transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={useAIForMd}
-                        onChange={(e) => setUseAIForMd(e.target.checked)}
-                        className="w-3.5 h-3.5 rounded text-cyan-500 bg-slate-900 border-slate-600 cursor-pointer"
-                      />
-                      <Sparkles className="w-3 h-3 text-cyan-400" />
-                      <span>Dùng AI OCR (file scan)</span>
-                    </label>
+                    {/* Auto-detect badge */}
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs text-slate-300 bg-slate-800/80 border border-slate-700/70 select-none" title="Hệ thống tự động phát hiện định dạng PDF để bóc tách tối ưu">
+                      <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>Tự động nhận diện (Chữ / Scan)</span>
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -995,7 +1019,7 @@ export default function DocumentAnalyzeModal({
                     {/* Generate / Re-generate Button */}
                     <button
                       type="button"
-                      onClick={() => handleGenerateMd(useAIForMd)}
+                      onClick={() => handleGenerateMd()}
                       disabled={isGeneratingMd}
                       className="px-3 py-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-md shadow-cyan-600/20 cursor-pointer"
                     >
