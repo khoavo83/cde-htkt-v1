@@ -29,6 +29,7 @@ import {
 import ProjectListTab from './ProjectListTab';
 import StaffListTab from './StaffListTab';
 import PermissionsTab from './PermissionsTab';
+import SystemMetadataStats from './SystemMetadataStats';
 import { useAuth } from '@/context/AuthContext';
 
 export default function SettingsTab({ 
@@ -707,8 +708,15 @@ export default function SettingsTab({
 
         {/* ── TAB HỆ THỐNG ── */}
         {activeSubTab === 'system' && (
-          <div className="flex-1 overflow-y-auto space-y-4 text-xs pr-1">
-            {/* Thẻ Trạng thái Kết nối & Hạ tầng */}
+          <div className="flex-1 overflow-y-auto space-y-5 text-xs pr-1">
+            {/* 1. Bảng Thống kê Metadata & Số hóa Markdown */}
+            <SystemMetadataStats 
+              agencies={agencies} 
+              documentTypes={documentTypes} 
+              onDocumentUpdate={fetchAgencies}
+            />
+
+            {/* 2. Thẻ Trạng thái Kết nối & Hạ tầng */}
             <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4 shadow-lg">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h3 className="font-bold text-sm text-emerald-400 flex items-center gap-2">
@@ -802,7 +810,7 @@ export default function SettingsTab({
               </div>
             </div>
 
-            {/* Thông tin Kiến trúc & Cơ chế vận hành */}
+            {/* 3. Thông tin Kiến trúc & Cơ chế vận hành */}
             <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 shadow-lg">
               <h3 className="font-bold text-sm text-slate-200 flex items-center gap-2">
                 <Cloud className="w-4 h-4 text-cyan-400" /> Kiến trúc Phân tách Dữ liệu
